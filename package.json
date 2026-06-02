@@ -4,6 +4,7 @@
   "scripts": {
     "start": "node server.js",
     "split:js": "node tools/split-game-modules.mjs",
+    "check:structure": "node tools/check-project-structure.mjs",
     "build:deploy": "node tools/build-deploy.mjs",
     "check:deploy": "node tools/check-deploy-sync.mjs",
     "verify": "npm run build:deploy && npm run test:smoke",

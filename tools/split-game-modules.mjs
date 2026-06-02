@@ -9,19 +9,30 @@ const sourcePath = path.join(root, "game.js");
 const outDir = path.join(root, "js");
 
 const lines = fs.readFileSync(sourcePath, "utf8").split(/\r?\n/);
-const stateLine = lines.findIndex((line) => line.startsWith("const state = "));
-const elsLine = lines.findIndex((line) => line.startsWith("const els = "));
-const courseZonesLine = lines.findIndex((line) => line.startsWith("const courseZones = "));
-const coreLine = lines.findIndex((line) => line.startsWith("function clamp("));
+const splitMarkers = {
+  state: "// @runtime-split state:start",
+  constantsResume: "// @runtime-split constants:resume",
+  core: "// @runtime-split core:start"
+};
 
-if ([stateLine, elsLine, courseZonesLine, coreLine].some((index) => index < 0)) {
-  throw new Error("split-game-modules: could not locate state/els/courseZones/core markers in game.js");
+function markerLine(marker) {
+  const index = lines.findIndex((line) => line.trim() === marker);
+  if (index < 0) throw new Error(`split-game-modules: missing marker "${marker}" in game.js`);
+  return index;
+}
+
+const stateLine = markerLine(splitMarkers.state);
+const courseZonesLine = markerLine(splitMarkers.constantsResume);
+const coreLine = markerLine(splitMarkers.core);
+
+if (!(stateLine < courseZonesLine && courseZonesLine < coreLine)) {
+  throw new Error("split-game-modules: runtime split markers are out of order in game.js");
 }
 
 const sections = {
-  constants: [...lines.slice(0, stateLine), ...lines.slice(courseZonesLine, coreLine)],
-  state: lines.slice(stateLine, courseZonesLine),
-  core: lines.slice(coreLine)
+  constants: [...lines.slice(0, stateLine), ...lines.slice(courseZonesLine + 1, coreLine)],
+  state: lines.slice(stateLine + 1, courseZonesLine),
+  core: lines.slice(coreLine + 1)
 };
 
 const timerNames = [
@@ -88,6 +99,7 @@ function transformTimers(text) {
 
 function wrapConstants(body) {
   return [
+    "/* Generated from game.js by tools/split-game-modules.mjs. Do not edit directly. */",
     "/* constants — 마운드 심리전 */",
     "window.MountPsycho = window.MountPsycho || {};",
     "(function (MP) {",
@@ -99,6 +111,7 @@ function wrapConstants(body) {
 
 function wrapState(body) {
   return [
+    "/* Generated from game.js by tools/split-game-modules.mjs. Do not edit directly. */",
     "/* state / DOM refs — 마운드 심리전 */",
     "window.MountPsycho = window.MountPsycho || {};",
     "(function (MP) {",
@@ -111,6 +124,7 @@ function wrapState(body) {
 function wrapCore(body, aliasKeys) {
   const chunk = transformTimers(body.join("\n"));
   return [
+    "/* Generated from game.js by tools/split-game-modules.mjs. Do not edit directly. */",
     "/* game core (logic + UI + bootstrap) — 마운드 심리전 */",
     "window.MountPsycho = window.MountPsycho || {};",
     "(function (MP) {",

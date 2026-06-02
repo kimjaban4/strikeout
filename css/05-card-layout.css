@@ -1,0 +1,848 @@
+/* Card layout overrides extracted from the legacy base stylesheet. */
+/* === Pitcher card: canonical grid (fixes post-merge layout conflicts) === */
+.pitcher-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 92px !important;
+  grid-auto-rows: auto !important;
+  column-gap: 14px !important;
+  row-gap: 8px !important;
+  align-items: start !important;
+  min-height: 230px !important;
+  padding: 16px !important;
+  overflow: hidden !important;
+}
+
+.pitcher-card::before,
+.pitcher-card::after {
+  display: none !important;
+  content: none !important;
+}
+
+.pitcher-card > div:first-child {
+  grid-column: 1 / 2 !important;
+  grid-row: 1 !important;
+  min-width: 0 !important;
+  min-height: 92px !important;
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.pitcher-card .pitcher-portrait,
+.pitcher-card .player-portrait {
+  grid-column: 2 / 3 !important;
+  grid-row: 1 !important;
+  position: relative !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  left: auto !important;
+  justify-self: end !important;
+  align-self: start !important;
+  width: 90px !important;
+  height: 90px !important;
+  max-width: 90px !important;
+  max-height: 90px !important;
+  opacity: 1 !important;
+}
+
+.pitcher-card .pitcher-tags {
+  grid-column: 1 / 3 !important;
+  grid-row: 2 !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, max-content)) !important;
+  grid-auto-rows: 24px !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+  width: 100% !important;
+}
+
+.pitcher-card .pitcher-tag-detail {
+  grid-column: 1 / 3 !important;
+  grid-row: 3 !important;
+}
+
+.pitcher-card .mini-stats {
+  grid-column: 1 / 3 !important;
+  grid-row: 4 !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 12px 0 0 !important;
+  border-top: 1px solid rgba(149, 195, 233, 0.24) !important;
+}
+
+.pitcher-card .mini-stats.compact-stats {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  grid-template-rows: none !important;
+  grid-auto-flow: row !important;
+  gap: 6px !important;
+  min-height: 50px !important;
+  padding-right: 0 !important;
+}
+
+.pitcher-card .mini-stats.detailed-stats {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: none !important;
+  gap: 9px !important;
+}
+
+.pitcher-card.pitcher-tag-open .pitcher-tag-detail:not([hidden]) ~ .mini-stats,
+.pitcher-card.pitcher-tag-open .mini-stats {
+  grid-row: 4 !important;
+}
+
+.pitcher-card.pitcher-tag-open .card-toggle {
+  grid-row: 5 !important;
+}
+
+.pitcher-card .card-toggle {
+  grid-column: 1 / 3 !important;
+  grid-row: 5 !important;
+  justify-self: end !important;
+  align-self: end !important;
+  position: relative !important;
+}
+
+.pitcher-card > div:first-child,
+.pitcher-card .mini-stats {
+  max-width: none !important;
+}
+
+.pitcher-card h2 small {
+  display: none !important;
+}
+
+/* === Player cards: shared tag + stat chip fixes === */
+.pitcher-tag,
+.pitcher-tag.base,
+.pitcher-tag.bonus,
+.pitcher-tag.weakness {
+  position: static !important;
+  transform: none !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: 23px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.pitcher-card .pitcher-tag.base {
+  background: rgba(39, 126, 194, 0.88) !important;
+  border: 1px solid rgba(105, 178, 237, 0.76) !important;
+  color: #ffffff !important;
+}
+
+.pitcher-card .mini-stats.compact-stats .stat-chip,
+.batter-card .stat-bars.compact-stats .stat-chip {
+  min-height: 56px !important;
+  height: auto !important;
+  padding: 6px 4px !important;
+  grid-template-columns: 22px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto !important;
+  gap: 2px 5px !important;
+}
+
+.pitcher-card .mini-stats.compact-stats .stat-chip span,
+.batter-card .stat-bars.compact-stats .stat-chip span {
+  font: 900 0.54rem/1.15 Arial, "Malgun Gothic", sans-serif !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: keep-all !important;
+  line-height: 1.1 !important;
+}
+
+/* 투수·타자 카드 동일 가로폭 (왼쪽 열 = 오른쪽 열 380px) */
+.pitch-area {
+  width: 100% !important;
+  max-width: none !important;
+}
+
+.pitcher-card,
+.batter-card {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+}
+
+.pitcher-tag,
+.batter-type .type-main,
+.batter-type .type-tag {
+  max-width: 80px !important;
+}
+
+/* === Batter card: kicker row + log-friendly layout === */
+.batter-card .batter-heading {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 4px !important;
+  grid-column: 1 / 2 !important;
+  grid-row: 1 !important;
+  min-height: 0 !important;
+  max-width: none !important;
+  width: 100% !important;
+}
+
+.batter-card .batter-heading-kicker {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+}
+
+.batter-card .batter-heading-kicker .section-kicker {
+  margin: 0 !important;
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+}
+
+.batter-card #battingSlot,
+.batter-card .batter-heading .slot-pill {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  width: auto !important;
+  min-width: 48px !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  flex: 0 0 auto !important;
+  margin: 0 0 0 2px !important;
+  transform: none !important;
+}
+
+.batter-card .batter-heading h2 {
+  margin: 0 !important;
+  padding: 0 !important;
+  max-width: 100% !important;
+}
+
+.batter-card .batter-card-lower {
+  grid-column: 1 / 3 !important;
+  grid-row: 5 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  margin-top: 10px !important;
+  padding-top: 12px !important;
+  border-top: 1px solid rgba(149, 195, 233, 0.24) !important;
+}
+
+/* 투수 카드: 좁은 폭에서 세로 압축으로 칩이 상세 버튼을 덮는 것 방지 */
+.pitch-area .pitcher-card:not(.card-v2) {
+  min-height: 280px !important;
+}
+
+.pitch-area .pitcher-card.card-v2 {
+  min-height: 0 !important;
+}
+
+/* 투수 카드 펼침 시: pitch-area를 flex 컬럼으로 전환해 카드가 콘텐츠만큼 늘어나고
+   아래 구종/코스 패널과 겹치지 않도록 함 (그리드 고정 행 + overflow:hidden 우회) */
+.pitch-area.pitcher-expanded {
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.pitch-area.pitcher-expanded > .pitcher-card {
+  overflow: visible !important;
+  height: auto !important;
+  flex: 0 0 auto !important;
+  min-height: 280px !important;
+}
+
+/* 투수 카드 하단: 상단(이름/태그/사진) 고정, 칩 유지 + 상세 시 아래로 추가 */
+.pitcher-card.card-v2 {
+  overflow: visible !important;
+  min-height: 0 !important;
+}
+
+/* card-v2: 레거시 grid-row(2/4) 무력화 — canonical 블록과 충돌 방지 */
+.pitcher-card.card-v2 .pitcher-tags,
+.pitcher-card.card-v2 .pitcher-tag-detail,
+.pitcher-card.card-v2 .pitcher-card-lower,
+.pitcher-card.card-v2 .mini-stats,
+.pitcher-card.card-v2 .card-toggle {
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+
+.pitcher-card.card-v2 .pitcher-card-lower {
+  grid-area: stats !important;
+  margin-top: 0 !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tags {
+  grid-area: tags !important;
+  grid-template-columns: 1fr !important;
+  grid-auto-rows: auto !important;
+  padding-right: 0 !important;
+}
+
+.pitcher-card.card-v2 .mini-stats {
+  grid-area: unset !important;
+  margin-top: 0 !important;
+  border-top: 0 !important;
+  padding-top: 0 !important;
+}
+
+.pitcher-card .pitcher-card-lower {
+  grid-column: 1 / 3 !important;
+  grid-row: 4 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 10px !important;
+  margin-top: 8px !important;
+  padding-top: 12px !important;
+  border-top: 1px solid rgba(149, 195, 233, 0.24) !important;
+}
+
+.pitcher-card .pitcher-card-lower > #pitcherStats,
+.pitcher-card .pitcher-card-lower > #pitcherDetailStats,
+.pitcher-card .pitcher-card-lower > #pitcherCardToggle {
+  grid-column: auto !important;
+  grid-row: auto !important;
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+}
+
+.pitcher-card .pitcher-card-lower > #pitcherStats {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-top: 0 !important;
+  order: 1 !important;
+}
+
+.pitcher-card .pitcher-card-lower > #pitcherCardToggle {
+  align-self: flex-end !important;
+  margin: 0 !important;
+  order: 2 !important;
+}
+
+.pitcher-card .pitcher-card-lower > #pitcherDetailStats {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding-top: 10px !important;
+  border-top: 1px solid rgba(149, 195, 233, 0.18) !important;
+  order: 3 !important;
+}
+
+.pitcher-card .pitcher-card-lower > #pitcherDetailStats[hidden] {
+  display: none !important;
+}
+
+.pitcher-card .pitcher-card-lower.is-expanded > #pitcherDetailStats {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 9px !important;
+}
+
+.batter-card .batter-card-lower > #batterStats,
+.batter-card .batter-card-lower > #batterDetailStats,
+.batter-card .batter-card-lower > #batterCardToggle {
+  grid-column: auto !important;
+  grid-row: auto !important;
+  position: static !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  bottom: auto !important;
+}
+
+.batter-card .batter-card-lower > #batterStats {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-top: 0 !important;
+  order: 1 !important;
+}
+
+.batter-card .batter-card-lower > #batterCardToggle {
+  align-self: flex-end !important;
+  margin: 0 !important;
+  order: 2 !important;
+}
+
+.batter-card .batter-card-lower > #batterDetailStats {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding-top: 10px !important;
+  border-top: 1px solid rgba(149, 195, 233, 0.18) !important;
+  order: 3 !important;
+}
+
+.batter-card .batter-card-lower > #batterDetailStats[hidden] {
+  display: none !important;
+}
+
+.batter-card .batter-card-lower.is-expanded > #batterDetailStats {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 9px !important;
+}
+
+/* === Duel panel stack: batter above log, no overlap === */
+.duel-panel {
+  display: contents !important;
+}
+
+.duel-panel-stack {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  grid-column: 3 !important;
+  grid-row: 1 / 4 !important;
+  align-self: stretch !important;
+}
+
+.duel-panel-stack .batter-card,
+.duel-panel-stack .log-card {
+  grid-column: unset !important;
+  grid-row: unset !important;
+  position: relative !important;
+  left: auto !important;
+  right: auto !important;
+  top: auto !important;
+  z-index: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+}
+
+.duel-panel-stack .batter-card {
+  flex: 0 0 auto !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: hidden !important;
+  align-self: stretch !important;
+}
+
+.duel-panel-stack .batter-card.expanded {
+  position: relative !important;
+  overflow: auto !important;
+  max-height: none !important;
+  box-shadow: 0 12px 28px rgba(3, 22, 39, 0.22) !important;
+}
+
+.duel-panel-stack .log-card {
+  flex: 1 1 auto !important;
+  min-height: 180px !important;
+  height: auto !important;
+  max-height: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  align-self: stretch !important;
+}
+
+.duel-panel-stack .log-list {
+  flex: 1 1 auto !important;
+  min-height: 120px !important;
+  overflow: auto !important;
+}
+
+@media (min-width: 1081px) {
+  .duel-panel-stack {
+    grid-column: 3 !important;
+    grid-row: 1 / 4 !important;
+    align-self: stretch !important;
+    max-width: 380px !important;
+    justify-self: end !important;
+  }
+}
+
+@media (max-width: 1080px) {
+  .duel-panel-stack {
+    grid-column: 1 !important;
+    grid-row: auto !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .duel-panel-stack .log-card {
+    min-height: 200px !important;
+  }
+}
+
+/* Card UI V2: 카드 영역만 스코프 적용 */
+.pitcher-card.card-v2 .pitcher-tags,
+.batter-card.card-v2 .batter-type {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-auto-rows: auto !important;
+  gap: 16px !important;
+  margin-top: 0 !important;
+  padding-right: 0 !important;
+  align-content: start !important;
+  overflow: visible !important;
+}
+
+.pitcher-card.card-v2.expanded .pitcher-tags,
+.batter-card.card-v2.expanded .batter-type,
+.pitcher-card.card-v2.pitcher-tag-open .pitcher-tags,
+.batter-card.card-v2.tag-open .batter-type {
+  padding-right: 0 !important;
+}
+
+.card-v2-section {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  gap: 5px !important;
+  width: 100% !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tag.state-tag {
+  width: auto !important;
+  max-width: 100% !important;
+  min-width: 52px !important;
+  height: 24px !important;
+  padding: 0 8px !important;
+  border-radius: 8px !important;
+  font-size: 0.64rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  cursor: default !important;
+  pointer-events: none !important;
+  border: 1px dashed rgba(149, 195, 233, 0.32) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  color: rgba(174, 200, 226, 0.72) !important;
+  font-weight: 700 !important;
+  flex: 0 0 auto !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tag.state-tag--support {
+  border-color: rgba(149, 195, 233, 0.32) !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tag.state-tag--weakness {
+  border-color: rgba(255, 140, 140, 0.28) !important;
+  color: rgba(255, 190, 190, 0.68) !important;
+}
+
+.card-v2-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+
+.card-v2-kicker {
+  color: #9ecaf0 !important;
+  font-size: 0.67rem !important;
+  font-weight: 900 !important;
+}
+
+.card-v2-count {
+  color: #cbe7ff !important;
+  font-size: 0.64rem !important;
+  font-weight: 800 !important;
+}
+
+.pitcher-card.card-v2 .card-v2-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  align-content: flex-start !important;
+  gap: 6px !important;
+  width: 100% !important;
+  min-height: 0 !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tag {
+  width: auto !important;
+  max-width: 112px !important;
+  min-width: 42px !important;
+  height: 24px !important;
+  padding: 0 8px !important;
+  border-radius: 8px !important;
+  font-size: 0.64rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  flex: 0 0 auto !important;
+}
+
+.batter-card.card-v2 .type-main,
+.batter-card.card-v2 .type-tag {
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 24px !important;
+  height: auto !important;
+  padding: 3px 8px !important;
+  border-radius: 8px !important;
+  font-size: 0.66rem !important;
+  line-height: 1.2 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.pitcher-card.card-v2 #pitcherName {
+  display: grid !important;
+  gap: 6px !important;
+  align-items: start !important;
+}
+
+.pitcher-card.card-v2 .pitcher-name-main {
+  display: block !important;
+}
+
+.pitcher-card.card-v2 .pitcher-name-core {
+  width: fit-content !important;
+  height: 24px !important;
+  padding: 0 10px !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(128, 190, 255, 0.75) !important;
+  background: rgba(54, 132, 220, 0.34) !important;
+  color: #d9ecff !important;
+  font-size: 0.68rem !important;
+  font-weight: 900 !important;
+  cursor: pointer !important;
+}
+
+.batter-card.card-v2 .card-v2-section {
+  width: 100% !important;
+}
+
+.batter-card.card-v2 .card-v2-row {
+  min-height: 24px !important;
+}
+
+.batter-card.card-v2 .batter-type {
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  gap: 4px !important;
+}
+
+.card-v2-inline-kicker {
+  display: block !important;
+  color: #9ecaf0 !important;
+  font-size: 0.66rem !important;
+  font-weight: 900 !important;
+}
+
+.batter-card.card-v2 .card-v2-inline-row {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+  align-content: start !important;
+  padding-top: 3px !important;
+}
+
+.batter-card.card-v2 .card-v2-inline-row .type-main,
+.batter-card.card-v2 .card-v2-inline-row .type-tag {
+  position: static !important;
+  transform: none !important;
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Card v2 final guard: pitcher card vertical stack (canonical) */
+.pitcher-card.card-v2 {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 92px !important;
+  grid-template-areas:
+    "head portrait"
+    "tags portrait"
+    "stats stats" !important;
+  grid-auto-rows: auto !important;
+  gap: 6px 14px !important;
+  align-content: start !important;
+  align-items: start !important;
+  min-height: 0 !important;
+  overflow: visible !important;
+}
+
+.pitcher-card.card-v2 > div:first-child,
+.pitcher-card.card-v2 .pitcher-portrait,
+.pitcher-card.card-v2 .player-portrait,
+.pitcher-card.card-v2 .pitcher-tags,
+.pitcher-card.card-v2 #pitcherTags,
+.pitcher-card.card-v2 .pitcher-tag-detail,
+.pitcher-card.card-v2 #pitcherTagDetail,
+.pitcher-card.card-v2 .pitcher-card-lower,
+.pitcher-card.card-v2 #pitcherCardLower,
+.pitcher-card.card-v2 .mini-stats,
+.pitcher-card.card-v2 #pitcherStats {
+  grid-row: auto !important;
+  grid-column: auto !important;
+  position: static !important;
+}
+
+.pitcher-card.card-v2 > div:first-child {
+  grid-area: head !important;
+  min-height: 0 !important;
+}
+
+.pitcher-card.card-v2 .pitcher-portrait,
+.pitcher-card.card-v2 .player-portrait.pitcher-portrait {
+  grid-area: portrait !important;
+  grid-row: 1 / 3 !important;
+  grid-column: 2 !important;
+  justify-self: end !important;
+  align-self: start !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tags-stack {
+  grid-area: tags !important;
+  grid-column: 1 !important;
+  min-width: 0 !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tags,
+.pitcher-card.card-v2 #pitcherTags {
+  grid-area: tags !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 16px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  padding-right: 0 !important;
+  min-height: 0 !important;
+  z-index: auto !important;
+  overflow: visible !important;
+  grid-template-columns: unset !important;
+  grid-auto-rows: unset !important;
+}
+
+.pitcher-card.card-v2 .pitcher-card-lower,
+.pitcher-card.card-v2 #pitcherCardLower {
+  grid-area: stats !important;
+  display: block !important;
+  margin: 0 !important;
+  padding: 10px 0 0 !important;
+  border-top: 1px solid rgba(149, 195, 233, 0.24) !important;
+}
+
+.pitcher-card.card-v2 .pitcher-card-lower > #pitcherStats,
+.pitcher-card.card-v2 #pitcherStats {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-top: 0 !important;
+}
+
+.pitcher-card.card-v2 #pitcherCardToggle,
+.pitcher-card.card-v2 #pitcherDetailStats {
+  display: none !important;
+}
+
+.pitcher-card.card-v2 #pitcherTagDetail[hidden] {
+  display: none !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tag-detail {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+  transform: none !important;
+  margin: 6px 0 0 !important;
+  z-index: auto !important;
+  width: 100% !important;
+  border: 1px solid rgba(103, 167, 226, 0.5) !important;
+  border-radius: 7px !important;
+  background: rgba(8, 31, 50, 0.84) !important;
+  padding: 8px 10px !important;
+  color: #d9f2ff !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tags .pitcher-tag-detail,
+.pitcher-card.card-v2 #pitcherName .pitcher-tag-detail {
+  grid-area: unset !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tag-detail-slot:empty {
+  display: none !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tag-detail:not([hidden]) {
+  display: grid !important;
+  gap: 3px !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tag-detail strong {
+  display: block !important;
+  color: #7fc1ff !important;
+  font-size: 0.72rem !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tag-detail span {
+  display: block !important;
+  color: #dceeff !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+  line-height: 1.35 !important;
+  opacity: 1 !important;
+}
+
+.pitcher-card.card-v2 .mini-stats,
+.pitcher-card.card-v2 #pitcherStats {
+  position: static !important;
+  z-index: auto !important;
+}
+
+.pitcher-card.card-v2 .card-v2-kicker {
+  display: inline-block !important;
+  margin-bottom: 2px !important;
+  text-align: left !important;
+}
+
+.pitcher-card.card-v2 .card-v2-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  gap: 6px !important;
+}
+
+.pitcher-card.card-v2 .card-toggle {
+  display: none !important;
+}
+
+.card-v2-inline-text {
+  display: block !important;
+  color: #d7ebff !important;
+  font-size: 0.68rem !important;
+  font-weight: 800 !important;
+}

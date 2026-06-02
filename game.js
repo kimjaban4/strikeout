@@ -777,6 +777,7 @@ const pitchLevelNames = {
   splitter: ["", "낮은 존 감각", "헛스윙 낙차", "땅볼 낙차", "사라지는 공"]
 };
 
+// @runtime-split state:start
 const state = {
   pitcher: null,
   pitcherChoices: [],
@@ -917,6 +918,7 @@ const els = {
   themeChoiceList: document.querySelector("#themeChoiceList"),
 };
 
+// @runtime-split constants:resume
 const courseZones = {
   1: { row: 0, col: 0, label: "1번 높은 몸쪽" },
   2: { row: 0, col: 1, label: "2번 높은 중앙" },
@@ -929,6 +931,7 @@ const courseZones = {
   9: { row: 2, col: 2, label: "9번 낮은 바깥쪽" }
 };
 
+// @runtime-split core:start
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }

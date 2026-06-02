@@ -8,15 +8,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sourceRoot = path.join(__dirname, "..");
 const deployRoot = path.join(sourceRoot, "..", "web-deploy", "mount-psycho-baseball");
 const staleDeployFiles = ["styles-pitcher-card-v2-guard.css"];
-const javascriptFiles = [
-  "game.js",
-  "server.js",
-  "js/00-constants.js",
-  "js/01-state.js",
-  "js/02-game-core.js",
-  "js/03-pitch-progression.js",
-  "js/04-stage-theme.js"
-];
+const javascriptFiles = deployFiles.filter((relativePath) => path.extname(relativePath) === ".js");
 
 function copyFile(relativePath) {
   const sourcePath = path.join(sourceRoot, relativePath);
@@ -41,6 +33,11 @@ function removeStaleDeployFile(relativePath) {
   if (!deployPath.startsWith(deployPrefix)) throw new Error(`Refusing to remove path outside deploy root: ${deployPath}`);
   if (fs.existsSync(deployPath)) fs.rmSync(deployPath);
 }
+
+execFileSync(process.execPath, [path.join(__dirname, "check-project-structure.mjs")], {
+  cwd: sourceRoot,
+  stdio: "inherit"
+});
 
 execFileSync(process.execPath, [path.join(__dirname, "split-game-modules.mjs")], {
   cwd: sourceRoot,

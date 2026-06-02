@@ -1,3 +1,4 @@
+/* Generated from game.js by tools/split-game-modules.mjs. Do not edit directly. */
 /* game core (logic + UI + bootstrap) — 마운드 심리전 */
 window.MountPsycho = window.MountPsycho || {};
 (function (MP) {
