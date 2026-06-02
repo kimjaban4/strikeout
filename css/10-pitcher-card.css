@@ -1,0 +1,184 @@
+/* Pitcher card v2 overrides. Loaded after the legacy base stylesheet. */
+
+.pitcher-card.card-v2 {
+  /* auto 행이 0px로 잡히는 회귀 방지 — tags 행은 콘텐츠 높이 보장 */
+  grid-template-areas:
+    "head portrait"
+    "tags portrait"
+    "stats stats" !important;
+  grid-template-rows: auto minmax(min-content, max-content) auto !important;
+  row-gap: 6px !important;
+  column-gap: 14px !important;
+  align-items: start !important;
+  align-content: start !important;
+  min-height: min-content !important;
+  height: auto !important;
+}
+
+.pitcher-card.card-v2 > div:first-child {
+  min-height: 0 !important;
+}
+
+.pitcher-card.card-v2 .pitcher-portrait,
+.pitcher-card.card-v2 .player-portrait.pitcher-portrait {
+  grid-area: portrait !important;
+  grid-row: 1 / 3 !important;
+  grid-column: 2 !important;
+  justify-self: end !important;
+  align-self: start !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tags-stack {
+  grid-area: tags !important;
+  grid-column: 1 !important;
+  min-width: 0 !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tags-stack #pitcherTags,
+.pitcher-card.card-v2 .pitcher-tags-stack .pitcher-tags,
+.pitcher-card.card-v2 .pitcher-tags,
+.pitcher-card.card-v2 #pitcherTags {
+  padding-right: 0 !important;
+  margin-top: 0 !important;
+}
+
+.pitch-area .pitcher-card.card-v2 {
+  min-height: min-content !important;
+  height: auto !important;
+  overflow: hidden !important;
+}
+
+/* pitch-area 내부 2행: 투수카드 + 구종 선택 */
+.pitch-area:has(.pitcher-card.card-v2) {
+  grid-template-rows: auto minmax(0, 1fr) !important;
+  align-content: stretch !important;
+  overflow: hidden !important;
+}
+
+.pitch-area:has(.pitcher-card.card-v2) .pitch-select-panel {
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.pitch-area:has(.pitcher-card.card-v2) .pitch-buttons {
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* 레거시 UI에서도 핵심태그 칩이 안 깨지게 최소 스타일 */
+.pitcher-name-core {
+  margin-top: 6px !important;
+}
+
+/* 태그+park를 하나의 grid 셀(tags)로 묶음 — #pitcherTagDetail이 카드 직계 자식이 되지 않게 */
+.pitcher-card:not(.card-v2) .pitcher-tags-stack {
+  grid-column: 1 / 3 !important;
+  grid-row: 2 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tags-stack {
+  grid-area: tags !important;
+  /* grid-row/column:auto 는 grid-area:tags 를 깨뜨림 — 지정하지 말 것 */
+  gap: 0 !important;
+  overflow: visible !important;
+  min-height: max-content !important;
+  height: auto !important;
+  align-self: stretch !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tags-stack #pitcherTags,
+.pitcher-card.card-v2 .pitcher-tags-stack .pitcher-tags {
+  min-height: max-content !important;
+  height: auto !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tags-stack #pitcherTags,
+.pitcher-card.card-v2 .pitcher-tags-stack .pitcher-tags {
+  grid-area: unset !important;
+  grid-column: unset !important;
+  grid-row: unset !important;
+  position: static !important;
+  z-index: auto !important;
+  min-height: max-content !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.pitcher-card .pitcher-tags-park {
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  overflow: hidden !important;
+}
+
+.pitcher-card .pitcher-tags-park > .pitcher-tag-detail[hidden] {
+  display: none !important;
+}
+
+/* 설명 패널이 카드 grid의 유령 행이 되지 않도록 */
+.pitcher-card.card-v2 > .pitcher-tag-detail,
+.pitcher-card.card-v2 > #pitcherTagDetail {
+  display: none !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tags-stack .pitcher-tag-detail:not([hidden]),
+.pitcher-card.card-v2 .pitcher-tags-stack #pitcherTagDetail:not([hidden]),
+.pitcher-card.card-v2 #pitcherName .pitcher-tag-detail:not([hidden]) {
+  display: grid !important;
+}
+
+.pitcher-card.card-v2 .pitcher-card-lower,
+.pitcher-card.card-v2 #pitcherCardLower {
+  grid-area: stats !important;
+  position: relative !important;
+  z-index: 1 !important;
+  margin-top: 0 !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tags-stack {
+  position: relative !important;
+  z-index: 2 !important;
+}
+
+/* 태그 누적 — 칩 줄바꿈·스크롤 */
+.pitcher-card.card-v2 .card-v2-row {
+  flex-wrap: wrap !important;
+  align-content: flex-start !important;
+  max-height: 88px !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  width: 100% !important;
+}
+
+.pitcher-card.card-v2 .pitcher-tag.state-tag--core {
+  border-color: rgba(120, 190, 255, 0.35) !important;
+  color: #9ec8ff !important;
+}
+
+.pitcher-card.card-v2 .card-v2-row--core {
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 6px 8px !important;
+}
+
+.pitcher-card.card-v2 .card-v2-evolution-wrap {
+  flex: 0 0 100%;
+  display: flex;
+}
+
+.pitcher-card.card-v2 .pitcher-tag.evolution {
+  border-color: rgba(47, 190, 108, 0.45) !important;
+  background: rgba(47, 190, 108, 0.12) !important;
+  color: #8ef0b8 !important;
+}

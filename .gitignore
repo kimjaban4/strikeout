@@ -1,0 +1,10 @@
+node_modules/
+test-results/
+*.log
+styles.consolidated.css
+
+# Runtime uses the normalized English asset folders. Keep raw source images local.
+assets/images/투수/
+assets/images/타자/
+assets/images/cards/
+assets/images/1231.png

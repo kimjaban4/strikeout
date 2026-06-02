@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>마운드 심리전</title>
+    <link rel="stylesheet" href="styles.css?v=20260602-maintenance" />
+    <link rel="stylesheet" href="css/10-pitcher-card.css?v=20260602-maintenance" />
+    <link rel="stylesheet" href="css/20-pitch-selection.css?v=20260602-maintenance" />
+  </head>
+  <body>
+    <button id="bgmToggle" class="bgm-toggle" type="button" aria-pressed="false" title="BGM 끄기">BGM</button>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">ROGUELIKE PITCH DUEL</p>
+          <h1>마운드 심리전</h1>
+        </div>
+        <section class="score-panel topbar-score">
+          <div class="score-row">
+            <div>
+              <span class="score-label">이닝</span>
+              <strong id="inningText">1 / 3</strong>
+            </div>
+            <div>
+              <span class="score-label">실점</span>
+              <strong id="runsText">0</strong>
+            </div>
+            <div>
+              <span class="score-label">목표</span>
+              <strong id="targetText">5실점 시 종료</strong>
+            </div>
+          </div>
+
+          <div class="count-board">
+            <div>
+              <span>B</span>
+              <strong id="ballsText">0</strong>
+            </div>
+            <div>
+              <span>S</span>
+              <strong id="strikesText">0</strong>
+            </div>
+            <div>
+              <span>O</span>
+              <strong id="outsText">0</strong>
+            </div>
+          </div>
+
+          <div class="bases" aria-label="주자 상황">
+            <div id="base2" class="base base-second"></div>
+            <div id="base3" class="base base-third"></div>
+            <div id="base1" class="base base-first"></div>
+            <div class="home-plate"></div>
+          </div>
+        </section>
+        <div class="topbar-actions">
+          <button id="newGameButton" class="ghost-button" type="button">새 경기</button>
+          <button id="nextBatterButton" class="primary-button" type="button" hidden>다음 타자</button>
+        </div>
+      </header>
+
+      <main class="game-layout">
+        <section class="field-panel">
+          <div class="stadium">
+            <div class="stadium-bg" aria-hidden="true"></div>
+            <div id="inningBanner" class="inning-banner" hidden></div>
+            <div class="outfield-band"></div>
+            <div class="infield">
+              <div class="mound">
+                <div class="pitcher-dot"></div>
+              </div>
+              <div class="plate-scene">
+                <div id="timingBadge" class="timing-badge">초구 준비</div>
+                <div id="batterFigure" class="batter-figure">
+                  <div class="helmet"></div>
+                  <div class="torso"></div>
+                  <div class="bat"></div>
+                </div>
+                <div id="strikeZone" class="strike-zone">
+                  <span></span><span></span><span></span>
+                  <span></span><span></span><span></span>
+                  <span></span><span></span><span></span>
+                </div>
+                <div id="ballSprite" class="ball-sprite"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="pitch-area">
+            <div class="pitcher-card">
+              <div>
+                <p class="section-kicker">오늘의 투수</p>
+                <h2 id="pitcherName">-</h2>
+              </div>
+              <div class="pitcher-tags-stack">
+                <div id="pitcherTags" class="pitcher-tags" aria-label="투수 태그"></div>
+                <div id="pitcherTagsPark" class="pitcher-tags-park" aria-hidden="true">
+                  <div id="pitcherTagDetail" class="tag-detail pitcher-tag-detail" hidden></div>
+                </div>
+              </div>
+              <img id="pitcherPortrait" class="player-portrait pitcher-portrait" alt="" aria-hidden="true" />
+              <div class="pitcher-card-lower" id="pitcherCardLower">
+                <div id="pitcherStats" class="mini-stats compact-stats"></div>
+              </div>
+            </div>
+
+            <div class="pitch-select-panel">
+              <p class="section-kicker">구종 선택</p>
+              <div id="pitchButtons" class="pitch-buttons"></div>
+            </div>
+          </div>
+        </section>
+
+        <aside class="duel-panel">
+          <div class="duel-panel-stack">
+          <section class="batter-card">
+            <div class="batter-heading">
+              <div class="batter-heading-kicker">
+                <p class="section-kicker">상대 타자</p>
+                <strong id="battingSlot" class="slot-pill">1번</strong>
+              </div>
+              <h2 id="batterName">-</h2>
+            </div>
+            <img id="batterPortrait" class="player-portrait batter-portrait" alt="" aria-hidden="true" />
+            <p id="batterType" class="batter-type">-</p>
+            <div id="tagDetail" class="tag-detail" hidden></div>
+            <div class="suspicion-meter">
+              <div>
+                <span>의심 게이지</span>
+                <strong id="suspicionText">0%</strong>
+              </div>
+              <div class="suspicion-track"><i id="suspicionFill"></i></div>
+              <small id="suspicionHint">패턴을 섞으면 낮아집니다.</small>
+            </div>
+            <div class="batter-card-lower" id="batterCardLower">
+              <div id="batterStats" class="stat-bars compact-stats"></div>
+              <button id="batterCardToggle" class="card-toggle" type="button" aria-expanded="false">상세</button>
+              <div id="batterDetailStats" class="stat-bars detailed-stats" hidden></div>
+            </div>
+          </section>
+
+          <section class="read-card">
+            <div class="read-heading">
+              <p class="section-kicker">노림수 추정</p>
+              <strong id="readGuess">불명</strong>
+            </div>
+            <div id="readBars" class="read-bars"></div>
+          </section>
+
+          <section class="log-card">
+            <div class="log-heading">
+              <p class="section-kicker">승부 기록</p>
+              <strong id="pitchCountText">0구</strong>
+            </div>
+            <div id="logList" class="log-list"></div>
+          </section>
+          </div>
+
+          <section class="recommend-card">
+            <div class="recommend-heading">
+              <p class="section-kicker">노림수 추천</p>
+              <strong id="recommendConfidence">불명</strong>
+            </div>
+            <div class="recommend-body">
+              <div class="recommend-icon"></div>
+              <div>
+                <strong id="recommendTitle">추천 대기</strong>
+                <span id="recommendText">투수 예측 수치에 따라 추천 정확도가 달라집니다.</span>
+              </div>
+            </div>
+            <div class="catcher-sign">
+              <strong id="catcherTitle">포수 사인</strong>
+              <span id="catcherText">포수 타입에 따라 매 공 추천이 달라집니다.</span>
+            </div>
+            <div class="count-psych-card">
+              <strong id="countCardTitle">카운트 심리</strong>
+              <span id="countCardText">카운트가 깊어질수록 선택지가 달라집니다.</span>
+            </div>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <div id="stageOverlay" class="stage-overlay" hidden>
+      <div class="stage-overlay-box">
+        <strong id="stageTitle">STAGE 1</strong>
+        <span id="stageSubtitle">3 INNINGS</span>
+        <div id="stageThemePanel" class="stage-theme-panel" hidden></div>
+      </div>
+    </div>
+
+    <div id="themeSelectOverlay" class="theme-select-overlay" hidden>
+      <div class="theme-select-box">
+        <p class="eyebrow">NEXT OPPONENT</p>
+        <h2>다음 상대 선택</h2>
+        <p class="theme-select-help">내 빌드가 감당할 위험을 고르세요.</p>
+        <div id="themeChoiceList" class="theme-choice-list"></div>
+      </div>
+    </div>
+
+    <div id="resultOverlay" class="result-overlay" hidden>
+      <div class="result-box">
+        <p class="eyebrow">GAME RESULT</p>
+        <h2 id="resultTitle">경기 종료</h2>
+        <p id="resultMessage"></p>
+        <button id="restartButton" class="primary-button" type="button">다시 시작</button>
+      </div>
+    </div>
+
+    <div id="pitcherSelectOverlay" class="pitcher-select-overlay" hidden>
+      <div class="pitcher-select-box">
+        <p class="eyebrow">STARTING PITCHER</p>
+        <h2>선발 투수 선택</h2>
+        <div id="pitcherChoiceList" class="pitcher-choice-list"></div>
+      </div>
+    </div>
+
+    <div id="rewardOverlay" class="reward-overlay" hidden>
+      <div class="reward-box">
+        <p class="eyebrow">ROGUELIKE REWARD</p>
+        <h2 id="rewardTitle">상황 보상</h2>
+        <p id="rewardReason">좋은 승부로 흐름을 가져왔습니다.</p>
+        <div id="rewardChoiceList" class="reward-choice-list"></div>
+        <button id="rewardConfirmButton" class="reward-confirm-button" type="button" hidden disabled>선택 확정</button>
+      </div>
+    </div>
+
+    <!-- 순서 고정: constants → state → core -->
+    <script src="js/00-constants.js?v=20260602-maintenance"></script>
+    <script src="js/01-state.js?v=20260602-maintenance"></script>
+    <script src="js/03-pitch-progression.js?v=20260602-maintenance"></script>
+    <script src="js/04-stage-theme.js?v=20260602-maintenance"></script>
+    <script src="js/02-game-core.js?v=20260602-maintenance"></script>
+  </body>
+</html>

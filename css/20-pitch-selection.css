@@ -1,0 +1,56 @@
+/* Pitch selection layout and compact card presentation. */
+.pitch-buttons {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.pitch-buttons.pitch-buttons--single-column {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.pitch-button {
+  grid-template-columns: 48px minmax(0, 1fr) !important;
+  column-gap: 7px !important;
+  padding: 8px 8px 0 !important;
+}
+
+.pitch-icon {
+  width: 44px !important;
+  height: 44px !important;
+  align-self: start !important;
+  transform: none !important;
+  margin-top: 2px !important;
+}
+
+.pitch-button kbd {
+  position: absolute !important;
+  top: 3px !important;
+  left: 3px !important;
+  z-index: 3 !important;
+  width: 19px !important;
+  height: 19px !important;
+  box-shadow: 0 1px 4px rgba(16, 39, 58, 0.24) !important;
+}
+
+.pitch-button .pitch-content {
+  padding-right: 0 !important;
+}
+
+.pitch-button .pitch-content .pitch-name-row {
+  min-height: 20px !important;
+  padding-right: 50px !important;
+}
+
+.pitch-button .pitch-content .pitch-name-row .pitch-name,
+.pitch-button .pitch-content .pitch-meta,
+.pitch-button .pitch-content .pitch-role,
+.pitch-button .pitch-burden-hint {
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+@media (max-width: 520px) {
+  .pitch-buttons {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}

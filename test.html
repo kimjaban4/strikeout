@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>마운드 심리전 · 테스트 콘솔</title>
+    <style>
+      :root {
+        --bg: #0a1626;
+        --panel: #122339;
+        --panel2: #0e1c30;
+        --line: rgba(120, 170, 220, 0.22);
+        --text: #dbeaff;
+        --muted: #8fb0d4;
+        --accent: #4f9bff;
+        --accent2: #36c39a;
+        --warn: #ff7a7a;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        display: flex;
+        font: 13px/1.45 "Malgun Gothic", Arial, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+      #panel {
+        width: 380px;
+        min-width: 380px;
+        height: 100vh;
+        overflow-y: auto;
+        background: var(--panel2);
+        border-right: 1px solid var(--line);
+        padding: 12px 12px 60px;
+      }
+      #stage { flex: 1; height: 100vh; border: 0; background: #05080f; }
+      h1 { font-size: 15px; margin: 2px 0 10px; display: flex; align-items: center; gap: 8px; }
+      h1 .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--warn); }
+      h1.ok .dot { background: var(--accent2); }
+      section.box {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 10px;
+      }
+      section.box > h2 {
+        font-size: 12px;
+        letter-spacing: 0.4px;
+        color: var(--muted);
+        margin: 0 0 8px;
+        text-transform: uppercase;
+      }
+      .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+      .row:last-child { margin-bottom: 0; }
+      .lbl { color: var(--muted); min-width: 52px; font-size: 12px; }
+      button {
+        cursor: pointer;
+        background: #1b3354;
+        color: var(--text);
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 5px 9px;
+        font-size: 12px;
+        transition: background 0.12s;
+      }
+      button:hover { background: #244270; }
+      button.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+      button.primary { background: #1f5fb0; border-color: #2f73c8; }
+      button.green { background: #1c6e57; border-color: #2a8f73; }
+      button.ghost { background: transparent; }
+      button.mini { padding: 3px 7px; font-size: 11px; }
+      input[type="number"] {
+        width: 56px; background: #0a1726; color: var(--text);
+        border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; font-size: 12px;
+      }
+      input[type="range"] { flex: 1; min-width: 90px; accent-color: var(--accent); }
+      select {
+        background: #0a1726; color: var(--text); border: 1px solid var(--line);
+        border-radius: 6px; padding: 4px 6px; font-size: 12px;
+      }
+      .seg { display: inline-flex; gap: 4px; }
+      .hint { color: var(--muted); font-size: 11px; margin: 2px 0 0; }
+      .pitch-ctl { border-top: 1px dashed var(--line); padding-top: 8px; margin-top: 8px; }
+      .pitch-ctl:first-of-type { border-top: 0; padding-top: 0; margin-top: 0; }
+      .pitch-ctl .name { font-weight: 700; margin-bottom: 4px; }
+      .val { color: var(--accent2); font-variant-numeric: tabular-nums; min-width: 30px; text-align: right; }
+      #dbg {
+        font-family: Consolas, monospace; font-size: 11.5px; white-space: pre-wrap;
+        background: #060f1c; border: 1px solid var(--line); border-radius: 8px;
+        padding: 8px; max-height: 360px; overflow: auto; color: #bfe0ff;
+      }
+      .pill { display: inline-block; padding: 1px 6px; border-radius: 5px; background: #1b3354; font-size: 11px; }
+      .tier-안정 { color: #7fe6b0; } .tier-부담 { color: #ffd36b; }
+      .tier-과부하 { color: #ff9d5c; } .tier-한계 { color: #ff6b6b; }
+      #fileWarn {
+        margin: 0 0 10px; padding: 10px 12px; border-radius: 8px;
+        background: rgba(255, 122, 122, 0.12); border: 1px solid rgba(255, 122, 122, 0.45);
+        color: #ffc9c9; font-size: 12px; line-height: 1.5;
+      }
+      #fileWarn code { color: #ffe0a8; }
+      #fileWarn a { color: #7fc1ff; }
+    </style>
+  </head>
+  <body>
+    <div id="panel">
+      <div id="fileWarn" hidden>
+        <strong>file:// 로는 테스트 콘솔이 연결되지 않습니다.</strong><br />
+        <code>야구게임</code> 폴더에서 <code>npm start</code> 실행 후
+        <a href="http://127.0.0.1:4173/test.html">http://127.0.0.1:4173/test.html</a>
+        로 접속하세요.
+      </div>
+      <h1 id="title"><span class="dot"></span>테스트 콘솔 <span id="conn" class="hint">연결 대기…</span></h1>
+
+      <section class="box">
+        <h2>세션</h2>
+        <div class="row">
+          <button class="primary" data-act="newGame">새 게임</button>
+          <button class="green" data-act="newPitcher">랜덤 새 투수</button>
+          <button data-act="reload">게임 리로드</button>
+        </div>
+        <p class="hint">먼저 제목 옆이 <strong>연결됨</strong>인지 확인하세요. 투수 선택 화면이면 <strong>랜덤 새 투수</strong>를 누르세요.</p>
+        <div class="row" style="margin-top:8px">
+          <button class="mini green" data-act="checkPitcherLayout">투수 카드 레이아웃</button>
+        </div>
+      </section>
+
+      <section class="box">
+        <h2>상황 (카운트 · 주자 · 아웃)</h2>
+        <div class="row"><span class="lbl">볼</span><span class="seg" id="ballsSeg"></span></div>
+        <div class="row"><span class="lbl">스트라이크</span><span class="seg" id="strikesSeg"></span></div>
+        <div class="row"><span class="lbl">아웃</span><span class="seg" id="outsSeg"></span></div>
+        <div class="row"><span class="lbl">주자</span>
+          <span class="seg">
+            <button data-base="0">1루</button>
+            <button data-base="1">2루</button>
+            <button data-base="2">3루</button>
+          </span>
+        </div>
+        <div class="row"><span class="lbl">실점</span>
+          <input type="number" id="runsIn" min="0" max="50" value="0" />
+          <button class="mini" data-act="setRuns">적용</button>
+          <span class="lbl">이닝</span>
+          <input type="number" id="inningIn" min="1" max="9" value="1" />
+          <button class="mini" data-act="setInning">적용</button>
+        </div>
+        <div class="row">
+          <button class="mini" data-act="situFull">만루 2아웃 풀카운트</button>
+          <button class="mini" data-act="situClean">주자없음 0-0 0아웃</button>
+        </div>
+      </section>
+
+      <section class="box">
+        <h2>구종 제어</h2>
+        <div id="pitchCtls"><p class="hint">투수가 없습니다.</p></div>
+        <div class="row" style="margin-top:8px">
+          <button class="mini green" data-act="pitchMax">전체 Max</button>
+          <button class="mini" data-act="pitchReset">전체 리셋</button>
+        </div>
+      </section>
+
+      <section class="box">
+        <h2>타자 제어</h2>
+        <div class="row"><span class="lbl">스테이지</span>
+          <select id="stageSel">
+            <option value="0">1 (3이닝)</option>
+            <option value="1">2 (5이닝)</option>
+            <option value="2">3 (7이닝)</option>
+            <option value="3">4 (보스전)</option>
+          </select>
+          <button class="mini" data-act="regenLineup">라인업 재생성</button>
+        </div>
+        <div class="row"><span class="lbl">슬롯</span><span class="seg" id="slotSeg"></span></div>
+        <div class="row">
+          <button class="mini" data-act="jumpBoss">보스에게 점프</button>
+        </div>
+        <div class="row"><span class="lbl">의심</span>
+          <input type="range" id="suspRange" min="0" max="100" value="0" />
+          <span class="val" id="suspVal">0</span>
+        </div>
+      </section>
+
+      <section class="box">
+        <h2>보상 강제 호출</h2>
+        <div class="row">
+          <button data-act="rewardNormal">일반 보상</button>
+          <button data-act="rewardTag">보조태그 3택</button>
+          <button data-act="rewardCore">핵심태그 강화</button>
+        </div>
+        <p class="hint">보조태그는 상한 없음 · 12종 전부 모으면 강화 보상. 핵심은 2스테이지 클리어 1회(신규+강화 혼합).</p>
+      </section>
+
+      <section class="box">
+        <h2>디버그 패널
+          <button class="mini ghost" id="autoBtn" style="float:right">자동갱신: ON</button>
+        </h2>
+        <div id="dbg">연결 대기…</div>
+      </section>
+    </div>
+
+    <iframe id="stage" src="index.html?v=test-console"></iframe>
+
+    <script>
+      const CHANNEL = "mount-psycho-test";
+      const frame = document.getElementById("stage");
+      const titleEl = document.getElementById("title");
+      const connEl = document.getElementById("conn");
+      const fileWarnEl = document.getElementById("fileWarn");
+      let autoRefresh = true;
+      let bridgeMode = null; // "direct" | "rpc"
+      let bridgeOk = false;
+      let lastBridgeOk = false;
+      let bridgeBlocked = false;
+      let snap = null;
+      let rpcSeq = 0;
+      const rpcWait = new Map();
+      let lastSig = "";
+      let detectInFlight = false;
+
+      if (location.protocol === "file:") fileWarnEl.hidden = false;
+
+      window.addEventListener("message", (event) => {
+        const data = event.data;
+        if (!data || data.channel !== CHANNEL) return;
+        if (data.event === "boot") {
+          if (!bridgeMode) detectBridge();
+          return;
+        }
+        if (data.id != null && rpcWait.has(data.id)) {
+          rpcWait.get(data.id)(data);
+          rpcWait.delete(data.id);
+        }
+      });
+
+      function frameWin() {
+        try { return frame.contentWindow || null; } catch (e) { return null; }
+      }
+
+      function canDirectBridge() {
+        try {
+          const w = frameWin();
+          return !!(w?.MountPsycho?.debug && w?.MountPsycho?.state);
+        } catch (e) {
+          if (e?.name === "SecurityError") bridgeBlocked = true;
+          return false;
+        }
+      }
+
+      function MP() {
+        const w = frameWin();
+        if (!w) return null;
+        try { return w.MountPsycho || null; } catch (e) {
+          if (e?.name === "SecurityError") bridgeBlocked = true;
+          return null;
+        }
+      }
+
+      function DBG() {
+        const m = MP();
+        return m?.debug || null;
+      }
+
+      function S() {
+        if (bridgeMode === "rpc") return snap;
+        const m = MP();
+        if (m?.state) return m.state;
+        return DBG()?.state || null;
+      }
+
+      function bridgeReady() {
+        if (bridgeMode === "direct") return canDirectBridge();
+        if (bridgeMode === "rpc") return !!snap;
+        return false;
+      }
+
+      function rpcCall(cmd, payload = {}, timeout = 8000) {
+        return new Promise((resolve, reject) => {
+          const w = frameWin();
+          if (!w) { reject(new Error("iframe 없음")); return; }
+          const id = ++rpcSeq;
+          const timer = setTimeout(() => {
+            rpcWait.delete(id);
+            reject(new Error("RPC timeout"));
+          }, timeout);
+          rpcWait.set(id, (msg) => {
+            clearTimeout(timer);
+            if (msg.ok) resolve(msg);
+            else reject(new Error(msg.error || "RPC failed"));
+          });
+          w.postMessage({ channel: CHANNEL, id, cmd, ...payload }, "*");
+        });
+      }
+
+      async function pullSnapshot() {
+        const res = await rpcCall("snapshot");
+        snap = res.snapshot;
+        return snap;
+      }
+
+      async function detectBridge() {
+        if (detectInFlight) return bridgeOk;
+        detectInFlight = true;
+        try {
+          if (canDirectBridge()) {
+            bridgeMode = "direct";
+            bridgeOk = true;
+            return true;
+          }
+          const res = await rpcCall("ping", {}, 2000);
+          if (res.ok && res.debugReady) {
+            bridgeMode = "rpc";
+            await pullSnapshot();
+            bridgeOk = true;
+            return true;
+          }
+        } catch (_) {}
+        bridgeOk = false;
+        return false;
+      }
+
+      async function gameExec(code) {
+        if (bridgeMode === "direct") {
+          frameWin().eval(code);
+          return;
+        }
+        if (bridgeMode === "rpc") {
+          await rpcCall("exec", { code });
+          await pullSnapshot();
+          return;
+        }
+        throw new Error("bridge not ready");
+      }
+
+      async function patchAndRender(body) {
+        await gameExec(`(() => { ${body} const s=MountPsycho.state,d=MountPsycho.debug; if(s.pitcher) d.render(); })()`);
+      }
+
+      function connectionLabel() {
+        if (!frameWin()) return "iframe 로딩…";
+        if (location.protocol === "file:" && !bridgeMode) return "file:// 차단 — npm start 후 http 접속";
+        if (bridgeBlocked && !bridgeMode) return "iframe 보안 차단 — http://127.0.0.1:4173/test.html";
+        if (bridgeMode === "direct" || bridgeMode === "rpc") {
+          const s = S();
+          if (!s) return "state 없음";
+          const mode = bridgeMode === "rpc" ? "RPC · " : "";
+          if (!s.pitcher) return mode + "연결됨 · 투수 선택 대기";
+          return mode + "연결됨 · 플레이 중";
+        }
+        if (canDirectBridge()) return "연결 중…";
+        return "게임 스크립트 로딩… (잠시 후 RPC 시도)";
+      }
+
+      async function refreshGame() {
+        const s = S();
+        if (!s?.pitcher) return;
+        await gameExec("MountPsycho.debug.render()");
+      }
+
+      function toast(msg) { connEl.textContent = msg; }
+
+      async function ensurePitcher() {
+        await gameExec(`(() => {
+          const d = MountPsycho.debug, s = MountPsycho.state;
+          if (!s.pitcher) d.beginGameWithPitcher(d.generatePitcher());
+        })()`);
+        buildPitchCtls();
+        buildSlotSeg();
+      }
+
+      function gameSignature() {
+        const s = S(); if (!s || !s.pitcher) return "no-pitcher";
+        const rep = (s.pitcher.repertoire || []).map(p => p.id + "L" + (p.level || 1)).join(",");
+        const tags = (s.pitcher.bonusTags || []).join(",") + "|" + (s.pitcher.revealedWeaknessTags || []).join(",");
+        const line = (s.lineup || []).map(b => b.name).join(",");
+        return rep + "#" + tags + "#" + line + "#" + (s.stageIndex);
+      }
+
+      const actions = {
+        async newGame() { await gameExec("MountPsycho.debug.startGame()"); },
+        async newPitcher() {
+          await gameExec("MountPsycho.debug.beginGameWithPitcher(MountPsycho.debug.generatePitcher())");
+          buildPitchCtls();
+          buildSlotSeg();
+        },
+        async checkPitcherLayout() {
+          await ensurePitcher();
+          let layout;
+          if (bridgeMode === "direct") {
+            layout = frameWin().MountPsycho.debug.assertPitcherCardLayout();
+          } else {
+            const res = await rpcCall("exec", { code: "MountPsycho.debug.assertPitcherCardLayout()" });
+            layout = res.result;
+            await pullSnapshot();
+          }
+          if (!layout?.ok) {
+            toast("레이아웃 FAIL: " + (layout?.reason || "?"));
+            console.warn("[pitcher-card layout]", layout);
+            return;
+          }
+          toast(layout.skipped ? "스킵(" + layout.reason + ")" : "레이아웃 OK · gap " + (layout.gapPx ?? "-") + "px");
+        },
+        reload() {
+          bridgeMode = null;
+          bridgeOk = false;
+          lastBridgeOk = false;
+          snap = null;
+          frame.src = "index.html?v=test-console&t=" + Date.now();
+        },
+        async setRuns() {
+          const v = clampInt(val("runsIn"), 0, 99);
+          await patchAndRender(`MountPsycho.state.runs=${v};`);
+        },
+        async setInning() {
+          const v = clampInt(val("inningIn"), 1, 9);
+          await patchAndRender(`MountPsycho.state.inning=${v};`);
+        },
+        async situFull() {
+          await patchAndRender(`const s=MountPsycho.state; s.balls=3; s.strikes=2; s.outs=2; s.bases=[true,true,true];`);
+          syncCounts();
+        },
+        async situClean() {
+          await patchAndRender(`const s=MountPsycho.state; s.balls=0; s.strikes=0; s.outs=0; s.bases=[false,false,false];`);
+          syncCounts();
+        },
+        async pitchMax() {
+          await gameExec(`(() => {
+            const s = MountPsycho.state;
+            if (!s.pitcher) return;
+            s.pitcher.repertoire.forEach(p => {
+              if (MountPsycho.ensurePitchRuntime) MountPsycho.ensurePitchRuntime(p);
+              p.level = 5; p.stageMastery = 100; p.runMastery = Math.max(p.runMastery, 200); p.burden = 0;
+            });
+            MountPsycho.debug.render();
+          })()`);
+          buildPitchCtls();
+        },
+        async pitchReset() {
+          await gameExec(`(() => {
+            const s = MountPsycho.state;
+            if (!s.pitcher) return;
+            s.pitcher.repertoire.forEach(p => {
+              if (MountPsycho.ensurePitchRuntime) MountPsycho.ensurePitchRuntime(p);
+              p.level = 1; p.stageMastery = 0; p.runMastery = 0; p.burden = 0;
+            });
+            MountPsycho.debug.render();
+          })()`);
+          buildPitchCtls();
+        },
+        async regenLineup() {
+          const idx = clampInt(document.getElementById("stageSel").value, 0, 3);
+          await gameExec(`(() => {
+            const d = MountPsycho.debug, s = MountPsycho.state;
+            s.stageIndex = ${idx}; s.inning = 1; s.outs = 0;
+            s.lineup = d.generateLineup(${idx});
+            s.batterIndex = 0; d.startAtBat(); d.render();
+          })()`);
+          buildSlotSeg();
+        },
+        async jumpBoss() {
+          await gameExec(`(() => {
+            const d = MountPsycho.debug, s = MountPsycho.state;
+            const boss = (s.lineup || []).find(b => b.isBoss);
+            if (!boss) return null;
+            s.batterIndex = boss.slot - 1; d.startAtBat(); d.render();
+            return boss.name;
+          })()`);
+          const s = S();
+          const boss = s?.lineup?.find(b => b.isBoss);
+          if (!boss) toast("보스 없음");
+        },
+        async rewardNormal() { await ensurePitcher(); await gameExec(`MountPsycho.debug.openRewardDraft("테스트 보상", null, "normal")`); },
+        async rewardTag() { await ensurePitcher(); await gameExec(`MountPsycho.debug.openRewardDraft("스테이지 클리어 보상", null, "stageTag")`); },
+        async rewardCore() {
+          await ensurePitcher();
+          const code = `(() => {
+            const d = MountPsycho.debug, s = MountPsycho.state;
+            s.coreEvolutionOffered = false;
+            s.pitcher.coreEvolutionId = null;
+            const choices = d.generateCoreEvolutionChoices();
+            if (!choices.length) return false;
+            d.openRewardDraft("핵심진화 보상", null, "coreEvolution");
+            return true;
+          })()`;
+          let ok = true;
+          if (bridgeMode === "direct") ok = !!frameWin().eval(code);
+          else {
+            const res = await rpcCall("exec", { code });
+            ok = !!res.result;
+            await pullSnapshot();
+          }
+          if (!ok) toast("핵심진화 후보 없음");
+        }
+      };
+
+      document.getElementById("panel").addEventListener("click", async (e) => {
+        const btn = e.target.closest("[data-act]");
+        if (btn && actions[btn.dataset.act]) {
+          if (btn.dataset.act === "reload") { actions.reload(); return; }
+          if (!bridgeReady()) await detectBridge();
+          if (!bridgeReady()) { toast(connectionLabel()); return; }
+          try {
+            await actions[btn.dataset.act]();
+            if (bridgeMode === "rpc") await pullSnapshot();
+            renderDbg();
+            syncCounts();
+          } catch (err) {
+            toast("실행 오류: " + (err?.message || err));
+          }
+          return;
+        }
+        const base = e.target.closest("[data-base]");
+        if (base) {
+          if (!bridgeReady()) await detectBridge();
+          if (!bridgeReady()) return;
+          const i = Number(base.dataset.base);
+          await patchAndRender(`MountPsycho.state.bases[${i}]=!MountPsycho.state.bases[${i}];`);
+          syncCounts();
+        }
+      });
+
+      function buildSeg(id, count, key) {
+        const wrap = document.getElementById(id);
+        wrap.innerHTML = "";
+        for (let i = 0; i <= count; i++) {
+          const b = document.createElement("button");
+          b.className = "mini"; b.textContent = i;
+          b.onclick = async () => {
+            if (!bridgeReady()) await detectBridge();
+            if (!bridgeReady()) return;
+            await patchAndRender(`MountPsycho.state.${key}=${i};`);
+            syncCounts();
+          };
+          wrap.appendChild(b);
+        }
+      }
+
+      function syncCounts() {
+        const s = S(); if (!s) return;
+        markSeg("ballsSeg", s.balls); markSeg("strikesSeg", s.strikes); markSeg("outsSeg", s.outs);
+        document.querySelectorAll("[data-base]").forEach(b => b.classList.toggle("on", !!s.bases[Number(b.dataset.base)]));
+        const r = document.getElementById("suspRange");
+        if (s.atBat) { r.value = Math.round(s.atBat.suspicion || 0); document.getElementById("suspVal").textContent = r.value; }
+      }
+
+      function markSeg(id, v) {
+        document.querySelectorAll("#" + id + " button").forEach((b, i) => b.classList.toggle("on", i === v));
+      }
+
+      function buildSlotSeg() {
+        const wrap = document.getElementById("slotSeg"); wrap.innerHTML = "";
+        const s = S();
+        for (let i = 1; i <= 9; i++) {
+          const b = document.createElement("button"); b.className = "mini"; b.textContent = i;
+          const isBoss = s && s.lineup[i - 1] && s.lineup[i - 1].isBoss;
+          if (isBoss) { b.style.borderColor = "#ff7a7a"; b.title = "보스"; }
+          b.onclick = async () => {
+            if (!bridgeReady()) await detectBridge();
+            if (!bridgeReady()) return;
+            await gameExec(`(() => {
+              const d = MountPsycho.debug, s = MountPsycho.state;
+              s.batterIndex = ${i - 1}; d.startAtBat(); d.render();
+            })()`);
+            syncCounts();
+          };
+          wrap.appendChild(b);
+        }
+      }
+
+      document.getElementById("suspRange").addEventListener("input", async (e) => {
+        document.getElementById("suspVal").textContent = e.target.value;
+        if (!bridgeReady()) await detectBridge();
+        if (!bridgeReady()) return;
+        const v = Number(e.target.value);
+        await patchAndRender(`if (MountPsycho.state.atBat) MountPsycho.state.atBat.suspicion = ${v};`);
+      });
+
+      function buildPitchCtls() {
+        const host = document.getElementById("pitchCtls");
+        const s = S();
+        if (!s || !s.pitcher) { host.innerHTML = '<p class="hint">투수가 없습니다.</p>'; return; }
+        host.innerHTML = "";
+        s.pitcher.repertoire.forEach((p, idx) => {
+          const div = document.createElement("div");
+          div.className = "pitch-ctl";
+          div.innerHTML =
+            '<div class="name">' + p.name + ' <span class="pill">' + (p.label || "") + '</span></div>' +
+            '<div class="row"><span class="lbl">레벨</span><select data-p="' + idx + '" data-f="level">' +
+              [1,2,3,4,5].map(l => '<option value="' + l + '"' + (p.level === l ? " selected" : "") + '>Lv.' + l + '</option>').join("") +
+            '</select></div>' +
+            '<div class="row"><span class="lbl">부담</span><input type="range" min="0" max="100" value="' + Math.round(p.burden) + '" data-p="' + idx + '" data-f="burden"><span class="val" data-v="burden-' + idx + '">' + Math.round(p.burden) + '</span></div>' +
+            '<div class="row"><span class="lbl">숙련</span><input type="range" min="0" max="100" value="' + Math.round(p.stageMastery) + '" data-p="' + idx + '" data-f="stageMastery"><span class="val" data-v="stageMastery-' + idx + '">' + Math.round(p.stageMastery) + '</span></div>';
+          host.appendChild(div);
+        });
+        host.querySelectorAll("select[data-f], input[data-f]").forEach(ctl => {
+          ctl.addEventListener("input", async () => {
+            if (!bridgeReady()) await detectBridge();
+            if (!bridgeReady()) return;
+            const idx = Number(ctl.dataset.p);
+            const f = ctl.dataset.f;
+            const v = Number(ctl.value);
+            await gameExec(`(() => {
+              const s = MountPsycho.state, p = s.pitcher?.repertoire?.[${idx}];
+              if (!p) return;
+              if (MountPsycho.ensurePitchRuntime) MountPsycho.ensurePitchRuntime(p);
+              p.${f} = ${v};
+              MountPsycho.debug.render();
+            })()`);
+            const vEl = host.querySelector('[data-v="' + f + "-" + idx + '"]');
+            if (vEl) vEl.textContent = ctl.value;
+          });
+        });
+      }
+
+      document.getElementById("autoBtn").addEventListener("click", (e) => {
+        autoRefresh = !autoRefresh;
+        e.target.textContent = "자동갱신: " + (autoRefresh ? "ON" : "OFF");
+      });
+
+      function renderDbg() {
+        const s = S();
+        const box = document.getElementById("dbg");
+        if (!s) { box.textContent = connectionLabel() + "\n\n브리지 연결 대기 중…"; return; }
+        const lines = [];
+        lines.push("[상황] B" + s.balls + " S" + s.strikes + " O" + s.outs +
+          " | 주자 " + s.bases.map((b, i) => b ? (i + 1) + "루" : "-").join(" ") +
+          " | 실점 " + s.runs);
+        lines.push("[진행] 스테이지 " + (s.stageIndex + 1) + " · " + s.inning + "이닝 · 타순 " + ((s.batterIndex % 9) + 1) + "번 · " + s.pitchCount + "구");
+        if (s.pitcher) {
+          const st = s.pitcher.stats;
+          const tagNames = s.pitcher.tagNames;
+          lines.push("");
+          lines.push("[투수] " + s.pitcher.name + " (" + s.pitcher.style + ")");
+          if (tagNames) {
+            lines.push("  핵심:" + tagNames.core + " | 진화:" + (tagNames.evolution || "-") + " | 보조:" + tagNames.bonus + " | 약점:" + tagNames.weakness);
+          } else {
+            const d = DBG();
+            const coreName = d?.tagById(s.pitcher.coreTagId)?.name || s.pitcher.coreTagId || "-";
+            const evoName = d?.coreEvolutionById(s.pitcher.coreEvolutionId)?.name || "-";
+            lines.push("  핵심:" + coreName + " | 진화:" + evoName +
+              " | 보조:" + ((s.pitcher.bonusTags || []).map(t => {
+                const tag = d?.tagById(t);
+                const tier = s.pitcher.bonusTagTiers?.[t] || 1;
+                const name = tag?.name || t;
+                return tier > 1 ? name + "+" + (tier - 1) : name;
+              }).join(",") || "-") +
+              " | 약점:" + ((s.pitcher.revealedWeaknessTags || []).map(t => d?.tagById(t)?.name || t).join(",") || "-"));
+          }
+          lines.push("  스탯 구속" + st.구속 + " 제구" + st.제구 + " 변화" + st.변화 + " 멘탈" + st.멘탈 + " 예측" + st.예측);
+          lines.push("  구종:");
+          s.pitcher.repertoire.forEach(p => {
+            const tier = p.burdenTier || (MP()?.burdenLabel ? MP().burdenLabel(p.burden) : "");
+            lines.push("   - " + pad(p.name, 6) + " Lv." + (p.level || 1) +
+              " | 부담 " + String(Math.round(p.burden)).padStart(3) + (tier ? "(" + tier + ")" : "") +
+              " | 숙련S " + String(Math.round(p.stageMastery)).padStart(3) +
+              " R " + Math.round(p.runMastery));
+          });
+        }
+        const ab = s.atBat;
+        const bt = s.currentBatter || (DBG()?.currentBatter && DBG().currentBatter());
+        if (ab && bt) {
+          lines.push("");
+          lines.push("[타석] " + bt.name + " · " + bt.type + (bt.isBoss ? " ★BOSS" : ""));
+          lines.push("  컨택" + bt.stats.컨택 + " 파워" + bt.stats.파워 + " 선구" + bt.stats.선구 + " 주력" + bt.stats.주력 + " 예측" + bt.stats.예측);
+          lines.push("  의심 " + Math.round(ab.suspicion || 0) + "% | 노림수 " + (ab.target || "-") +
+            " | 성향 " + (bt.tendency?.approach || "-") + " | 심리 " + (bt.mind?.label || "-"));
+          if (ab.recommendation) lines.push("  추천 " + (ab.recommendation.title || ab.recommendation.label || JSON.stringify(ab.recommendation).slice(0, 60)));
+        }
+        box.textContent = lines.join("\n");
+      }
+
+      function pad(str, n) { str = String(str); while (str.length < n) str += " "; return str; }
+
+      async function tick() {
+        if (canDirectBridge()) {
+          if (bridgeMode !== "direct") {
+            bridgeMode = "direct";
+            bridgeOk = true;
+          }
+        } else if (!bridgeMode && !detectInFlight) {
+          await detectBridge();
+        }
+        bridgeOk = bridgeReady();
+        const label = connectionLabel();
+        if (bridgeOk !== lastBridgeOk) {
+          lastBridgeOk = bridgeOk;
+          titleEl.classList.toggle("ok", bridgeOk);
+          toast(label);
+          if (bridgeOk) { buildSlotSeg(); buildPitchCtls(); lastSig = gameSignature(); }
+        } else if (connEl.textContent !== label) {
+          toast(label);
+        }
+        if (bridgeOk) {
+          if (bridgeMode === "rpc") {
+            try { await pullSnapshot(); } catch (_) {}
+          }
+          const sig = gameSignature();
+          if (sig !== lastSig) { lastSig = sig; buildPitchCtls(); buildSlotSeg(); }
+        }
+        if (bridgeOk && autoRefresh) { renderDbg(); syncCounts(); }
+        detectInFlight = false;
+      }
+
+      frame.addEventListener("load", () => {
+        bridgeMode = null;
+        bridgeOk = false;
+        lastBridgeOk = false;
+        snap = null;
+        buildSeg("ballsSeg", 3, "balls");
+        buildSeg("strikesSeg", 2, "strikes");
+        buildSeg("outsSeg", 2, "outs");
+        setTimeout(tick, 120);
+        setTimeout(tick, 800);
+        setTimeout(tick, 2000);
+      });
+
+      buildSeg("ballsSeg", 3, "balls");
+      buildSeg("strikesSeg", 2, "strikes");
+      buildSeg("outsSeg", 2, "outs");
+      setInterval(tick, 500);
+      function val(id) { return Number(document.getElementById(id).value); }
+      function clampInt(v, lo, hi) { v = Math.round(Number(v) || 0); return Math.max(lo, Math.min(hi, v)); }
+    </script>
+  </body>
+</html>
