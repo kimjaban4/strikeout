@@ -1,4 +1,4 @@
-/* Independent mobile game screen. Desktop components are never moved or restyled here. */
+/* Mobile-first game screen. The legacy desktop shell stays mounted but hidden. */
 .mobile-game-shell {
   display: none;
 }
@@ -55,25 +55,20 @@
 
   .mobile-brand {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
+    align-items: center;
+    justify-content: flex-start;
     min-width: 0;
+    height: 100%;
+    overflow: hidden;
   }
 
-  .mobile-brand small {
-    color: #168cff;
-    font-size: 7px;
-    font-weight: 900;
-    font-style: italic;
-    white-space: nowrap;
-  }
-
-  .mobile-brand strong {
-    margin-top: 3px;
-    color: #fff;
-    font-size: 16px;
-    line-height: 1;
-    white-space: nowrap;
+  .mobile-brand-logo {
+    display: block;
+    height: 44px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: left center;
   }
 
   .mobile-score-summary {
@@ -742,7 +737,7 @@
     padding-left: 7px;
     padding-right: 7px;
   }
-  .mobile-brand strong { font-size: 14px; }
+  .mobile-brand-logo { height: 38px; }
   .mobile-score-summary b { font-size: 12px; }
   .mobile-control-panel { grid-template-rows: 37px 88px 62px 60px; gap: 6px; }
   .mobile-pitch-button { grid-template-rows: 30px 14px 11px 15px; }

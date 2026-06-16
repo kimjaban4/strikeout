@@ -10,8 +10,7 @@
     <link rel="stylesheet" href="css/15-mission-focus-card.css?v=20260611-mission-compact" />
     <link rel="stylesheet" href="css/16-plate-scene-hud.css?v=20260611-plate-center" />
     <link rel="stylesheet" href="css/20-pitch-selection.css?v=20260610-main-title" />
-    <link rel="stylesheet" href="css/30-mobile-portrait.css?v=20260616-mobile-main" />
-    <link rel="stylesheet" href="css/31-mobile-reference.css?v=20260616-mobile-main" />
+    <link rel="stylesheet" href="css/31-mobile-reference.css?v=20260616-mobile-ui-cleanup" />
   </head>
   <body>
     <button id="bgmToggle" class="bgm-toggle" type="button" aria-pressed="false" title="BGM 끄기">BGM</button>
@@ -302,8 +301,12 @@
     <div id="mobileGameShell" class="mobile-game-shell" aria-label="모바일 경기 화면">
       <header class="mobile-game-header">
         <div class="mobile-brand">
-          <small>ROGUELIKE PITCH DUEL</small>
-          <strong>마운드 심리전</strong>
+          <img
+            class="mobile-brand-logo"
+            src="assets/images/title/main-title.png"
+            alt="마운드 심리전"
+            decoding="async"
+          />
         </div>
         <div class="mobile-score-summary">
           <span>이닝<b id="mobileInningText">1 / 3</b></span>

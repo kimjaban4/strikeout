@@ -29,7 +29,6 @@ assertOrdered(
     "css/15-mission-focus-card.css",
     "css/16-plate-scene-hud.css",
     "css/20-pitch-selection.css",
-    "css/30-mobile-portrait.css",
     "css/31-mobile-reference.css"
   ],
   "stylesheet"
