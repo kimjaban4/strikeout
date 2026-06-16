@@ -9555,6 +9555,7 @@ function bindUiEvents() {
   els.mobileInfoTab?.addEventListener("click", () => openMobilePanel("info"));
   els.mobileNewGameButton?.addEventListener("click", startGame);
   els.mobileThrowButton?.addEventListener("click", () => finishReleaseTiming());
+  els.mobileReleasePanel?.addEventListener("click", () => finishReleaseTiming());
   els.mobilePitchButtons?.addEventListener("click", (event) => {
     const button = event.target.closest?.("[data-mobile-pitch]");
     if (button) selectPitch(button.dataset.mobilePitch);

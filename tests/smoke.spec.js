@@ -75,8 +75,10 @@ test("mobile pitch controls render and unlock throw after choosing a zone", asyn
   const mobilePitchCount = await page.evaluate(() => Math.min(4, window.MountPsycho.state.pitcher.repertoire.length));
   await expect(page.locator("#mobilePitchButtons .mobile-pitch-button")).toHaveCount(mobilePitchCount);
   await expect(page.locator("#mobileThrowButton")).toBeDisabled();
+  await expect(page.locator("#mobileReleasePanel")).toBeHidden();
 
   await chooseMobilePitchAndZone(page);
+  await expect(page.locator("#mobileReleasePanel")).toBeVisible();
 });
 
 test("mobile throw records a log entry", async ({ page }) => {
