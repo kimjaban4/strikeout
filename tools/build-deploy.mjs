@@ -6,7 +6,9 @@ import { deployDirectories, deployFiles } from "./deploy-file-list.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const sourceRoot = path.join(__dirname, "..");
-const deployRoot = path.join(sourceRoot, "..", "web-deploy", "mount-psycho-baseball");
+const deployRoot = process.env.DEPLOY_ROOT
+  ? path.resolve(sourceRoot, process.env.DEPLOY_ROOT)
+  : path.join(sourceRoot, "..", "web-deploy", "mount-psycho-baseball");
 const staleDeployFiles = ["styles-pitcher-card-v2-guard.css"];
 const javascriptFiles = deployFiles.filter((relativePath) => path.extname(relativePath) === ".js");
 

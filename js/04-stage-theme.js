@@ -17,11 +17,11 @@ window.MountPsycho = window.MountPsycho || {};
   MP.stageThemeCatalog = {
     contact: {
       id: "contact",
-      name: "컨택 타선",
+      name: "끈질긴 컨택 타선",
       shortDesc: "쉽게 삼진당하지 않고 파울로 버팁니다.",
-      dangerText: "2스트 이후 투구 수가 늘어납니다.",
-      counterText: "낮은 공과 정타 억제가 유효합니다.",
-      rewardHint: "땅볼계 / 정타봉쇄 계열",
+      dangerText: "2스트 이후 승부가 길어지고 투구 수가 늘어납니다.",
+      counterText: "낮은 공과 정타 억제로 약한 타구를 만들어야 합니다.",
+      rewardHint: "땅볼계, 정타 억제 계열 보상에 유리합니다.",
       rewardBias: ["groundball", "soft_contact"],
       stage1Eligible: true,
       riskTier: "stable",
@@ -36,9 +36,9 @@ window.MountPsycho = window.MountPsycho || {};
       id: "power",
       name: "장타 타선",
       shortDesc: "노린 공이 오면 크게 받아칩니다.",
-      dangerText: "실투 시 장타 위험이 커집니다.",
-      counterText: "낮은 공·패턴 변화·볼 유도가 유효합니다.",
-      rewardHint: "희귀 보조태그 / 장타 억제",
+      dangerText: "실투와 읽힌 패턴이 바로 장타로 이어집니다.",
+      counterText: "낮은 공, 패턴 변화, 볼 유도를 섞어 정타를 피하세요.",
+      rewardHint: "장타 억제, 희귀 보조태그 보상에 유리합니다.",
       rewardBias: ["rare", "groundball"],
       stage1Eligible: false,
       riskTier: "risky",
@@ -51,11 +51,11 @@ window.MountPsycho = window.MountPsycho || {};
     },
     eye: {
       id: "eye",
-      name: "눈야구 타선",
+      name: "선구안 타선",
       shortDesc: "존 밖 공을 잘 참습니다.",
-      dangerText: "볼넷 위험이 증가합니다.",
-      counterText: "초구 스트라이크·코너 제구·루킹이 유효합니다.",
-      rewardHint: "제구계 / 볼넷 억제",
+      dangerText: "볼넷 위험이 커지고 유인구 효율이 떨어집니다.",
+      counterText: "초구 스트라이크, 코너 제구, 루킹 승부가 필요합니다.",
+      rewardHint: "제구계, 볼넷 억제 보상에 유리합니다.",
       rewardBias: ["control", "strikeout"],
       stage1Eligible: true,
       riskTier: "stable",
@@ -68,11 +68,11 @@ window.MountPsycho = window.MountPsycho || {};
     },
     tricky: {
       id: "tricky",
-      name: "교활 타선",
+      name: "반응 숨김 타선",
       shortDesc: "반응을 그대로 믿기 어렵습니다.",
-      dangerText: "거짓 단서·역노림이 늘어납니다.",
-      counterText: "3구 이상 흐름·패턴 숨기기가 유효합니다.",
-      rewardHint: "심리계 / 추천 보완",
+      dangerText: "거짓 단서와 역노림이 늘어납니다.",
+      counterText: "한 공 반응보다 3구 이상 흐름을 보고 판단하세요.",
+      rewardHint: "심리계, 추천 보완 보상에 유리합니다.",
       rewardBias: ["psych"],
       stage1Eligible: false,
       riskTier: "risky",
@@ -87,11 +87,11 @@ window.MountPsycho = window.MountPsycho || {};
     },
     first_pitch: {
       id: "first_pitch",
-      name: "초구공격 타선",
+      name: "초구 공격 타선",
       shortDesc: "초구부터 적극적으로 배트를 냅니다.",
       dangerText: "초구 실투 시 장타 위험이 큽니다.",
-      counterText: "초구 목적·낮은 초구·바깥 볼 확인이 유효합니다.",
-      rewardHint: "초구 / 강속구 계열",
+      counterText: "초구의 목적을 정하고 낮은 코스나 바깥 볼 확인을 섞으세요.",
+      rewardHint: "초구, 강속구 계열 보상에 유리합니다.",
       rewardBias: ["first_pitch", "strikeout"],
       stage1Eligible: true,
       riskTier: "risky",
@@ -104,11 +104,11 @@ window.MountPsycho = window.MountPsycho || {};
     },
     patience: {
       id: "patience",
-      name: "참을성 타선",
+      name: "참는 타선",
       shortDesc: "공을 오래 보고 불리한 공은 참습니다.",
-      dangerText: "유인구 효율이 떨어집니다.",
-      counterText: "초구·1스트 선점·코너 스트라이크가 유효합니다.",
-      rewardHint: "제구 / 풀카운트 계열",
+      dangerText: "유인구 효율이 떨어지고 볼넷 위험이 늘어납니다.",
+      counterText: "초구와 1스트를 먼저 잡고 코너 스트라이크로 압박하세요.",
+      rewardHint: "제구, 풀카운트 계열 보상에 유리합니다.",
       rewardBias: ["control", "operation"],
       stage1Eligible: true,
       riskTier: "stable",
@@ -121,11 +121,11 @@ window.MountPsycho = window.MountPsycho || {};
     },
     bottom_revolt: {
       id: "bottom_revolt",
-      name: "하위반란 타선",
-      shortDesc: "하위타선이 의외로 까다롭습니다.",
-      dangerText: "6번 이후 방심하면 위험합니다.",
-      counterText: "하위타선에도 안정 제구·부담 관리가 필요합니다.",
-      rewardHint: "운영계 / 보상 선택 강화",
+      name: "하위 반란 타선",
+      shortDesc: "하위타선도 쉽게 물러나지 않습니다.",
+      dangerText: "6번 이후 방심하면 흐름이 넘어갑니다.",
+      counterText: "하위타선에도 안정 제구와 부담 관리가 필요합니다.",
+      rewardHint: "운영계, 보상 선택 강화에 유리합니다.",
       rewardBias: ["operation", "rare"],
       stage1Eligible: false,
       riskTier: "risky",
@@ -416,22 +416,22 @@ window.MountPsycho = window.MountPsycho || {};
     const entries = [];
     const pushStat = (stat, title, desc) => entries.push({ type: "stat", stat, amount: 2, title, desc, themeReward: true });
     if (theme.rewardBias.includes("groundball")) {
-      pushStat("변화", "땅볼 유도 감각", "현재 타선에 맞춘 땅볼 운영 보상입니다.");
+      pushStat("변화", "땅볼 유도 감각", "투수 능력치 '변화'가 +2 오릅니다.");
     }
     if (theme.rewardBias.includes("control") || theme.rewardBias.includes("first_pitch")) {
-      pushStat("제구", "코너 제구 강화", "현재 타선에 맞춘 제구 보상입니다.");
+      pushStat("제구", "코너 제구 강화", "투수 능력치 '제구'가 +2 오릅니다.");
     }
     if (theme.rewardBias.includes("psych")) {
-      pushStat("예측", "심리전 분석", "교활한 타선 대응용 예측 보상입니다.");
+      pushStat("예측", "심리전 분석", "투수 능력치 '예측'이 +2 오릅니다.");
     }
     if (theme.rewardBias.includes("strikeout")) {
-      pushStat("멘탈", "루킹 운영", "볼넷·루킹 운영 보상입니다.");
+      pushStat("멘탈", "루킹 운영", "투수 능력치 '멘탈'이 +2 오릅니다.");
     }
     if (theme.rewardBias.includes("operation") || theme.rewardBias.includes("soft_contact")) {
-      pushStat("멘탈", "경기 운영", "긴 타석·운영형 보상입니다.");
+      pushStat("멘탈", "경기 운영", "투수 능력치 '멘탈'이 +2 오릅니다.");
     }
     if (theme.rewardBias.includes("rare")) {
-      pushStat("예측", "희귀 분석 데이터", "장타·변칙 타선 대응 보상입니다.");
+      pushStat("예측", "희귀 분석 데이터", "투수 능력치 '예측'이 +2 오릅니다.");
     }
     return entries.slice(0, 2);
   };

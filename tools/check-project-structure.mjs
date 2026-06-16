@@ -22,7 +22,16 @@ const scripts = [...indexHtml.matchAll(/<script\s+src="([^"]+)"/g)].map((match) 
 
 assertOrdered(
   stylesheets,
-  ["styles.css", "css/05-card-layout.css", "css/10-pitcher-card.css", "css/20-pitch-selection.css"],
+  [
+    "styles.css",
+    "css/05-card-layout.css",
+    "css/10-pitcher-card.css",
+    "css/15-mission-focus-card.css",
+    "css/16-plate-scene-hud.css",
+    "css/20-pitch-selection.css",
+    "css/30-mobile-portrait.css",
+    "css/31-mobile-reference.css"
+  ],
   "stylesheet"
 );
 assertOrdered(

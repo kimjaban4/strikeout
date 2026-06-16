@@ -41,6 +41,7 @@ const timerNames = [
   "courseFlashTimer",
   "inningBannerTimer",
   "pitchFlightFrame",
+  "releaseTimingFrame",
   "rewardTimer",
   "gameOverTimer",
   "uiEventsBound"
@@ -49,8 +50,8 @@ const timerNames = [
 function transformConstants(body) {
   return body
     .map((line) => {
-      if (/^const\s+([A-Za-z_$][\w$]*)\s*=/.test(line)) {
-        return line.replace(/^const\s+/, "MP.");
+      if (/^\uFEFF?const\s+([A-Za-z_$][\w$]*)\s*=/.test(line)) {
+        return line.replace(/^\uFEFF?const\s+/, "MP.");
       }
       return line;
     })
@@ -63,7 +64,7 @@ function transformState(body) {
     .replace(/^const state = /m, "MP.state = ")
     .replace(/^const els = /m, "MP.els = ")
     .replace(
-      /^let (timingTimer|autoAdvanceTimer|courseFlashTimer|inningBannerTimer|pitchFlightFrame|rewardTimer|gameOverTimer|uiEventsBound) = /gm,
+      /^let (timingTimer|autoAdvanceTimer|courseFlashTimer|inningBannerTimer|pitchFlightFrame|releaseTimingFrame|rewardTimer|gameOverTimer|uiEventsBound) = /gm,
       "MP.$1 = "
     );
 }
@@ -159,7 +160,7 @@ function verifySplitOutput() {
 fs.mkdirSync(outDir, { recursive: true });
 
 const constantsTransformed = transformConstants(sections.constants);
-const constantsKeys = extractMpKeys(sections.constants.map((line) => line.replace(/^const\s+/, "MP.")));
+const constantsKeys = extractMpKeys(sections.constants.map((line) => line.replace(/^\uFEFF?const\s+/, "MP.")));
 
 fs.writeFileSync(path.join(outDir, "00-constants.js"), wrapConstants(constantsTransformed));
 fs.writeFileSync(path.join(outDir, "01-state.js"), wrapState(transformState(sections.state)));

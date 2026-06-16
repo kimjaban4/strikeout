@@ -4,13 +4,45 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>마운드 심리전</title>
-    <link rel="stylesheet" href="styles.css?v=20260602-maintenance" />
-    <link rel="stylesheet" href="css/05-card-layout.css?v=20260602-maintenance" />
-    <link rel="stylesheet" href="css/10-pitcher-card.css?v=20260602-maintenance" />
-    <link rel="stylesheet" href="css/20-pitch-selection.css?v=20260602-maintenance" />
+    <link rel="stylesheet" href="styles.css?v=20260611-plate-layout" />
+    <link rel="stylesheet" href="css/05-card-layout.css?v=20260610-main-title" />
+    <link rel="stylesheet" href="css/10-pitcher-card.css?v=20260610-main-title" />
+    <link rel="stylesheet" href="css/15-mission-focus-card.css?v=20260611-mission-compact" />
+    <link rel="stylesheet" href="css/16-plate-scene-hud.css?v=20260611-plate-center" />
+    <link rel="stylesheet" href="css/20-pitch-selection.css?v=20260610-main-title" />
+    <link rel="stylesheet" href="css/30-mobile-portrait.css?v=20260616-mobile-main" />
+    <link rel="stylesheet" href="css/31-mobile-reference.css?v=20260616-mobile-main" />
   </head>
   <body>
     <button id="bgmToggle" class="bgm-toggle" type="button" aria-pressed="false" title="BGM 끄기">BGM</button>
+
+    <div id="titleOverlay" class="title-screen-overlay">
+      <div class="title-screen-inner">
+        <img
+          class="title-screen-art"
+          src="assets/images/title/main-title.png"
+          alt="마운드 심리전"
+          decoding="async"
+        />
+        <nav class="title-screen-actions" aria-label="메인 메뉴">
+          <button id="titleStartButton" class="title-screen-button title-screen-button--primary" type="button">
+            게임 시작
+          </button>
+          <button id="titleTutorialButton" class="title-screen-button" type="button">튜토리얼</button>
+        </nav>
+      </div>
+    </div>
+
+    <div id="tutorialOverlay" class="title-screen-overlay tutorial-screen-overlay" hidden>
+      <div class="tutorial-screen-box">
+        <p class="eyebrow">TUTORIAL</p>
+        <h2>튜토리얼</h2>
+        <p class="tutorial-screen-lead">기본 조작과 심리전 규칙을 익히는 화면입니다.</p>
+        <p class="tutorial-screen-note">상세 튜토리얼 콘텐츠는 준비 중입니다.</p>
+        <button id="tutorialBackButton" class="title-screen-button" type="button">메인으로</button>
+      </div>
+    </div>
+
     <div class="app-shell">
       <header class="topbar">
         <div>
@@ -56,6 +88,7 @@
           </div>
         </section>
         <div class="topbar-actions">
+          <div id="stageThemeBadge" class="stage-theme-badge" hidden aria-live="polite"></div>
           <button id="newGameButton" class="ghost-button" type="button">새 경기</button>
           <button id="nextBatterButton" class="primary-button" type="button" hidden>다음 타자</button>
         </div>
@@ -66,13 +99,47 @@
           <div class="stadium">
             <div class="stadium-bg" aria-hidden="true"></div>
             <div id="inningBanner" class="inning-banner" hidden></div>
+            <section id="missionFocusCard" class="mission-focus-card" hidden aria-live="polite">
+              <div class="mission-focus-head">
+                <span class="mission-focus-label">이닝 미션</span>
+                <strong id="missionFocusTitle">초구 선점</strong>
+                <span id="missionFocusStatus">0/1</span>
+              </div>
+              <div class="mission-focus-body">
+                <div class="mission-focus-row mission-focus-row--condition">
+                  <span class="mission-focus-row-icon mission-focus-row-icon--condition" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8" />
+                      <circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.8" />
+                      <circle cx="12" cy="12" r="1.4" fill="currentColor" />
+                    </svg>
+                  </span>
+                  <span class="mission-focus-row-tag">조건</span>
+                  <span class="mission-focus-row-divider" aria-hidden="true"></span>
+                  <span id="missionFocusCondition" class="mission-focus-row-text">초구 스트라이크 1회</span>
+                </div>
+                <div id="missionFocusRewardRow" class="mission-focus-row mission-focus-row--reward">
+                  <span class="mission-focus-row-icon mission-focus-row-icon--reward" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <rect x="4.5" y="10.5" width="15" height="9" rx="1.2" stroke="currentColor" stroke-width="1.8" />
+                      <path d="M12 10.5V19.5" stroke="currentColor" stroke-width="1.8" />
+                      <path d="M4.5 10.5H19.5" stroke="currentColor" stroke-width="1.8" />
+                      <path d="M12 10.5C12 8.4 10.8 6.8 9 6.2C10.2 5.4 11.6 5 12 5C12.4 5 13.8 5.4 15 6.2C13.2 6.8 12 8.4 12 10.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" />
+                    </svg>
+                  </span>
+                  <span class="mission-focus-row-tag">보상</span>
+                  <span class="mission-focus-row-divider" aria-hidden="true"></span>
+                  <span id="missionFocusReward" class="mission-focus-row-text">성공 시 다음 이닝 첫 타자 공략 보조태그 1개 공개</span>
+                </div>
+              </div>
+            </section>
             <div class="outfield-band"></div>
             <div class="infield">
               <div class="mound">
                 <div class="pitcher-dot"></div>
               </div>
               <div class="plate-scene">
-                <div id="timingBadge" class="timing-badge">초구 준비</div>
+                <div id="timingBadge" class="timing-badge">첫 공 준비</div>
                 <div id="batterFigure" class="batter-figure">
                   <div class="helmet"></div>
                   <div class="torso"></div>
@@ -84,6 +151,25 @@
                   <span></span><span></span><span></span>
                 </div>
                 <div id="ballSprite" class="ball-sprite"></div>
+                <div id="releaseTimingPanel" class="release-timing-panel" data-state="idle">
+                  <div class="release-timing-head">
+                    <span>릴리즈 타이밍</span>
+                    <strong id="releaseTimingGrade">대기</strong>
+                  </div>
+                  <button id="releaseTimingButton" class="release-timing-button" type="button" disabled>
+                    <span class="release-label-row">
+                      <em>빠름</em>
+                      <b id="releaseTimingMode">안정 릴리즈</b>
+                      <em>늦음</em>
+                    </span>
+                    <span id="releaseTimingTrack" class="release-timing-track">
+                      <i id="releaseGoodZone" class="release-good-zone"></i>
+                      <i id="releasePerfectZone" class="release-perfect-zone"></i>
+                      <b id="releaseTimingCursor" class="release-timing-cursor"></b>
+                    </span>
+                    <small id="releaseTimingHint">코스를 선택하면 릴리즈 타이밍이 열립니다.</small>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -91,7 +177,7 @@
           <div class="pitch-area">
             <div class="pitcher-card">
               <div>
-                <p class="section-kicker">오늘의 투수</p>
+                <p class="section-kicker">오늘의 선발</p>
                 <h2 id="pitcherName">-</h2>
               </div>
               <div class="pitcher-tags-stack">
@@ -107,7 +193,7 @@
             </div>
 
             <div class="pitch-select-panel">
-              <p class="section-kicker">구종 선택</p>
+              <p class="section-kicker">다음 공 선택</p>
               <div id="pitchButtons" class="pitch-buttons"></div>
             </div>
           </div>
@@ -118,7 +204,7 @@
           <section class="batter-card">
             <div class="batter-heading">
               <div class="batter-heading-kicker">
-                <p class="section-kicker">상대 타자</p>
+                <p class="section-kicker">타석의 상대</p>
                 <strong id="battingSlot" class="slot-pill">1번</strong>
               </div>
               <h2 id="batterName">-</h2>
@@ -128,12 +214,22 @@
             <div id="tagDetail" class="tag-detail" hidden></div>
             <div class="suspicion-meter">
               <div>
-                <span>의심 게이지</span>
+                <span>배합 간파도</span>
                 <strong id="suspicionText">0%</strong>
               </div>
               <div class="suspicion-track"><i id="suspicionFill"></i></div>
-              <small id="suspicionHint">패턴을 섞으면 낮아집니다.</small>
+              <small id="suspicionHint">같은 흐름이 반복되면 타자가 기다리기 시작합니다.</small>
             </div>
+            <button
+              id="mobileBatterToggle"
+              class="mobile-batter-open-btn"
+              type="button"
+              hidden
+              aria-expanded="false"
+              aria-label="타자 상세"
+            >
+              ▶
+            </button>
             <div class="batter-card-lower" id="batterCardLower">
               <div id="batterStats" class="stat-bars compact-stats"></div>
               <button id="batterCardToggle" class="card-toggle" type="button" aria-expanded="false">상세</button>
@@ -143,15 +239,15 @@
 
           <section class="read-card">
             <div class="read-heading">
-              <p class="section-kicker">노림수 추정</p>
-              <strong id="readGuess">불명</strong>
+              <p class="section-kicker">타자 반응 추정</p>
+              <strong id="readGuess">아직 불명</strong>
             </div>
             <div id="readBars" class="read-bars"></div>
           </section>
 
           <section class="log-card">
             <div class="log-heading">
-              <p class="section-kicker">승부 기록</p>
+              <p class="section-kicker">승부 해석</p>
               <strong id="pitchCountText">0구</strong>
             </div>
             <div id="logList" class="log-list"></div>
@@ -160,27 +256,131 @@
 
           <section class="recommend-card">
             <div class="recommend-heading">
-              <p class="section-kicker">노림수 추천</p>
+              <p class="section-kicker">마운드 판단</p>
               <strong id="recommendConfidence">불명</strong>
             </div>
             <div class="recommend-body">
               <div class="recommend-icon"></div>
               <div>
-                <strong id="recommendTitle">추천 대기</strong>
-                <span id="recommendText">투수 예측 수치에 따라 추천 정확도가 달라집니다.</span>
+                <strong id="recommendTitle">조언 대기</strong>
+                <span id="recommendText">타자 반응과 투수 예측에 따라 조언이 달라집니다.</span>
               </div>
             </div>
+            <button
+              id="mobileLogMore"
+              class="mobile-inline-more"
+              type="button"
+              hidden
+              aria-expanded="false"
+              aria-controls="logList"
+            >
+              더보기
+            </button>
             <div class="catcher-sign">
-              <strong id="catcherTitle">포수 사인</strong>
-              <span id="catcherText">포수 타입에 따라 매 공 추천이 달라집니다.</span>
+              <strong id="catcherTitle">포수의 사인</strong>
+              <span id="catcherText">포수는 타자 반응과 카운트를 함께 보고 사인을 냅니다.</span>
             </div>
-            <div class="count-psych-card">
-              <strong id="countCardTitle">카운트 심리</strong>
-              <span id="countCardText">카운트가 깊어질수록 선택지가 달라집니다.</span>
+          </section>
+
+          <section id="runStatusCard" class="run-status-card" hidden>
+            <div class="run-status-heading">
+              <p class="section-kicker">경기 운영</p>
+              <strong id="runStageName">STAGE 1</strong>
             </div>
+            <div class="run-status-lines">
+              <span id="runMissionText">이닝 미션 대기</span>
+              <span id="runRivalText">라이벌 과제 대기</span>
+              <span id="runStarText">클리어 등급 대기</span>
+            </div>
+            <div id="ownedCardSummary" class="owned-card-summary"></div>
+            <div id="cardTriggerLog" class="card-trigger-log"></div>
           </section>
         </aside>
       </main>
+    </div>
+
+    <div id="mobileGameShell" class="mobile-game-shell" aria-label="모바일 경기 화면">
+      <header class="mobile-game-header">
+        <div class="mobile-brand">
+          <small>ROGUELIKE PITCH DUEL</small>
+          <strong>마운드 심리전</strong>
+        </div>
+        <div class="mobile-score-summary">
+          <span>이닝<b id="mobileInningText">1 / 3</b></span>
+          <span>실점<b id="mobileRunsText">0</b></span>
+          <span>목표<b id="mobileTargetText">4실점 시 종료</b></span>
+        </div>
+        <button id="mobileNewGameButton" class="mobile-new-game" type="button">새 경기</button>
+        <div class="mobile-count-strip">
+          <div class="is-ball"><b>B</b><span id="mobileBallsDots"></span></div>
+          <div class="is-strike"><b>S</b><span id="mobileStrikesDots"></span></div>
+          <div class="is-out"><b>O</b><span id="mobileOutsDots"></span></div>
+          <div id="mobileBases" class="mobile-bases" aria-label="주자 상황">
+            <i data-base="2"></i><i data-base="3"></i><i data-base="1"></i><i class="is-home"></i>
+          </div>
+        </div>
+      </header>
+
+      <section id="mobileMissionCard" class="mobile-mission-card">
+        <span class="mobile-mission-label">이닝<br />미션</span>
+        <div>
+          <strong id="mobileMissionTitle">초구 선점</strong>
+          <small id="mobileMissionCondition">초구 스트라이크 1회</small>
+        </div>
+        <b id="mobileMissionStatus">0/1</b>
+      </section>
+
+      <section class="mobile-field-scene">
+        <div class="mobile-field-bg" aria-hidden="true"></div>
+        <article class="mobile-player-card mobile-pitcher-summary">
+          <small>오늘의 선발</small>
+          <strong id="mobilePitcherName">-</strong>
+          <span id="mobilePitcherTags">태그 준비 중</span>
+        </article>
+        <article class="mobile-player-card mobile-batter-summary">
+          <small>타석의 상대 <em id="mobileBattingSlot">1번</em></small>
+          <strong id="mobileBatterName">-</strong>
+          <span id="mobileBatterTags">상대 분석 중</span>
+          <div class="mobile-suspicion-row">
+            <i><u id="mobileSuspicionFill"></u></i>
+            <b id="mobileSuspicionText">0%</b>
+          </div>
+        </article>
+        <div id="mobileInningBanner" class="mobile-inning-banner" hidden></div>
+        <div id="mobileTimingBadge" class="mobile-timing-badge"></div>
+        <div id="mobileBallSprite" class="mobile-ball-sprite"></div>
+        <div id="mobileStrikeZone" class="mobile-strike-zone" aria-label="투구 코스 선택"></div>
+      </section>
+
+      <section class="mobile-control-panel">
+        <nav class="mobile-control-tabs" aria-label="경기 정보 탭">
+          <button id="mobilePitchTab" class="is-active" type="button">구종</button>
+          <button id="mobileLogTab" type="button">승부기록</button>
+          <button id="mobileInfoTab" type="button">정보</button>
+        </nav>
+        <div id="mobilePitchButtons" class="mobile-pitch-buttons"></div>
+        <div id="mobileReleasePanel" class="mobile-release-panel" data-state="idle">
+          <div><span>릴리즈 타이밍</span><strong id="mobileReleaseGrade">대기</strong></div>
+          <div class="mobile-release-labels"><span>빠름</span><b id="mobileReleaseMode">안정 릴리즈</b><span>늦음</span></div>
+          <div class="mobile-release-track"><i></i><u></u><b id="mobileReleaseCursor"></b></div>
+        </div>
+        <div class="mobile-action-row">
+          <article class="mobile-recommend-card">
+            <span>마운드 판단 <b id="mobileRecommendConfidence">불명</b></span>
+            <strong id="mobileRecommendTitle">조언 대기</strong>
+            <small id="mobileRecommendText">타자 반응을 확인하세요.</small>
+          </article>
+          <button id="mobileThrowButton" class="mobile-throw-button" type="button" disabled>
+            <span>투구</span><i aria-hidden="true">●</i>
+          </button>
+        </div>
+      </section>
+
+      <button id="mobilePanelBackdrop" class="mobile-panel-backdrop" type="button" aria-label="정보 패널 닫기" hidden></button>
+      <aside id="mobileInfoPanel" class="mobile-info-panel" hidden>
+        <header><strong id="mobileInfoPanelTitle">승부기록</strong><button id="mobileInfoPanelClose" type="button">닫기</button></header>
+        <div id="mobileInfoPanelBody"></div>
+      </aside>
     </div>
 
     <div id="stageOverlay" class="stage-overlay" hidden>
@@ -188,14 +388,24 @@
         <strong id="stageTitle">STAGE 1</strong>
         <span id="stageSubtitle">3 INNINGS</span>
         <div id="stageThemePanel" class="stage-theme-panel" hidden></div>
+        <button id="stageStartButton" class="stage-start-button" type="button">스테이지 시작</button>
+      </div>
+    </div>
+
+    <div id="stageThemeDetailOverlay" class="stage-theme-detail-overlay" hidden>
+      <div class="stage-theme-detail-box" role="dialog" aria-modal="true" aria-labelledby="stageThemeDetailTitle">
+        <button id="stageThemeDetailClose" class="stage-theme-detail-close" type="button" aria-label="테마 설명 닫기">×</button>
+        <p class="section-kicker">타선 성향</p>
+        <h2 id="stageThemeDetailTitle">-</h2>
+        <div id="stageThemeDetailBody" class="stage-theme-detail-body"></div>
       </div>
     </div>
 
     <div id="themeSelectOverlay" class="theme-select-overlay" hidden>
       <div class="theme-select-box">
-        <p class="eyebrow">NEXT OPPONENT</p>
-        <h2>다음 상대 선택</h2>
-        <p class="theme-select-help">내 빌드가 감당할 위험을 고르세요.</p>
+        <p class="eyebrow">NEXT LINEUP</p>
+        <h2>다음 상대 타선 선택</h2>
+        <p class="theme-select-help">다음 스테이지에서 어떤 성향의 타선을 상대할지 고르세요.</p>
         <div id="themeChoiceList" class="theme-choice-list"></div>
       </div>
     </div>
@@ -205,7 +415,7 @@
         <p class="eyebrow">GAME RESULT</p>
         <h2 id="resultTitle">경기 종료</h2>
         <p id="resultMessage"></p>
-        <button id="restartButton" class="primary-button" type="button">다시 시작</button>
+        <button id="restartButton" class="primary-button" type="button">다시 도전</button>
       </div>
     </div>
 
@@ -220,18 +430,29 @@
     <div id="rewardOverlay" class="reward-overlay" hidden>
       <div class="reward-box">
         <p class="eyebrow">ROGUELIKE REWARD</p>
-        <h2 id="rewardTitle">상황 보상</h2>
-        <p id="rewardReason">좋은 승부로 흐름을 가져왔습니다.</p>
+        <h2 id="rewardTitle">승부 보상</h2>
+        <p id="rewardReason">방금 승부로 흐름을 가져왔습니다.</p>
         <div id="rewardChoiceList" class="reward-choice-list"></div>
-        <button id="rewardConfirmButton" class="reward-confirm-button" type="button" hidden disabled>선택 확정</button>
+        <button id="rewardConfirmButton" class="reward-confirm-button" type="button" hidden disabled>이 보상 선택</button>
       </div>
     </div>
 
+    <div id="dugoutOverlay" class="reward-overlay dugout-overlay" hidden>
+      <div class="reward-box dugout-box">
+        <p class="eyebrow">DUGOUT CHOICE</p>
+        <h2 id="dugoutTitle">덕아웃 작전 선택</h2>
+        <p id="dugoutReason">다음 이닝을 어떤 흐름으로 풀지 고르세요.</p>
+        <div id="dugoutChoiceList" class="dugout-choice-list"></div>
+      </div>
+    </div>
+
+    <div id="mobileSheetBackdrop" class="mobile-sheet-backdrop" hidden aria-hidden="true"></div>
+
     <!-- 순서 고정: constants → state → core -->
-    <script src="js/00-constants.js?v=20260602-maintenance"></script>
-    <script src="js/01-state.js?v=20260602-maintenance"></script>
-    <script src="js/03-pitch-progression.js?v=20260602-maintenance"></script>
-    <script src="js/04-stage-theme.js?v=20260602-maintenance"></script>
-    <script src="js/02-game-core.js?v=20260602-maintenance"></script>
+    <script src="js/00-constants.js?v=20260610-mission-toggle"></script>
+    <script src="js/01-state.js?v=20260610-mission-toggle"></script>
+    <script src="js/03-pitch-progression.js?v=20260610-mission-toggle"></script>
+    <script src="js/04-stage-theme.js?v=20260610-mission-toggle"></script>
+    <script src="js/02-game-core.js?v=20260610-mission-toggle"></script>
   </body>
 </html>

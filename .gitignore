@@ -1,5 +1,6 @@
 node_modules/
 test-results/
+_site-test/
 *.log
 styles.consolidated.css
 

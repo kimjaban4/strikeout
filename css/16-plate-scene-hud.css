@@ -1,0 +1,121 @@
+/* === Plate scene HUD: strike zone center, release timing bottom === */
+
+.plate-scene {
+  position: absolute !important;
+  inset: 0 !important;
+  left: 0 !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  transform: none !important;
+  z-index: 50 !important;
+  pointer-events: none !important;
+}
+
+.strike-zone,
+.strike-zone.ball-mode,
+.strike-zone.wide-target-mode {
+  left: 50% !important;
+  right: auto !important;
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translate(-50%, calc(-50% - 46px)) !important;
+  width: 24.4% !important;
+  height: 34.8% !important;
+  max-height: calc(100% - 112px) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  z-index: 140 !important;
+  border: 2px solid rgba(255, 255, 255, 0.94) !important;
+  background: rgba(16, 88, 44, 0.3) !important;
+  box-shadow:
+    0 0 0 1px rgba(18, 72, 38, 0.42),
+    0 10px 28px rgba(8, 28, 16, 0.24) !important;
+}
+
+.strike-zone .strike-zone-target {
+  border-color: rgba(255, 255, 255, 0.86) !important;
+  background: rgba(36, 168, 66, 0.66) !important;
+}
+
+.strike-zone .ball-zone {
+  border-color: rgba(245, 188, 82, 0.82) !important;
+  background: rgba(245, 188, 82, 0.22) !important;
+}
+
+.strike-zone .zone-button:hover,
+.strike-zone .zone-button:focus-visible {
+  background: rgba(89, 219, 106, 0.82) !important;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.72), 0 0 18px rgba(66, 219, 93, 0.58) !important;
+}
+
+.plate-scene .release-timing-panel {
+  position: absolute !important;
+  top: auto !important;
+  bottom: 8px !important;
+  left: 50% !important;
+  right: auto !important;
+  width: min(calc(100% - 16px), 360px) !important;
+  min-width: 0 !important;
+  max-width: 360px !important;
+  transform: translateX(-50%) !important;
+  z-index: 150 !important;
+  pointer-events: auto !important;
+  filter: drop-shadow(0 10px 20px rgba(7, 24, 40, 0.2)) !important;
+}
+
+.plate-scene .release-timing-head span {
+  color: #24435d !important;
+  text-shadow: none !important;
+}
+
+.plate-scene .release-timing-button {
+  min-height: 78px !important;
+  border-color: rgba(180, 203, 222, 0.95) !important;
+  background: rgba(255, 255, 255, 0.97) !important;
+}
+
+.plate-scene .release-timing-button:disabled {
+  opacity: 0.94 !important;
+}
+
+.plate-scene .release-timing-panel.is-active .release-timing-button {
+  border-color: #7eb6df !important;
+  box-shadow: 0 0 0 2px rgba(47, 122, 184, 0.16), 0 8px 18px rgba(8, 36, 58, 0.14) !important;
+}
+
+.recommend-card {
+  height: auto !important;
+  min-height: 116px !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.recommend-card .release-timing-panel {
+  display: none !important;
+}
+
+@media (min-width: 1081px) {
+  .strike-zone,
+  .strike-zone.ball-mode,
+  .strike-zone.wide-target-mode {
+    transform: translate(-50%, calc(-50% - 50px)) !important;
+  }
+
+  .plate-scene .release-timing-panel {
+    bottom: 10px !important;
+    width: min(calc(100% - 20px), 350px) !important;
+  }
+}
+
+@media (max-width: 1080px) {
+  .strike-zone,
+  .strike-zone.ball-mode,
+  .strike-zone.wide-target-mode {
+    width: min(31vw, 150px) !important;
+    height: min(43vw, 210px) !important;
+    transform: translate(-50%, calc(-50% - 42px)) !important;
+  }
+}

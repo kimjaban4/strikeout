@@ -12,7 +12,7 @@ MP.pitchLibrary = [
     movement: 28,
     control: 76,
     cost: 5,
-    note: "정면 승부"
+    note: "존 안을 밀어붙이는 기본 빠른 공"
   },
   {
     id: "two",
@@ -23,7 +23,7 @@ MP.pitchLibrary = [
     movement: 52,
     control: 68,
     cost: 5,
-    note: "땅볼 유도"
+    note: "낮게 들어가면 먹힌 타구 유도"
   },
   {
     id: "sinker",
@@ -34,7 +34,7 @@ MP.pitchLibrary = [
     movement: 74,
     control: 62,
     cost: 6,
-    note: "낮은 땅볼 유도"
+    note: "주자가 있을 때 병살 흐름 유도"
   },
   {
     id: "slider",
@@ -45,7 +45,7 @@ MP.pitchLibrary = [
     movement: 86,
     control: 58,
     cost: 7,
-    note: "헛스윙 유도"
+    note: "배트 끝을 끌어내는 변화구"
   },
   {
     id: "curve",
@@ -56,7 +56,7 @@ MP.pitchLibrary = [
     movement: 92,
     control: 50,
     cost: 7,
-    note: "타이밍 교란"
+    note: "빠른 공 뒤 타이밍 교란"
   },
   {
     id: "change",
@@ -67,7 +67,7 @@ MP.pitchLibrary = [
     movement: 66,
     control: 62,
     cost: 6,
-    note: "직구 노림 저격"
+    note: "빠른 공을 기다리는 타자 흔들기"
   },
   {
     id: "splitter",
@@ -78,7 +78,7 @@ MP.pitchLibrary = [
     movement: 80,
     control: 46,
     cost: 8,
-    note: "낙차 큰 승부구"
+    note: "낮게 떨어지면 삼진, 몰리면 위험"
   },
   {
     id: "cutter",
@@ -89,7 +89,7 @@ MP.pitchLibrary = [
     movement: 62,
     control: 70,
     cost: 6,
-    note: "빗맞힘 유도"
+    note: "배트 중심을 비껴가는 빠른 공"
   }
 ];
 
@@ -100,7 +100,262 @@ MP.categoryNames = {
 };
 
 MP.stageInnings = [3, 5, 7];
-MP.stageRunLimits = [5, 4, 3];
+MP.RELEASE_TIMING_SPEED = 0.8;
+
+MP.stageConfigs = [
+  {
+    id: "rookie_lineup",
+    name: "루키타선",
+    innings: 3,
+    clearRuns: 3,
+    stableRuns: 1,
+    perfectRuns: 0,
+    themeText: "아직 배합을 넓게 가져갈 수 있는 초반 타선입니다. 반복 패턴만 조심하세요.",
+    starNames: ["버텨낸 경기", "안정적인 운영", "무실점 루키타선 제압"],
+    missions: [
+      { id: "s1_i1_first_strike", inning: 1, title: "초구 스트라이크 1회 이상", type: "firstPitchStrikesAtLeast", threshold: 1 },
+      { id: "s1_i2_no_walk", inning: 2, title: "볼넷 없이 이닝 종료", type: "noWalk" },
+      { id: "s1_i3_low_suspicion", inning: 3, title: "배합 간파도 60% 이하 유지", type: "suspicionEndBelow", threshold: 60 }
+    ],
+    rival: {
+      name: "주시온",
+      slot: 1,
+      role: "출루형 / 몸쪽 반응 / 선구안 보통",
+      goalText: "장타를 막으세요. 실투와 반복 패턴이 가장 위험합니다.",
+      rewardText: "보상 카드 선택지 +1",
+      reward: { choiceBonus: 1 }
+    }
+  },
+  {
+    id: "analysis_lineup",
+    name: "분석타선",
+    innings: 5,
+    clearRuns: 4,
+    stableRuns: 2,
+    perfectRuns: 1,
+    perfectExtras: ["같은 구종 3연속 사용 없음", "배합 간파도 평균 55% 이하"],
+    themeText: "같은 공과 같은 코스를 빠르게 기억합니다. 성공한 패턴도 반복하면 바로 읽힙니다.",
+    starNames: ["분석타선 돌파", "패턴 관리 성공", "노림수 역이용 경기"],
+    missions: [
+      { id: "s2_i1_first_strike", inning: 1, title: "초구 스트라이크 2회 이상", type: "firstPitchStrikesAtLeast", threshold: 2 },
+      { id: "s2_i2_no_three_pitch", inning: 2, title: "같은 구종 3연속 금지", type: "maxPitchStreakBelow", threshold: 3 },
+      { id: "s2_i3_weakness_choice", inning: 3, title: "공략 보조태그 찌르기 1회", type: "weaknessChoiceAtLeast", threshold: 1 },
+      { id: "s2_i4_no_center_long", inning: 4, title: "중심 타선 장타 금지", type: "noCenterLongHit" },
+      { id: "s2_i5_low_suspicion", inning: 5, title: "배합 간파도 70% 이하 유지", type: "suspicionEndBelow", threshold: 70 }
+    ],
+    rival: {
+      name: "한도윤",
+      slot: 3,
+      role: "분석형 / 같은 구종 적응 / 바깥쪽 코스 예측",
+      goalText: "같은 구종을 두 번 이상 보여주지 마세요. 이 타자는 반복을 빠르게 기억합니다.",
+      rewardText: "희귀 카드 1장 추가 보장",
+      reward: { guaranteedRare: 1 }
+    }
+  },
+  {
+    id: "championship_lineup",
+    name: "챔피언십타선",
+    innings: 7,
+    clearRuns: 5,
+    stableRuns: 3,
+    perfectRuns: 2,
+    perfectExtras: ["라이벌 장타 허용 없음", "배합 간파도 평균 60% 이하"],
+    themeText: "강한 타자들이 실투와 반복을 놓치지 않습니다. 인상을 심고, 다음 공에서 배신해야 합니다.",
+    starNames: ["최종전 생존", "우승권 운영", "완벽한 마운드 지배"],
+    missions: [
+      { id: "s3_i1_no_center_long", inning: 1, title: "중심 타선 장타 금지", type: "noCenterLongHit" },
+      { id: "s3_i2_no_walk", inning: 2, title: "볼넷 없이 이닝 종료", type: "noWalk" },
+      { id: "s3_i3_no_scoring_run", inning: 3, title: "득점권 상황 실점 금지", type: "noScoringPositionRun" },
+      { id: "s3_i4_no_center_long", inning: 4, title: "중심 타선 장타 금지", type: "noCenterLongHit" },
+      { id: "s3_i5_highlight_success", inning: 5, title: "하이라이트 승부 성공", type: "highlightSuccessAtLeast", threshold: 1 },
+      { id: "s3_i6_weakness_choice", inning: 6, title: "공략 보조태그 선택 2회", type: "weaknessChoiceAtLeast", threshold: 2 },
+      { id: "s3_i7_scoreless", inning: 7, title: "최종 이닝 무실점", type: "scorelessInning" }
+    ],
+    rival: {
+      name: "강태오",
+      slot: 4,
+      role: "해결사 / 장타형 / 득점권 강함 / 위험 구종 노림",
+      goalText: "장타를 막고 출루도 1번 이하로 묶으세요. 코스보다 흐름 관리가 중요합니다.",
+      rewardText: "핵심 카드 선택지 +1",
+      reward: { coreChoiceBonus: 1 }
+    }
+  }
+];
+
+MP.stageRunLimits = [4, 5, 6];
+
+MP.rivalPsychPatterns = {
+  leadoffProbe: {
+    id: "leadoffProbe",
+    microRead: "선구 모드",
+    memoryBonus: 1,
+    firstPitchTake: 0.06,
+    ballPatience: 0.04
+  },
+  patternReader: {
+    id: "patternReader",
+    microRead: "패턴 대기",
+    memoryBonus: 2,
+    repeatSuspicionBonus: 3,
+    exposedContactBonus: 0.04
+  },
+  clutchSlugger: {
+    id: "clutchSlugger",
+    microRead: "장타 노림",
+    memoryBonus: 1,
+    targetQualityBonus: 5,
+    mistakeQualityBonus: 8
+  }
+};
+
+MP.batterWeaknessCatalog = [
+  {
+    id: "weak_low_breaking",
+    name: "낮은 변화구 취약",
+    category: "pitchType",
+    description: "몸이 먼저 나가 낮은 변화구에 따라붙습니다. 빠른 공 인상을 먼저 심으면 더 잘 속습니다.",
+    triggerCondition: "낮은 존 + 변화구 계열",
+    effectText: "낮은 변화구에 배트가 따라 나옵니다.",
+    recommendedPitchTypes: ["slider", "curve", "splitter"],
+    recommendedZones: ["low"],
+    effects: { swing: 0.06, contact: -0.1 }
+  },
+  {
+    id: "weak_first_pitch_hasty",
+    name: "첫 공 과반응",
+    category: "count",
+    description: "첫 공부터 배트가 빨리 나옵니다. 초구를 존 끝에 붙이면 흐름을 가져올 수 있습니다.",
+    triggerCondition: "0-0 카운트",
+    effectText: "초구 코너워크가 잘 먹힙니다.",
+    recommendedPitchTypes: ["four", "cutter", "curve"],
+    recommendedZones: ["edge", "high"],
+    effects: { firstPitchSwing: 0.1, contactQuality: -4 }
+  },
+  {
+    id: "weak_inside",
+    name: "몸쪽 경직",
+    category: "zone",
+    description: "몸쪽 공 이후 시야가 좁아지고 반응이 굳습니다.",
+    triggerCondition: "몸쪽 코스 제구 성공",
+    effectText: "몸쪽 성공 시 정타가 줄어듭니다.",
+    recommendedPitchTypes: ["two", "cutter", "four"],
+    recommendedZones: ["inside"],
+    effects: { contact: -0.06, contactQuality: -6 }
+  },
+  {
+    id: "weak_outer_reach",
+    name: "바깥쪽 팔 뻗음",
+    category: "zone",
+    description: "바깥쪽 공에 팔이 멀리 나옵니다. 코너에 붙이면 파울이나 약한 타구를 만들기 좋습니다.",
+    triggerCondition: "바깥쪽 코스",
+    effectText: "바깥쪽 코너에서 파울과 약타가 늘어납니다.",
+    recommendedPitchTypes: ["slider", "change", "four"],
+    recommendedZones: ["outside"],
+    effects: { foul: 0.07, contactQuality: -5 }
+  },
+  {
+    id: "weak_after_two_strike",
+    name: "보호 스윙 과잉",
+    category: "count",
+    description: "삼진을 피하려다 낮은 변화구에 배트가 따라 나옵니다.",
+    triggerCondition: "2스트라이크 + 변화구",
+    effectText: "2스트 이후 낮은 변화구가 잘 먹힙니다.",
+    recommendedPitchTypes: ["slider", "curve", "splitter"],
+    recommendedZones: ["low", "outside"],
+    effects: { twoStrikeSwing: 0.08, contact: -0.12 }
+  },
+  {
+    id: "weak_scoring_pressure",
+    name: "득점권 과반응",
+    category: "psychology",
+    description: "주자가 득점권에 있으면 빠르게 해결하려는 스윙이 늘어납니다.",
+    triggerCondition: "주자 2루 또는 3루",
+    effectText: "득점권에서 유인 반응이 늘어납니다.",
+    recommendedPitchTypes: ["change", "slider", "splitter"],
+    recommendedZones: ["low", "outside"],
+    effects: { scoringChase: 0.08, contactQuality: -4 }
+  },
+  {
+    id: "weak_high_fast",
+    name: "하이존 늦음",
+    category: "pitchType",
+    description: "배트가 아래에서 올라와 높은 빠른 공에 늦습니다.",
+    triggerCondition: "높은 존 + 강속구",
+    effectText: "높은 빠른 공에 반응이 늦습니다.",
+    recommendedPitchTypes: ["four", "cutter"],
+    recommendedZones: ["high"],
+    effects: { swing: 0.05, contact: -0.09 }
+  },
+  {
+    id: "weak_full_count",
+    name: "풀카운트 존끝 흔들림",
+    category: "count",
+    description: "3볼 2스트라이크에서 존 끝 스트라이크 승부에 반응이 늦습니다.",
+    triggerCondition: "3볼 2스트라이크",
+    effectText: "풀카운트 존 끝 승부에 반응이 늦습니다.",
+    recommendedPitchTypes: ["four", "two", "slider"],
+    recommendedZones: ["edge"],
+    effects: { fullCountContact: -0.08, contactQuality: -4 }
+  }
+];
+
+MP.rewardCardCatalog = [
+  { id: "C001", rarity: "common", name: "포심으로 존 점유", type: ["구종 강화"], description: "포심으로 존 안을 밀어붙일 때 손끝이 더 안정됩니다.", triggerCondition: "포심 사용", effectText: "포심 제구가 증가합니다.", stackType: "stackable", maxStack: 3, synergyTags: ["포심"], effects: { fourControl: 5 } },
+  { id: "C002", rarity: "common", name: "먹히는 투심", type: ["구종 강화"], description: "투심이 존 근처에 들어가면 배트 중심을 비껴 약한 땅볼을 만들기 쉬워집니다.", triggerCondition: "투심 제구 성공", effectText: "투심 땅볼 확률이 증가합니다.", stackType: "stackable", maxStack: 3, synergyTags: ["투심", "땅볼"], effects: { twoGroundball: 0.05 } },
+  { id: "C003", rarity: "common", name: "슬라이더 감각 유지", type: ["노출 관리"], description: "슬라이더를 여러 번 써도 손끝 부담이 덜 쌓입니다.", triggerCondition: "슬라이더 사용", effectText: "슬라이더 부담도 증가량이 감소합니다.", stackType: "stackable", maxStack: 2, synergyTags: ["슬라이더"], effects: { sliderBurdenReduce: 10 } },
+  { id: "C004", rarity: "common", name: "커브로 시선 끌기", type: ["심리전", "구종 강화"], description: "커브를 보여주면 타자의 시선이 느린 궤적에 묶입니다.", triggerCondition: "커브 사용 후 노스윙", effectText: "커브를 지켜보게 만들면 다음 빠른 공이 살아납니다.", stackType: "stackable", maxStack: 2, synergyTags: ["커브"], effects: { curveTakeSuspicion: -5 } },
+  { id: "C005", rarity: "common", name: "직구 뒤 체인지업", type: ["구종 강화", "심리전"], description: "빠른 공을 보여준 뒤 체인지업을 던지면 타자의 판단이 늦습니다.", triggerCondition: "직구 계열 이후 체인지업", effectText: "직구 계열 이후 체인지업 성공률이 증가합니다.", stackType: "stackable", maxStack: 2, synergyTags: ["체인지업", "완급"], effects: { changeAfterFastQuality: 4 } },
+  { id: "C015", rarity: "common", name: "같은 릴리스", type: ["심리전", "구종 운영"], description: "빠른 공과 같은 팔스윙에서 늦게 갈라지는 공의 효과가 좋아집니다.", triggerCondition: "빠른 공 이후 체인지업/스플리터/커터", effectText: "직구처럼 보인 공이 늦게 갈라지며 타이밍을 흔듭니다.", stackType: "stackable", maxStack: 2, synergyTags: ["완급", "릴리스"], effects: { sameRelease: 1 } },
+  { id: "C006", rarity: "common", name: "낮게 사라지는 포크", type: ["구종 강화"], description: "낮게 떨어지는 스플리터가 배트 밑으로 사라집니다.", triggerCondition: "낮은 포크", effectText: "낮은 스플리터 헛스윙 확률이 증가합니다.", stackType: "stackable", maxStack: 2, synergyTags: ["포크"], effects: { splitterLowWhiff: 0.05 } },
+  { id: "C007", rarity: "common", name: "플레이트 점유", type: ["코스 운영", "심리전"], description: "타석 첫 공을 존 끝에 붙여 타자가 플레이트를 편하게 쓰지 못하게 만듭니다.", triggerCondition: "타자별 첫 투구", effectText: "초구 스트라이크 성공 시 타자가 빠른 승부를 의식합니다.", stackType: "stackable", maxStack: 2, synergyTags: ["초구", "압박"], effects: { firstPitchControl: 5 } },
+  { id: "C008", rarity: "common", name: "흔들림 억제", type: ["위기관리"], description: "3볼 이후에도 손끝을 붙잡아 볼넷 위험을 줄입니다.", triggerCondition: "3볼 카운트", effectText: "3볼 카운트 제구가 증가합니다.", stackType: "stackable", maxStack: 2, synergyTags: ["볼넷"], effects: { threeBallControl: 5 } },
+  { id: "C009", rarity: "common", name: "낮게 깔기", type: ["코스 운영"], description: "낮은 존을 더 안정적으로 공략해 큰 타구를 줄입니다.", triggerCondition: "낮은 존 선택", effectText: "낮은 존 성공률이 증가합니다.", stackType: "stackable", maxStack: 2, synergyTags: ["낮은 코스"], effects: { lowZoneControl: 4 } },
+  { id: "C010", rarity: "common", name: "몸쪽 의식", type: ["코스 운영"], description: "몸쪽 공을 성공시키면 타자의 몸과 시야가 굳습니다.", triggerCondition: "몸쪽 코스 제구 성공", effectText: "몸쪽 성공 시 약한 타구 확률이 증가합니다.", stackType: "stackable", maxStack: 2, synergyTags: ["몸쪽"], effects: { insideWeakContact: 5 } },
+  { id: "C011", rarity: "common", name: "바깥쪽으로 멀어지게", type: ["코스 운영"], description: "바깥쪽 코스를 성공시키면 타자의 배트가 멀리 나옵니다.", triggerCondition: "바깥쪽 코스 제구 성공", effectText: "바깥쪽 성공 시 다음 몸쪽 승부가 숨습니다.", stackType: "stackable", maxStack: 2, synergyTags: ["바깥쪽"], effects: { outsideSuspicion: -5 } },
+  { id: "C012", rarity: "common", name: "첫 이닝 흐름 잡기", type: ["심리전"], description: "스테이지 초반에는 배합을 넓게 가져가며 타자를 흔듭니다.", triggerCondition: "각 스테이지 1이닝", effectText: "각 스테이지 첫 이닝에는 반복 흐름이 조금 덜 읽힙니다.", stackType: "unique", synergyTags: ["운영"], effects: { firstInningSuspicionMult: 0.9 } },
+  { id: "C013", rarity: "common", name: "이닝 미션 집중", type: ["보상 강화"], description: "이닝 미션을 달성하면 다음 선택지가 넓어집니다.", triggerCondition: "이닝 미션 성공", effectText: "이닝 미션 성공 시 보상 선택지가 증가합니다.", stackType: "limited", maxStack: 2, synergyTags: ["미션"], effects: { missionChoiceBonus: 1 } },
+  { id: "C014", rarity: "common", name: "기본기 다지기", type: ["구종 강화"], description: "모든 구종의 손끝 감각이 조금 안정됩니다.", triggerCondition: "항상 적용", effectText: "모든 구종 제구가 조금 증가합니다.", stackType: "stackable", maxStack: 3, synergyTags: ["기본기"], effects: { allControl: 2 } },
+  { id: "R001", rarity: "rare", name: "완급으로 흔들기", type: ["심리전", "구종 운영"], description: "빠른 공 뒤에 느린 공을 섞어 타자의 기준 타이밍을 무너뜨립니다.", triggerCondition: "직구 이후 느린 구종", effectText: "직구 이후 느린 구종으로 타이밍을 빼앗습니다.", stackType: "unique", synergyTags: ["완급"], effects: { slowAfterFastSuspicion: -8 } },
+  { id: "R002", rarity: "rare", name: "결정구 미끼", type: ["심리전", "구종 운영"], description: "유리한 카운트에서 변화구를 미끼로 써 배트를 끌어냅니다.", triggerCondition: "0-2, 1-2, 2-2 변화구", effectText: "유리 카운트 변화구 헛스윙 확률이 증가합니다.", stackType: "limited", maxStack: 2, synergyTags: ["유인구"], effects: { aheadBreakingWhiff: 0.12 } },
+  { id: "R003", rarity: "rare", name: "득점권 호흡", type: ["위기관리"], description: "주자가 득점권에 있어도 손끝과 호흡을 유지합니다.", triggerCondition: "주자 2루 또는 3루", effectText: "득점권 제구가 증가합니다.", stackType: "unique", synergyTags: ["득점권"], effects: { scoringControl: 10 } },
+  { id: "R004", rarity: "rare", name: "코스 흐름 끊기", type: ["코스 운영", "심리전"], description: "같은 코스가 이어져도 포수 사인으로 타자의 기다림을 한 번 늦춥니다.", triggerCondition: "같은 코스 2회 연속", effectText: "같은 코스 반복을 타자가 바로 기다리지 못합니다.", stackType: "unique", synergyTags: ["코스"], effects: { sameCourseShield: 1 } },
+  { id: "R005", rarity: "rare", name: "같은 공 재요구", type: ["심리전"], description: "같은 구종을 다시 요구해도 포수 사인으로 타자의 기다림을 한 박자 늦춥니다.", triggerCondition: "같은 구종 반복", effectText: "같은 구종 반복이 조금 덜 읽힙니다.", stackType: "unique", synergyTags: ["반복", "포수"], effects: { repeatSuspicionMult: 0.7 } },
+  { id: "R006", rarity: "rare", name: "포수의 첫 수", type: ["덕아웃", "심리전"], description: "이닝 첫 타자를 상대로 포수가 안전한 흐름을 먼저 잡아줍니다.", triggerCondition: "이닝 첫 타자", effectText: "이닝 첫 타자가 배합을 바로 좁히지 못합니다.", stackType: "unique", synergyTags: ["포수"], effects: { inningFirstBatterSuspicion: -10 } },
+  { id: "R007", rarity: "rare", name: "라이벌 사전 분석", type: ["타자 분석"], description: "스테이지 시작 전 라이벌의 공략 보조태그를 미리 확인합니다.", triggerCondition: "스테이지 시작", effectText: "라이벌 공략 보조태그 1개가 공개됩니다.", stackType: "limited", maxStack: 2, synergyTags: ["라이벌", "분석"], effects: { stageRivalWeaknessReveal: 1 } },
+  { id: "R008", rarity: "rare", name: "첫 타자 반응 체크", type: ["타자 분석"], description: "이닝 첫 타자의 약한 반응을 포수가 먼저 읽어냅니다.", triggerCondition: "이닝 첫 타자 등장", effectText: "이닝 첫 타자 공략 보조태그 1개가 공개됩니다.", stackType: "unique", synergyTags: ["분석"], effects: { firstBatterWeaknessReveal: 1 } },
+  { id: "R009", rarity: "rare", name: "공략 보조태그 활용", type: ["타자 분석", "심리전"], description: "공개된 공략 보조태그에 맞춰 승부에 성공하면 타자가 쉽게 배합을 좁히지 못합니다.", triggerCondition: "공략 보조태그 활용 성공", effectText: "공략 승부 성공 후 다음 같은 흐름을 숨깁니다.", stackType: "unique", synergyTags: ["공략 보조태그"], effects: { weaknessSuccessSuspicion: -10 } },
+  { id: "R010", rarity: "rare", name: "몸쪽으로 문 열기", type: ["코스 운영", "심리전"], description: "몸쪽을 성공시킨 뒤 바깥쪽을 열어 타자의 시야를 흔듭니다.", triggerCondition: "몸쪽 성공 후 바깥쪽", effectText: "몸쪽 성공 후 다음 바깥쪽 성공률이 증가합니다.", stackType: "unique", synergyTags: ["몸쪽", "바깥쪽"], effects: { outsideAfterInsideControl: 7 } },
+  { id: "R011", rarity: "rare", name: "바깥쪽 의식 후 낙차", type: ["코스 운영"], description: "바깥쪽을 계속 보여준 뒤 낮은 변화구로 배트를 끌어냅니다.", triggerCondition: "바깥쪽 성공 누적 후 낮은 변화구", effectText: "바깥쪽 성공 누적 후 낮은 변화구가 강해집니다.", stackType: "unique", synergyTags: ["바깥쪽", "변화구"], effects: { outsideSetupLowBreaking: 0.1 } },
+  { id: "R012", rarity: "rare", name: "풀카운트 호흡", type: ["위기관리"], description: "풀카운트에서 넣으러 가는 공도 끝까지 존 끝에 붙입니다.", triggerCondition: "3볼 2스트라이크", effectText: "풀카운트 제구가 오르고 같은 흐름이 덜 읽힙니다.", stackType: "unique", synergyTags: ["풀카운트"], effects: { fullCountControl: 10, fullCountSuspicion: -5 } },
+  { id: "R013", rarity: "rare", name: "위기 승부 집중", type: ["위기관리", "보상 강화"], description: "하이라이트 승부를 이기면 팀 분위기와 보상 흐름이 좋아집니다.", triggerCondition: "하이라이트 성공", effectText: "하이라이트 성공 시 보상 선택지가 증가합니다.", stackType: "unique", synergyTags: ["하이라이트"], effects: { highlightChoiceBonus: 1 } },
+  { id: "R014", rarity: "rare", name: "덕아웃 플랜", type: ["덕아웃", "보상 강화"], description: "덕아웃 작전 중 하나가 더 강한 선택지로 등장합니다.", triggerCondition: "덕아웃 선택지 생성", effectText: "희귀 덕아웃 선택지 1개가 보장됩니다.", stackType: "unique", synergyTags: ["덕아웃"], effects: { guaranteedRareDugout: 1 } },
+  { id: "R015", rarity: "rare", name: "시선 높이 함정", type: ["심리전", "코스 운영"], description: "높은 빠른 공으로 눈높이를 올린 뒤 낮은 변화구로 배트를 끌어냅니다.", triggerCondition: "높은 빠른 공 이후 낮은 변화구", effectText: "높은 공 뒤 낮은 변화구가 더 살아납니다.", stackType: "unique", synergyTags: ["하이존", "낮은 코스"], effects: { heightTrap: 1 } },
+  { id: "R016", rarity: "rare", name: "반응 체크", type: ["타자 분석", "심리전"], description: "초구 반응을 보고 타자가 어느 계열에 맞춰 움직이는지 더 빨리 좁힙니다.", triggerCondition: "타자별 첫 투구", effectText: "초구 반응으로 다음 승부의 읽기가 좋아집니다.", stackType: "unique", synergyTags: ["분석", "초구"], effects: { reactionCheck: 1 } },
+  { id: "R017", rarity: "rare", name: "파울 분석", type: ["타자 분석", "심리전"], description: "파울 타이밍을 보고 타자의 기준점을 더 정확히 읽습니다.", triggerCondition: "파울 발생", effectText: "파울 이후 다음 배합 판단이 좋아집니다.", stackType: "unique", synergyTags: ["분석", "파울"], effects: { foulAnalysis: 1 } },
+  { id: "K001", rarity: "core", name: "땅볼 설계자", type: ["구종 강화", "위기관리"], description: "낮은 공으로 타구를 눌러 다음 타자까지 흐름을 안정시킵니다.", triggerCondition: "땅볼 결과", effectText: "땅볼 성공 시 다음 타자가 바로 기다리지 못합니다.", stackType: "unique", synergyTags: ["땅볼"], effects: { groundOutNextSuspicion: -10 } },
+  { id: "K002", rarity: "core", name: "노림수 역이용", type: ["심리전"], description: "타자가 기다리기 시작한 순간, 오히려 그 기다림을 흔듭니다.", triggerCondition: "간파도 60% 이상", effectText: "타자가 기다리는 순간 헛스윙을 끌어내기 쉽습니다.", stackType: "unique", synergyTags: ["심리전"], effects: { highSuspicionWhiff: 0.12 } },
+  { id: "K003", rarity: "core", name: "부담 건 승부", type: ["심리전", "위험 감수"], description: "피로도가 쌓인 구종을 과감하게 성공시키면 분위기를 되찾지만 실패 리스크가 큽니다.", triggerCondition: "부담 50 이상 구종", effectText: "부담 높은 구종 성공 시 타자의 기다림을 끊습니다.", stackType: "unique", synergyTags: ["위험"], effects: { burdenGamble: 1 } },
+  { id: "K004", rarity: "core", name: "포수의 다음 수", type: ["덕아웃", "심리전"], description: "포수와 미리 맞춘 작전으로 직전 공의 의식을 다음 공까지 더 선명하게 이어갑니다.", triggerCondition: "덕아웃 선택 / 이전 공 활용", effectText: "덕아웃 효과와 이전 공 활용이 강화됩니다.", stackType: "unique", synergyTags: ["덕아웃", "포수"], effects: { dugoutEffectMult: 1.3, catcherNextMove: 1 } },
+  { id: "K005", rarity: "core", name: "분석 역이용", type: ["타자 분석", "심리전"], description: "공개된 공략 보조태그와 일치하는 투구에 성공하면 다음 승부가 더 쉬워집니다.", triggerCondition: "공략 보조태그 활용 성공", effectText: "다음 투구 성공률이 증가합니다.", stackType: "unique", synergyTags: ["공략 보조태그"], effects: { weaknessNextPitchControl: 7 } },
+  { id: "K006", rarity: "core", name: "클러치 에이스", type: ["위기관리"], description: "득점권에서도 호흡을 유지해 손끝과 제구가 흔들리지 않습니다.", triggerCondition: "주자 2루 또는 3루", effectText: "득점권 멘탈과 제구가 상승합니다.", stackType: "unique", synergyTags: ["득점권"], effects: { scoringControl: 5, scoringQuality: 4 } },
+  { id: "K007", rarity: "core", name: "배합 배신", type: ["심리전", "구종 운영"], description: "앞선 두 공과 다른 흐름으로 타자의 기다림을 끊습니다.", triggerCondition: "직전 2구와 다른 계열", effectText: "직전 2구와 다른 계열로 타자의 기다림을 흔듭니다.", stackType: "unique", synergyTags: ["배합"], effects: { patternBreaker: 1 } },
+  { id: "K008", rarity: "core", name: "결승구 설계", type: ["구종 운영", "보상 강화"], description: "2스트라이크 이후 삼진을 잡을수록 보상 흐름이 좋아집니다.", triggerCondition: "2스트 이후 삼진", effectText: "2스트 이후 삼진 시 희귀 카드 선택지가 추가됩니다.", stackType: "unique", synergyTags: ["삼진", "보상"], effects: { twoStrikeGuaranteedRare: 1 } }
+];
+
+MP.dugoutChoiceCatalog = [
+  { id: "pitch_check", category: "안정형", title: "구종 점검", desc: "다음 이닝 동안 가장 피로도가 쌓인 구종의 부담 증가가 줄고, 같은 공 재요구도 조금 숨깁니다.", effects: { burdenControl: 0.8, repeatSuspicionMult: 0.92, samePitchCall: 1 } },
+  { id: "breaking_tune", category: "안정형", title: "변화구 감각 정비", desc: "다음 이닝 변화구 계열의 손끝 감각이 좋아지고, 빠른 공 뒤 느린 공 연결이 살아납니다.", effects: { breakingQuality: 4, slowAfterFastBoost: 0.1 } },
+  { id: "fastball_reset", category: "안정형", title: "빠른 공 재정비", desc: "다음 이닝 포심, 투심, 커터를 존 끝에 붙이기 쉽고 초구 압박이 살아납니다.", effects: { fastControl: 5, firstStrikePressure: 1 } },
+  { id: "catcher_lead", category: "안정형", title: "포수 리드 강화", desc: "다음 이닝 포수 사인으로 직전 공의 의식을 더 오래 살리고, 반복 패턴을 조금 숨깁니다.", effects: { suspicionMult: 0.88, impressionBonus: 0.12, samePitchCall: 1 } },
+  { id: "breath_reset", category: "안정형", title: "첫 타자 호흡 정리", desc: "이닝 첫 타자를 상대로 급하게 들어가지 않습니다. 첫 승부에서 타자가 배합을 바로 좁히지 못합니다.", effects: { firstBatterSuspicion: -10 } },
+  { id: "batter_analysis", category: "분석형", title: "타자 반응 체크", desc: "다음 이닝 첫 타자의 공략 보조태그 후보를 2개 확인하고 초구 반응을 더 잘 읽습니다.", effects: { candidateNextFirstWeakness: 2, reactionCheckBoost: 0.35 } },
+  { id: "rival_analysis", category: "분석형", title: "라이벌 사전 분석", desc: "라이벌 타자의 공략 보조태그 1개를 공개합니다.", effects: { revealRivalWeakness: 1 } },
+  { id: "course_analysis", category: "분석형", title: "코스 반응 분석", desc: "다음 이닝 첫 타자의 코스 단서 후보를 2개 확인하고 파울 코스를 더 잘 읽습니다.", effects: { candidateCourseWeakness: 2, courseReadBoost: 0.3 } },
+  { id: "deep_outfield", category: "안정형", title: "외야 깊게 수비", desc: "다음 이닝 장타를 줄이는 대신 약한 안타 위험은 조금 늘어납니다.", effects: { longHitGuard: 1, singleRisk: 0.1 } },
+  { id: "perfect_challenge", category: "도박형", title: "완벽 이닝 도전", desc: "무실점이면 희귀 보상 흐름이 열리고, 실점하면 다음 타자가 같은 흐름을 더 빨리 기다립니다.", effects: { scorelessGuaranteedRare: 1, scorelessRiskSuspicion: 15 } },
+  { id: "aggressive_call", category: "도박형", title: "선제 압박 운영", desc: "이닝 미션을 달성하면 보상 흐름이 넓어집니다. 초구 스트라이크는 강해지지만, 초구 볼은 바로 읽힙니다.", effects: { missionChoiceBonus: 1, firstBatterSuspicion: 8, firstStrikePressure: 1, firstStrikeRiskSuspicion: 8 } },
+  { id: "rival_duel_call", category: "특수형", title: "라이벌 정면승부 선언", desc: "위험 타자를 장타 없이 막으면 핵심 보상이 열리고, 장타를 맞으면 등급이 흔들립니다.", effects: { rivalCoreChoiceBonus: 1, rivalRisk: 1 }, requiresNextInningThreat: true }
+];
 
 MP.GAME_TIMING = {
   timingFeedbackDelay: 430,
@@ -129,7 +384,30 @@ MP.GAME_TIMING = {
   stageOverlayLong: 2200
 };
 
+MP.suspicionStageMultipliers = [0.8, 1, 1.2];
+MP.batterMindStageMultipliers = [0.7, 1, 1.12];
+MP.suspicionPatternValues = {
+  samePitch: 12,
+  sameFamily: 7,
+  sameZone: 6,
+  sameHeight: 4,
+  sameIntent: 4,
+  targetMatch: 15,
+  mistake: 10,
+  exactRepeat: 10
+};
+
+MP.BATTER_MIND_LIMITS = {
+  timing: [0, 100],
+  confidence: [0, 100],
+  confusion: [0, 100],
+  pressure: [0, 100],
+  plateAware: [0, 100]
+};
+
 MP.SCREEN_PHASE = {
+  title: "title",
+  tutorial: "tutorial",
   pitcherSelect: "pitcherSelect",
   pitching: "pitching",
   reward: "reward",
@@ -217,105 +495,105 @@ MP.pitcherProfiles = [
 MP.pitcherTagCatalog = [
   {
     id: "power_fastball",
-    name: "강속구형",
+    name: "빠른 공 압박",
     type: "base",
-    description: "빠른 공 계열의 구위가 조금 강해집니다.",
+    description: "빠른 공으로 타자를 늦게 만들기 좋습니다.",
     effects: { fastQualityBonus: 3 },
     profiles: ["power"]
   },
   {
     id: "breaking_master",
-    name: "변화구 장인",
+    name: "꺾이는 공의 감각",
     type: "base",
-    description: "변화구와 느린공 계열의 헛스윙 유도가 좋아집니다.",
+    description: "변화구와 느린 공으로 타이밍을 흔드는 데 강합니다.",
     effects: { secondaryQualityBonus: 2, whiffBonus: 0.03 },
     profiles: ["breaking"]
   },
   {
     id: "command_artist",
-    name: "제구형 투수",
+    name: "코너워크",
     type: "base",
-    description: "스트라이크 승부의 제구 흔들림이 조금 줄어듭니다.",
+    description: "존 끝에 붙이는 능력이 좋습니다. 볼넷보다 루킹 승부에 강합니다.",
     effects: { strikeControlBonus: 3 },
     profiles: ["command"]
   },
   {
     id: "balanced_pitcher",
-    name: "균형형 투수",
+    name: "안정 운영",
     type: "base",
-    description: "동점 카운트에서 구위가 조금 안정됩니다.",
+    description: "한쪽에 치우치지 않고 카운트 운영이 안정적입니다.",
     effects: { evenCountQualityBonus: 2 },
     profiles: ["balanced"]
   },
   {
     id: "two_strike_specialist",
-    name: "2스트 특화",
+    name: "몰아넣은 뒤 강함",
     type: "bonus",
-    description: "2스트라이크 이후 삼진을 노릴 때 공의 힘이 좋아집니다.",
+    description: "2스트라이크 이후 결정구의 힘이 좋아집니다.",
     effects: { twoStrikeQualityBonus: 4, twoStrikeContactPenalty: 0.05 },
     profiles: ["power", "command"]
   },
   {
     id: "low_zone_master",
-    name: "낮은 코스 장인",
+    name: "낮게 누르기",
     type: "bonus",
-    description: "낮은 코스 투구의 제구가 좋아집니다.",
+    description: "낮은 코스로 타구를 누르는 데 강합니다.",
     effects: { lowZoneControlBonus: 6 },
     profiles: ["breaking", "balanced"]
   },
   {
     id: "outside_control",
-    name: "바깥쪽 제구",
+    name: "바깥 코너 제구",
     type: "bonus",
-    description: "바깥쪽 승부의 제구가 좋아집니다.",
+    description: "바깥쪽 승부가 안정적입니다. 파울과 약한 타구를 유도하기 좋습니다.",
     effects: { outsideControlBonus: 6 },
     profiles: ["command", "balanced"]
   },
   {
     id: "whiff_boost",
-    name: "헛스윙 유도",
+    name: "배트 끌어내기",
     type: "bonus",
-    description: "변화구와 유인구에 배트가 나올 확률이 조금 올라갑니다.",
+    description: "변화구와 유인구로 스윙을 끌어내는 능력이 좋습니다.",
     effects: { whiffBonus: 0.06, chaseBonus: 0.04 },
     profiles: ["breaking"]
   },
   {
     id: "groundball_inducer",
-    name: "땅볼 유도",
+    name: "땅볼 설계",
     type: "bonus",
-    description: "낮은 코스 인플레이에서 땅볼과 병살 가능성이 올라갑니다.",
+    description: "낮은 공으로 땅볼과 병살 흐름을 만들기 좋습니다.",
     effects: { groundballBonus: 0.12, lowContactQualityPenalty: 5 },
     profiles: ["breaking", "command"]
   },
   {
     id: "mental_recovery",
-    name: "멘탈 회복",
+    name: "위기 호흡",
     type: "bonus",
-    description: "주자가 있을 때 멘탈 부담이 조금 줄어듭니다.",
+    description: "주자가 있어도 흔들림이 적습니다.",
     effects: { pressureReduce: 4 },
     profiles: ["balanced", "command"]
   },
   {
     id: "first_pitch_edge",
-    name: "초구 강세",
+    name: "첫 공 선점",
     type: "bonus",
-    description: "타석 첫 구의 제구와 구위가 좋아집니다.",
+    description: "타석 첫 공으로 카운트를 가져오기 쉽습니다.",
     effects: { firstPitchControlBonus: 4, firstPitchQualityBonus: 3 },
     profiles: ["power", "balanced"]
   },
   {
     id: "homerun_risk",
-    name: "장타 위험",
+    name: "실투 장타 위험",
     type: "weakness",
-    description: "실투가 몰리면 장타 위험이 커질 수 있습니다.",
+    description: "몰린 공이 나오면 장타 위험이 큽니다.",
     revealCondition: "allowHomerun",
     effects: { mistakeHomerunRisk: 8 }
   },
   {
     id: "walk_risk",
-    name: "볼넷 위험",
+    name: "볼넷 흔들림",
     type: "weakness",
-    description: "볼넷이 쌓이면 흔들릴 수 있습니다.",
+    description: "볼넷이 쌓이면 손끝이 흔들릴 수 있습니다.",
     revealCondition: "allowWalk",
     effects: { walkPressure: 4 }
   },
@@ -331,7 +609,7 @@ MP.pitcherTagCatalog = [
     id: "pressure_wobble",
     name: "위기 흔들림",
     type: "weakness",
-    description: "주자가 쌓이면 제구 흔들림이 커질 수 있습니다.",
+    description: "주자가 쌓이면 제구가 흔들릴 수 있습니다.",
     revealCondition: "consecutiveOnBase",
     effects: { pressurePenalty: 4 }
   },
@@ -339,39 +617,39 @@ MP.pitcherTagCatalog = [
     id: "inside_cheese",
     name: "몸쪽 위협",
     type: "bonus",
-    description: "몸쪽 승부 제구가 좋아지고 위협구가 더 효과적입니다.",
+    description: "몸쪽 승부가 좋고 위협구로 타자를 불편하게 만들 수 있습니다.",
     effects: { insideControlBonus: 4, brushContactPenalty: 3 },
     profiles: ["power", "command"]
   },
   {
     id: "high_fast_lift",
-    name: "고속 직구 위",
+    name: "하이존 압박",
     type: "bonus",
-    description: "높은 존 강속구의 구위와 헛스윙 유도가 좋아집니다.",
+    description: "높은 빠른 공으로 배트 궤적 위를 찌르는 데 강합니다.",
     effects: { highFastQualityBonus: 3, highFastWhiffBonus: 0.04 },
     profiles: ["power"]
   },
   {
     id: "full_count_command",
-    name: "풀카운트 제구",
+    name: "끝까지 코너워크",
     type: "bonus",
-    description: "풀카운트 스트라이크 승부의 제구가 안정됩니다.",
+    description: "풀카운트에서도 존 끝을 노릴 수 있습니다.",
     effects: { fullCountControlBonus: 5, fullCountWalkReduce: 2 },
     profiles: ["command", "balanced"]
   },
   {
     id: "pattern_shuffler",
-    name: "배합 교란",
+    name: "흐름 섞기",
     type: "bonus",
-    description: "구종·계열을 섞을 때 타자의 의심이 더 빨리 풀립니다.",
+    description: "구종과 계열을 섞을 때 타자의 간파도를 더 빨리 낮춥니다.",
     effects: { mixSuspicionBonus: 2 },
     profiles: ["breaking", "balanced"]
   },
   {
     id: "texas_suppress",
-    name: "약타 억제",
+    name: "빗맞은 안타 감소",
     type: "bonus",
-    description: "완전히 속인 타자의 약한 안타 확률을 줄입니다.",
+    description: "완전히 속인 타구가 운 좋게 떨어질 확률을 줄입니다.",
     effects: { texasHitSuppress: 0.06 },
     profiles: ["command", "breaking"]
   }
@@ -380,97 +658,98 @@ MP.pitcherTagCatalog = [
 MP.coreTagCatalog = [
   {
     id: "core_high_fastballer",
-    name: "하이볼러",
+    name: "하이존 압박",
     family: "삼진계",
-    description: "높은 코스에 강속구를 던지면 구위가 오르고 헛스윙 유도가 쉬워집니다. 강속구 전반의 위력도 조금 강해집니다.",
+    description: "높은 빠른 공으로 배트 궤적 위를 찌릅니다. 단, 반복하면 장타 위험이 커집니다.",
     effects: { highFastQualityBonus: 2, highFastWhiffBonus: 0.03, fastQualityBonus: 1 },
     profiles: ["power", "command"]
   },
   {
     id: "core_groundball_architect",
-    name: "땅볼설계",
+    name: "낮게 누르는 설계",
     family: "땅볼계",
-    description: "낮은 코스로 승부하면 땅볼 유도 확률이 오르고, 낮은 공에 맞은 타구는 위력이 약해집니다.",
+    description: "낮은 코스로 타구를 눌러 병살과 약한 땅볼을 노립니다.",
     effects: { groundballBonus: 0.08, lowContactQualityPenalty: 3 },
     profiles: ["breaking", "command"]
   },
   {
     id: "core_tempo_master",
-    name: "완급지배",
+    name: "속도차 지배",
     family: "완급계",
-    description: "변화구·느린공의 구위가 오르고, 빠른 공과 번갈아 던질 때 헛스윙 확률이 조금 올라갑니다.",
+    description: "빠른 공과 느린 공의 간격으로 타자의 기준 타이밍을 흔듭니다.",
     effects: { secondaryQualityBonus: 2, whiffBonus: 0.02 },
     profiles: ["breaking", "balanced"]
   },
   {
     id: "core_breaking_maestro",
-    name: "마구장인",
+    name: "궤적 지배",
     family: "삼진계",
-    description: "변화구의 구위가 크게 오르고, 결정구로 헛스윙을 잡아낼 확률이 높아집니다.",
+    description: "변화구 궤적으로 타자의 판단을 늦추고 헛스윙을 노립니다.",
     effects: { secondaryQualityBonus: 3, whiffBonus: 0.03 },
     profiles: ["breaking"]
   },
   {
     id: "core_corner_artist",
-    name: "칼제구",
+    name: "코너 잠금",
     family: "제구계",
-    description: "스트라이크 존 제구가 정밀해지고, 특히 바깥쪽 코너 제구가 좋아져 볼카운트를 유리하게 끌고 갑니다.",
+    description: "존 끝을 안정적으로 공략해 볼카운트를 유리하게 가져갑니다.",
     effects: { strikeControlBonus: 3, outsideControlBonus: 3 },
     profiles: ["command", "balanced"]
   },
   {
     id: "core_bait_designer",
-    name: "낚시꾼",
+    name: "미끼 설계",
     family: "심리계",
-    description: "유인구·낚시 볼에 타자가 따라 나와 헛스윙할 확률이 오르고, 구종 배합으로 타자의 의심을 키웁니다.",
+    description: "유인구와 보여주는 공으로 타자의 배트를 끌어냅니다.",
     effects: { chaseBonus: 0.03, mixSuspicionBonus: 1 },
     profiles: ["breaking", "balanced"]
   },
   {
     id: "core_counter_pitcher",
-    name: "수싸움",
+    name: "노림수 역이용",
     family: "심리계",
-    description: "타자가 노린 구종을 역으로 찔렀을 때 타구 위력을 크게 떨어뜨리고, 배합으로 의심을 키웁니다.",
+    description: "타자가 기다리는 흐름을 읽고 반대로 찔러 타구 힘을 떨어뜨립니다.",
     effects: { counterContactPenalty: 4, mixSuspicionBonus: 1 },
     profiles: ["command", "breaking"]
   },
   {
     id: "core_clutch_pitcher",
-    name: "강심장",
+    name: "위기 제압",
     family: "멘탈/운영계",
-    description: "득점권 등 위기 상황에서 받는 압박이 줄어 제구·멘탈이 흔들리지 않고, 풀카운트 제구도 안정됩니다.",
+    description: "득점권과 풀카운트에서도 흔들림을 줄입니다.",
     effects: { pressureReduce: 5, fullCountControlBonus: 2 },
     profiles: ["balanced", "command"]
   },
   {
     id: "core_first_pitch_pressure",
-    name: "기선제압",
+    name: "첫 공 압박",
     family: "제구계",
-    description: "타석 첫 공의 제구와 구위가 크게 올라, 초구 스트라이크로 카운트를 선점하기 쉬워집니다.",
+    description: "타석 첫 공으로 카운트와 심리 주도권을 가져옵니다.",
     effects: { firstPitchControlBonus: 4, firstPitchQualityBonus: 3 },
     profiles: ["power", "balanced"]
   },
   {
     id: "core_cutter_softcontact",
-    name: "정타봉쇄",
+    name: "배트 중심 회피",
     family: "땅볼계",
-    description: "커터·투심으로 몸쪽·낮은 코스를 공략하면 정타를 억제해, 맞아도 약한 타구로 만듭니다.",
+    description: "커터와 투심으로 정타를 피하고 약한 타구를 만듭니다.",
     effects: { brushContactPenalty: 2, lowContactQualityPenalty: 2 },
+    requiredAllPitchIds: ["cutter", "two"],
     profiles: ["command", "power"]
   },
   {
     id: "core_finisher_collector",
-    name: "필살구",
+    name: "마지막 공 설계",
     family: "삼진계",
-    description: "2스트라이크 이후 결정구의 구위가 오르고 타자의 정타 확률이 떨어져, 삼진을 잡기 쉬워집니다.",
+    description: "2스트라이크 이후 결정구로 삼진을 잡는 데 강합니다.",
     effects: { twoStrikeQualityBonus: 3, twoStrikeContactPenalty: 0.04 },
     profiles: ["power", "breaking"]
   },
   {
     id: "core_game_manager",
-    name: "판짜기",
+    name: "이닝 운영자",
     family: "멘탈/운영계",
-    description: "동점 카운트에서 구위가 오르고 풀카운트 볼넷이 줄며, 위기 압박도 조금 줄어 안정적으로 운영합니다.",
+    description: "카운트와 위기를 안정적으로 관리해 큰 흐름을 지킵니다.",
     effects: { evenCountQualityBonus: 2, fullCountWalkReduce: 1, pressureReduce: 2 },
     profiles: ["balanced", "command"]
   }
@@ -501,16 +780,16 @@ MP.coreEvolutionPatternSets = {
 
 MP.coreEvolutionCatalog = [
   { id: "evo_hf_top_pressure", coreTagId: "core_high_fastballer", name: "상단압박", icon: "target", role: "canonical", condition: "높은 코스 강속구", effectText: "헛스윙↑, 장타 위험 소폭↑", operation: "높은 직구로 찍어누르는 운영", when: { highFast: true }, effects: { highFastWhiffBonus: 0.04, highFastQualityBonus: 2, mistakeHomerunRisk: 2 } },
-  { id: "evo_hf_fast_imprint", coreTagId: "core_high_fastballer", name: "직구각인", icon: "bolt", role: "synergy", condition: "높은 강속구 성공 후", effectText: "다음 변화구 속임↑", operation: "직구 후 변화구로 마무리", when: { afterHighFast: true }, effects: { mixSuspicionBonus: 1, secondaryQualityBonus: 2 } },
+  { id: "evo_hf_fast_imprint", coreTagId: "core_high_fastballer", name: "직구 의식", icon: "bolt", role: "synergy", condition: "높은 강속구 성공 후", effectText: "다음 변화구 타이밍 흔듦↑", operation: "직구 후 변화구로 마무리", when: { afterHighFast: true }, effects: { mixSuspicionBonus: 1, secondaryQualityBonus: 2 } },
   { id: "evo_hf_power_finish", coreTagId: "core_high_fastballer", name: "파워피니시", icon: "bolt", role: "risk", condition: "2스트 높은 강속구", effectText: "결정구 위력↑, 부담↑ 시 감소", operation: "2스트에서 위로 끝내기", when: { twoStrike: true, highFast: true }, effects: { twoStrikeQualityBonus: 3, highFastWhiffBonus: 0.03 } },
   { id: "evo_hf_bait_look", coreTagId: "core_high_fastballer", name: "시선끌기", icon: "hook", role: "psych", condition: "높은 공 후 낮은 변화구", effectText: "낮은 변화구 효과↑", operation: "높은 공 보여주고 아래로", when: { afterHigh: true, secondary: true }, effects: { secondaryQualityBonus: 2, whiffBonus: 0.02 } },
   { id: "evo_hf_speed_gamble", coreTagId: "core_high_fastballer", name: "강속승부", icon: "bolt", role: "risk", condition: "강속구 계열", effectText: "구위↑, 노림 일치 시 장타↑", operation: "속도로 밀어붙이는 고위험 운영", when: { fast: true }, effects: { fastQualityBonus: 2, mistakeHomerunRisk: 3 } },
   { id: "evo_bm_angle_up", coreTagId: "core_breaking_maestro", name: "각도강화", icon: "target", role: "canonical", condition: "변화구 계열", effectText: "헛스윙·타이밍 교란↑", operation: "변화구 각도로 흔들기", when: { secondary: true }, effects: { secondaryQualityBonus: 3, whiffBonus: 0.03 } },
-  { id: "evo_bm_hide_path", coreTagId: "core_breaking_maestro", name: "궤적은폐", icon: "cycle", role: "psych", condition: "변화구 반복 시", effectText: "의심 상승 완화", operation: "같은 변화구를 숨기듯 던지기", when: { secondary: true }, effects: { mixSuspicionBonus: 1 } },
+  { id: "evo_bm_hide_path", coreTagId: "core_breaking_maestro", name: "궤적은폐", icon: "cycle", role: "psych", condition: "변화구 반복 시", effectText: "반복 흐름 완화", operation: "같은 변화구를 숨기듯 던지기", when: { secondary: true }, effects: { mixSuspicionBonus: 1 } },
   { id: "evo_bm_k_finish", coreTagId: "core_breaking_maestro", name: "결정낙차", icon: "bolt", role: "canonical", condition: "2스트 변화구", effectText: "유인·헛스윙↑", operation: "2스트에서 낙차로 끝내기", when: { twoStrike: true, secondary: true }, effects: { twoStrikeQualityBonus: 3, whiffBonus: 0.03 } },
   { id: "evo_bm_whiff_angle", coreTagId: "core_breaking_maestro", name: "헛스윙각", icon: "bolt", role: "risk", condition: "변화구 유인", effectText: "헛스윙↑, 실투 시 장타↑", operation: "과감한 변화구 승부", when: { secondary: true }, effects: { whiffBonus: 0.04, mistakeHomerunRisk: 2 } },
-  { id: "evo_bm_speed_illusion", coreTagId: "core_breaking_maestro", name: "속도착시", icon: "cycle", role: "synergy", condition: "변화구 성공 후 강속구", effectText: "다음 강속구 속임↑", operation: "느린 뒤 빠른 공으로 교란", when: { afterSecondary: true, fast: true }, effects: { fastQualityBonus: 2, mixSuspicionBonus: 1 } },
-  { id: "evo_fc_decide_imprint", coreTagId: "core_finisher_collector", name: "결정각인", icon: "bolt", role: "canonical", condition: "2스트 결정구", effectText: "최고 레벨 구종 위력↑", operation: "2스트에서 최고 구종으로", when: { twoStrike: true }, effects: { twoStrikeQualityBonus: 4, twoStrikeContactPenalty: 0.04 } },
+  { id: "evo_bm_speed_illusion", coreTagId: "core_breaking_maestro", name: "속도착시", icon: "cycle", role: "synergy", condition: "변화구 성공 후 강속구", effectText: "다음 강속구 타이밍 흔듦↑", operation: "느린 뒤 빠른 공으로 교란", when: { afterSecondary: true, fast: true }, effects: { fastQualityBonus: 2, mixSuspicionBonus: 1 } },
+  { id: "evo_fc_decide_imprint", coreTagId: "core_finisher_collector", name: "결정구 집중", icon: "bolt", role: "canonical", condition: "2스트 결정구", effectText: "최고 레벨 구종 위력↑", operation: "2스트에서 최고 구종으로", when: { twoStrike: true }, effects: { twoStrikeQualityBonus: 4, twoStrikeContactPenalty: 0.04 } },
   { id: "evo_fc_final_gamble", coreTagId: "core_finisher_collector", name: "끝장승부", icon: "bolt", role: "risk", condition: "2스트", effectText: "헛스윙↑, 실패 시 위험↑", operation: "한 방에 끝내기", when: { twoStrike: true }, effects: { whiffBonus: 0.04, twoStrikeContactPenalty: 0.02, mistakeHomerunRisk: 2 } },
   { id: "evo_fc_burden_care", coreTagId: "core_finisher_collector", name: "부담관리", icon: "shield", role: "burden", condition: "2스트 결정구", effectText: "부담도 증가량↓", operation: "결정구를 아껴 쓰기", when: { twoStrike: true }, effects: { twoStrikeQualityBonus: 1 } },
   { id: "evo_fc_closer_sense", coreTagId: "core_finisher_collector", name: "마무리감", icon: "scales", role: "operation", condition: "2스트", effectText: "제구 안정, 삼진 보상↑", operation: "차분히 삼진 잡기", when: { twoStrike: true }, effects: { twoStrikeQualityBonus: 2, strikeControlBonus: 2 } },
@@ -531,33 +810,33 @@ MP.coreEvolutionCatalog = [
   { id: "evo_ca_outside_fight", coreTagId: "core_corner_artist", name: "바깥승부", icon: "target", role: "operation", condition: "바깥 스트", effectText: "바깥 제구↑", operation: "바깥 코너 승부", when: { outside: true, strike: true }, effects: { outsideControlBonus: 4 } },
   { id: "evo_ca_zone_manage", coreTagId: "core_corner_artist", name: "존관리", icon: "scales", role: "burden", condition: "연속 볼 후", effectText: "스트 제구 회복", operation: "장기전 존 관리", when: { behindCount: true }, effects: { strikeControlBonus: 2, fullCountControlBonus: 2 } },
   { id: "evo_fp_first_edge", coreTagId: "core_first_pitch_pressure", name: "초구선점", icon: "target", role: "canonical", condition: "0-0", effectText: "스트 의도 제구↑", operation: "첫 공부터 스트라이크", when: { firstPitch: true }, effects: { firstPitchControlBonus: 4, firstPitchQualityBonus: 3 } },
-  { id: "evo_fp_open_push", coreTagId: "core_first_pitch_pressure", name: "첫공압박", icon: "bolt", role: "synergy", condition: "초구 스트 성공", effectText: "다음 공 속임↑", operation: "초구 성공 후 이어치기", when: { afterFirstStrike: true }, effects: { mixSuspicionBonus: 1, secondaryQualityBonus: 1 } },
-  { id: "evo_fp_first_bait", coreTagId: "core_first_pitch_pressure", name: "초구미끼", icon: "hook", role: "psych", condition: "초구 볼 후 스트", effectText: "속임↑", operation: "볼 보여주고 스트", when: { ballIntentSwitch: true }, effects: { chaseBonus: 0.02, strikeControlBonus: 2 } },
-  { id: "evo_fp_preempt", coreTagId: "core_first_pitch_pressure", name: "선제공략", icon: "cycle", role: "operation", condition: "초구 스트", effectText: "타자 의심↑", operation: "초구로 심리 선점", when: { firstPitch: true, strike: true }, effects: { mixSuspicionBonus: 1, firstPitchQualityBonus: 2 } },
+  { id: "evo_fp_open_push", coreTagId: "core_first_pitch_pressure", name: "첫공압박", icon: "bolt", role: "synergy", condition: "초구 스트 성공", effectText: "다음 공 타이밍 흔듦↑", operation: "초구 성공 후 이어치기", when: { afterFirstStrike: true }, effects: { mixSuspicionBonus: 1, secondaryQualityBonus: 1 } },
+  { id: "evo_fp_first_bait", coreTagId: "core_first_pitch_pressure", name: "초구미끼", icon: "hook", role: "psych", condition: "초구 볼 후 스트", effectText: "타이밍 흔듦↑", operation: "볼 보여주고 스트", when: { ballIntentSwitch: true }, effects: { chaseBonus: 0.02, strikeControlBonus: 2 } },
+  { id: "evo_fp_preempt", coreTagId: "core_first_pitch_pressure", name: "선제공략", icon: "cycle", role: "operation", condition: "초구 스트", effectText: "초구 흐름 선점", operation: "초구로 심리 선점", when: { firstPitch: true, strike: true }, effects: { mixSuspicionBonus: 1, firstPitchQualityBonus: 2 } },
   { id: "evo_fp_fast_count", coreTagId: "core_first_pitch_pressure", name: "빠른카운트", icon: "shield", role: "burden", condition: "0-1 이후", effectText: "부담 증가↓", operation: "빠르게 카운트 진행", when: { aheadEarly: true }, effects: { evenCountQualityBonus: 1 } },
   { id: "evo_bd_chase_up", coreTagId: "core_bait_designer", name: "유인강화", icon: "hook", role: "canonical", condition: "존 밖 근처", effectText: "유인 스윙↑", operation: "볼 근처로 끌어내기", when: { chaseZone: true }, effects: { chaseBonus: 0.04, whiffBonus: 0.02 } },
-  { id: "evo_bd_bait_recall", coreTagId: "core_bait_designer", name: "미끼회수", icon: "cycle", role: "synergy", condition: "볼 후 스트", effectText: "속임↑", operation: "미끼 후 회수", when: { ballIntentSwitch: true }, effects: { mixSuspicionBonus: 1, strikeControlBonus: 2 } },
+  { id: "evo_bd_bait_recall", coreTagId: "core_bait_designer", name: "미끼회수", icon: "cycle", role: "synergy", condition: "볼 후 스트", effectText: "타이밍 흔듦↑", operation: "미끼 후 회수", when: { ballIntentSwitch: true }, effects: { mixSuspicionBonus: 1, strikeControlBonus: 2 } },
   { id: "evo_bd_walk_care", coreTagId: "core_bait_designer", name: "볼넷관리", icon: "scales", role: "weakness", condition: "유인 실패 후", effectText: "다음 스트 제구↑", operation: "볼넷 막기", when: { behindCount: true }, effects: { strikeControlBonus: 2, fullCountWalkReduce: 1 } },
   { id: "evo_bd_whiff_trap", coreTagId: "core_bait_designer", name: "헛스윙덫", icon: "hook", role: "risk", condition: "유인구", effectText: "헛스윙↑, 3볼↓", operation: "과감한 유인", when: { chaseZone: true }, effects: { chaseBonus: 0.05, whiffBonus: 0.03 } },
-  { id: "evo_bd_eye_lead", coreTagId: "core_bait_designer", name: "시선유도", icon: "cycle", role: "psych", condition: "보여주기 볼 후", effectText: "반대 코스 속임↑", operation: "시선 끌고 반대로", when: { ballIntentSwitch: true }, effects: { mixSuspicionBonus: 2, chaseBonus: 0.02 } },
-  { id: "evo_cp_read_break", coreTagId: "core_counter_pitcher", name: "노림파괴", icon: "target", role: "canonical", condition: "역노림 성공", effectText: "타구 품질↓", operation: "읽힘 역이용", when: { counterPitch: true }, effects: { counterContactPenalty: 5, mixSuspicionBonus: 1 } },
-  { id: "evo_cp_reverse_flow", coreTagId: "core_counter_pitcher", name: "역류승부", icon: "cycle", role: "psych", condition: "의심 60+", effectText: "다른 계열 속임↑", operation: "고의심 역공", when: { highSuspicion: true, categorySwitch: true }, effects: { mixSuspicionBonus: 2, secondaryQualityBonus: 2 } },
-  { id: "evo_cp_pattern_cut", coreTagId: "core_counter_pitcher", name: "패턴절단", icon: "shield", role: "weakness", condition: "패턴 노출 후", effectText: "의심 상승 완화", operation: "패턴 끊고 안정", when: { categorySwitch: true }, effects: { mixSuspicionBonus: 1 } },
-  { id: "evo_cp_false_seed", coreTagId: "core_counter_pitcher", name: "허상심기", icon: "hook", role: "synergy", condition: "거짓 단서 후", effectText: "다음 공 속임↑", operation: "허상으로 흔들기", when: { afterFalseClue: true }, effects: { mixSuspicionBonus: 2, chaseBonus: 0.02 } },
-  { id: "evo_cp_read_counter", coreTagId: "core_counter_pitcher", name: "읽힘역공", icon: "bolt", role: "risk", condition: "패턴 노출 역계열", effectText: "성공 시 큰 보너스", operation: "읽혔을 때 역공", when: { counterPitch: true, patternExposed: true }, effects: { counterContactPenalty: 6, whiffBonus: 0.03 } },
+  { id: "evo_bd_eye_lead", coreTagId: "core_bait_designer", name: "시선유도", icon: "cycle", role: "psych", condition: "보여주기 볼 후", effectText: "반대 코스 타이밍 흔듦↑", operation: "시선 끌고 반대로", when: { ballIntentSwitch: true }, effects: { mixSuspicionBonus: 2, chaseBonus: 0.02 } },
+  { id: "evo_cp_read_break", coreTagId: "core_counter_pitcher", name: "노림파괴", icon: "target", role: "canonical", condition: "역노림 성공", effectText: "타구 품질↓", operation: "노림수 역이용", when: { counterPitch: true }, effects: { counterContactPenalty: 5, mixSuspicionBonus: 1 } },
+  { id: "evo_cp_reverse_flow", coreTagId: "core_counter_pitcher", name: "역류승부", icon: "cycle", role: "psych", condition: "간파도 60+", effectText: "다른 계열 타이밍 흔듦↑", operation: "높은 간파도 역공", when: { highSuspicion: true, categorySwitch: true }, effects: { mixSuspicionBonus: 2, secondaryQualityBonus: 2 } },
+  { id: "evo_cp_pattern_cut", coreTagId: "core_counter_pitcher", name: "패턴절단", icon: "shield", role: "weakness", condition: "패턴 노출 후", effectText: "반복 흐름 완화", operation: "패턴 끊고 안정", when: { categorySwitch: true }, effects: { mixSuspicionBonus: 1 } },
+  { id: "evo_cp_false_seed", coreTagId: "core_counter_pitcher", name: "허상심기", icon: "hook", role: "synergy", condition: "거짓 단서 후", effectText: "다음 공 타이밍 흔듦↑", operation: "허상으로 흔들기", when: { afterFalseClue: true }, effects: { mixSuspicionBonus: 2, chaseBonus: 0.02 } },
+  { id: "evo_cp_read_counter", coreTagId: "core_counter_pitcher", name: "노림수역공", icon: "bolt", role: "risk", condition: "패턴 노출 역계열", effectText: "성공 시 큰 보너스", operation: "간파당했을 때 역공", when: { counterPitch: true, patternExposed: true }, effects: { counterContactPenalty: 6, whiffBonus: 0.03 } },
   { id: "evo_cl_crisis_block", coreTagId: "core_clutch_pitcher", name: "위기봉쇄", icon: "shield", role: "canonical", condition: "득점권", effectText: "실투↓", operation: "득점권에서 버티기", when: { scoring: true }, effects: { pressureReduce: 5, strikeControlBonus: 2 } },
   { id: "evo_cl_full_gamble", coreTagId: "core_clutch_pitcher", name: "승부수", icon: "scales", role: "operation", condition: "3-2 풀카운트", effectText: "스트 제구↑, 볼넷↓", operation: "도망가지 않는 존 승부", when: { fullCount: true, strike: true }, effects: { fullCountControlBonus: 4, fullCountWalkReduce: 2 } },
   { id: "evo_cl_clutch_engine", coreTagId: "core_clutch_pitcher", name: "클러치엔진", icon: "bolt", role: "risk", condition: "주자 + 결정구", effectText: "결정구↑, 실패 시 부담↑", operation: "위기에서 한 방", when: { runners: true, twoStrike: true }, effects: { twoStrikeQualityBonus: 3, pressureReduce: 3 } },
   { id: "evo_cl_runner_bind", coreTagId: "core_clutch_pitcher", name: "주자묶기", icon: "shield", role: "weakness", condition: "주자 있음", effectText: "장타 위험↓", operation: "주자 묶는 보수 운영", when: { runners: true }, effects: { pressureReduce: 3, lowContactQualityPenalty: 2 } },
   { id: "evo_cl_mental_reset", coreTagId: "core_clutch_pitcher", name: "멘탈회복", icon: "scales", role: "burden", condition: "실점 직후", effectText: "제구 흔들림 완화", operation: "실점 후 바로 회복", when: { afterRun: true }, effects: { pressureReduce: 4, strikeControlBonus: 2 } },
   { id: "evo_gm_tempo", coreTagId: "core_game_manager", name: "운영템포", icon: "scales", role: "canonical", condition: "동점 카운트", effectText: "구위·제구 소폭↑", operation: "동점에서 리듬 유지", when: { evenCount: true }, effects: { evenCountQualityBonus: 3, strikeControlBonus: 1 } },
-  { id: "evo_gm_flow_switch", coreTagId: "core_game_manager", name: "흐름전환", icon: "cycle", role: "psych", condition: "직전과 다른 계열", effectText: "속임↑", operation: "반복 패턴 끊기", when: { categorySwitch: true }, effects: { mixSuspicionBonus: 2, secondaryQualityBonus: 1, whiffBonus: 0.02 } },
+  { id: "evo_gm_flow_switch", coreTagId: "core_game_manager", name: "흐름전환", icon: "cycle", role: "psych", condition: "직전과 다른 계열", effectText: "타이밍 흔듦↑", operation: "반복 패턴 끊기", when: { categorySwitch: true }, effects: { mixSuspicionBonus: 2, secondaryQualityBonus: 1, whiffBonus: 0.02 } },
   { id: "evo_gm_inning_care", coreTagId: "core_game_manager", name: "이닝관리", icon: "shield", role: "burden", condition: "이닝 종료", effectText: "부담 회복↑", operation: "이닝마다 체력 분배", effects: { evenCountQualityBonus: 1 } },
   { id: "evo_gm_count_design", coreTagId: "core_game_manager", name: "카운트설계", icon: "target", role: "operation", condition: "1-1, 2-2", effectText: "카운터 효과↑", operation: "중립 카운트 설계", when: { evenCount: true }, effects: { evenCountQualityBonus: 2, mixSuspicionBonus: 1 } },
   { id: "evo_gm_stamina_split", coreTagId: "core_game_manager", name: "체력분배", icon: "shield", role: "burden", condition: "미사용 구종", effectText: "부담 회복↑", operation: "구종 로테이션", effects: { evenCountQualityBonus: 1, pressureReduce: 2 } },
   { id: "evo_tm_tempo_burst", coreTagId: "core_tempo_master", name: "완급폭발", icon: "bolt", role: "canonical", condition: "강속↔느린 교차", effectText: "교차 효과↑", operation: "속도 차로 흔들기", when: { categorySwitch: true }, effects: { whiffBonus: 0.03, secondaryQualityBonus: 2 } },
   { id: "evo_tm_timing_cut", coreTagId: "core_tempo_master", name: "타이밍절단", icon: "target", role: "synergy", condition: "타이밍 교란", effectText: "컨택 품질↓", operation: "타이밍 뺏기", when: { categorySwitch: true }, effects: { whiffBonus: 0.02, contactQuality: -3 } },
-  { id: "evo_tm_seq_press", coreTagId: "core_tempo_master", name: "시퀀스압박", icon: "cycle", role: "mastery", condition: "3구 내 계열 혼합", effectText: "의심 완화·속임↑", operation: "짧은 시퀀스 압박", when: { categorySwitch: true }, effects: { mixSuspicionBonus: 1, whiffBonus: 0.02 } },
+  { id: "evo_tm_seq_press", coreTagId: "core_tempo_master", name: "시퀀스압박", icon: "cycle", role: "mastery", condition: "3구 내 계열 혼합", effectText: "간파도 완화·타이밍 흔듦↑", operation: "짧은 시퀀스 압박", when: { categorySwitch: true }, effects: { mixSuspicionBonus: 1, whiffBonus: 0.02 } },
   { id: "evo_tm_speed_gap", coreTagId: "core_tempo_master", name: "속도낙차", icon: "bolt", role: "canonical", condition: "속도 차 클 때", effectText: "타이밍 교란↑", operation: "낙차 극대화", when: { categorySwitch: true }, effects: { secondaryQualityBonus: 2, whiffBonus: 0.03 } },
   { id: "evo_tm_slow_bait", coreTagId: "core_tempo_master", name: "완급미끼", icon: "hook", role: "psych", condition: "느린공 후 강속구", effectText: "헛스윙↑", operation: "느린 뒤 빠른 공", when: { afterSecondary: true, fast: true }, effects: { whiffBonus: 0.04, fastQualityBonus: 1 } }
 ];
@@ -565,81 +844,81 @@ MP.coreEvolutionCatalog = [
 MP.batterTagCatalog = [
   {
     id: "fast_killer",
-    name: "빠른공 킬러",
-    description: "강속구 계열에 배트가 빨리 나옵니다.",
+    name: "빠른 공 기준",
+    description: "빠른 공에 기준을 둡니다. 느린 공이나 궤적 변화로 흔들어야 합니다.",
     slotBoost: "middle",
     bossWeight: 2,
     weight: 1.2
   },
   {
     id: "breaking_weak",
-    name: "변화구 약점",
-    description: "변화구·느린공 타이밍을 자주 뺏깁니다.",
+    name: "궤적 흔들림",
+    description: "변화구와 느린 공에 타이밍을 자주 뺏깁니다.",
     slotBoost: "bottom",
     weight: 1.1
   },
   {
     id: "inside_weak",
-    name: "몸쪽 약함",
-    description: "몸쪽 스트라이크에 타이밍이 흔들립니다.",
+    name: "몸쪽 경직",
+    description: "몸쪽 스트라이크에 반응이 굳습니다.",
     slotBoost: "bottom",
     weight: 1
   },
   {
     id: "inside_punish",
-    name: "몸쪽 응징",
-    description: "몸쪽 실투를 강하게 받아칩니다.",
+    name: "몸쪽 실투 응징",
+    description: "몸쪽으로 몰리면 강하게 받아칩니다. 정확한 코스가 필요합니다.",
     slotBoost: "middle",
     bossWeight: 2,
     weight: 1
   },
   {
     id: "outside_chase_foul",
-    name: "바깥쪽 추격",
-    description: "바깥 공을 파울로 막아냅니다.",
+    name: "바깥쪽 커트",
+    description: "바깥 공을 파울로 버팁니다. 너무 단순한 바깥 승부는 길어집니다.",
     slotBoost: "top",
     weight: 1
   },
   {
     id: "low_ball_grounder",
-    name: "골퍼",
-    description: "낮은 공도 땅볼로 살려냅니다.",
+    name: "낮은 공 살리기",
+    description: "낮은 공도 땅볼로 살려낼 수 있습니다.",
     slotBoost: "bottom",
     weight: 1.1
   },
   {
     id: "high_fast_vulnerable",
-    name: "높은 공 취약",
-    description: "높은 직구에 배트가 뜨기 쉽습니다.",
+    name: "하이존 늦음",
+    description: "높은 직구에 배트가 늦기 쉽습니다.",
     slotBoost: "middle",
     weight: 1
   },
   {
     id: "full_count_heart",
-    name: "풀카운트 강심장",
-    description: "풀카운트에서 승부를 고릅니다.",
+    name: "풀카운트 침착",
+    description: "풀카운트에서 쉽게 무너지지 않습니다. 확실한 코너가 필요합니다.",
     slotBoost: "top",
     bossWeight: 1.5,
     weight: 0.9
   },
   {
     id: "texas_luck",
-    name: "약타 생산",
+    name: "빗맞은 안타",
     description: "완전히 속아도 약한 안타가 나올 수 있습니다.",
     slotBoost: "power",
     weight: 0.8
   },
   {
     id: "dp_risk",
-    name: "병살 위험",
+    name: "병살 유도 가능",
     description: "낮은 땅볼이 병살 코스로 흐르기 쉽습니다.",
     slotBoost: "power",
     weight: 0.85
   },
   {
     id: "offspeed_patience",
-    name: "느린공 참기",
-    description: "느린 공 계열 유인구에 잘 속지 않습니다.",
+    name: "느린 공 인내",
+    description: "느린 공 유인구에 잘 속지 않습니다. 빠른 공 압박이 필요합니다.",
     slotBoost: "top",
     weight: 1
   }
@@ -687,19 +966,19 @@ MP.bossGimmicks = [
 ];
 
 MP.ballIntentPlans = {
-  fishing: { label: "낚시 볼", text: "헛스윙을 유도합니다.", swing: 0.08, next: "다음 공 반응 단서 확보" },
-  show: { label: "보여주기 볼", text: "다음 공 체감 변화를 키웁니다.", quality: 2, next: "완급 보정" },
-  waste: { label: "버리는 볼", text: "타자 반응을 확인합니다.", read: 0.22, next: "노림수 정보" },
-  brush: { label: "위협구", text: "몸쪽 의식을 심습니다.", contactQuality: -4, next: "몸쪽 의식 유도" }
+  fishing: { label: "유인구", text: "타자의 배트를 끌어내기 위한 존 밖 공입니다.", swing: 0.08, next: "다음 공 반응 단서 확보" },
+  show: { label: "보여주는 공", text: "다음 공을 살리기 위해 타자의 의식을 한쪽으로 묶는 공입니다.", quality: 2, next: "타이밍 흔듦" },
+  waste: { label: "버리는 공", text: "카운트 여유를 써서 타자의 반응을 보는 공입니다.", read: 0.22, next: "노림수 정보" },
+  brush: { label: "위협구", text: "타자를 불편하게 만들어 다음 바깥쪽을 열기 위한 공입니다.", contactQuality: -4, next: "몸쪽 의식 유도" }
 };
 
 MP.pitchBurdenConfig = {
   max: 100,
   tiers: [
     { id: "stable", min: 0, max: 24, label: "안정", command: 0, mistake: 0, homerun: 0, whiff: 0 },
-    { id: "load", min: 25, max: 49, label: "부담", command: 2, mistake: 0.01, homerun: 0, whiff: 0 },
-    { id: "overload", min: 50, max: 74, label: "과부하", command: 5, mistake: 0.04, homerun: 0.02, whiff: -0.02 },
-    { id: "limit", min: 75, max: 100, label: "한계", command: 8, mistake: 0.07, homerun: 0.05, whiff: -0.04 }
+    { id: "load", min: 25, max: 49, label: "노출", command: 2, mistake: 0.01, homerun: 0, whiff: 0 },
+    { id: "overload", min: 50, max: 74, label: "흔들림", command: 5, mistake: 0.04, homerun: 0.02, whiff: -0.02 },
+    { id: "limit", min: 75, max: 100, label: "위험", command: 8, mistake: 0.07, homerun: 0.05, whiff: -0.04 }
   ],
   useBase: 4,
   repeat2: 8,
@@ -750,13 +1029,13 @@ MP.pitchMasteryConfig = {
   burdenGainRate: { stable: 1, load: 0.9, overload: 0.7, limit: 0.45 },
   masteryWeight: [
     { min: 0, max: 19, mult: 1 },
-    { min: 20, max: 39, mult: 1.4 },
-    { min: 40, max: 59, mult: 1.9 },
-    { min: 60, max: 79, mult: 2.6 },
-    { min: 80, max: 100, mult: 3.5 }
+    { min: 20, max: 39, mult: 0.75 },
+    { min: 40, max: 59, mult: 1 },
+    { min: 60, max: 79, mult: 1.25 },
+    { min: 80, max: 100, mult: 1.55 }
   ],
-  levelWeightDecay: { 3: 0.65, 4: 0.45, 5: 0.3 },
-  upgradeMasteryGate: { 4: 40, 5: 70 },
+  levelWeightDecay: { 3: 0.35, 4: 0.18, 5: 0.08 },
+  upgradeMasteryGate: { 4: 55, 5: 90 },
   flowLabels: [
     { min: 0, max: 19, label: "낮음" },
     { min: 20, max: 39, label: "상승" },
@@ -771,7 +1050,7 @@ MP.pitchMasteryConfig = {
 };
 
 MP.pitchLevelNames = {
-  four: ["", "존 압박", "하이패스트볼", "직구가 만든 그림자", "에이스 패스트볼"],
+  four: ["", "존 압박", "하이패스트볼", "직구 후 변화구 강화", "에이스 패스트볼"],
   two: ["", "스트라이크 안정", "먹힌 타구", "더블플레이 루트", "땅볼 머신"],
   sinker: ["", "낮게 깔기", "땅볼 유도", "병살 설계", "가라앉는 승부구"],
   slider: ["", "바깥 제구", "헛스윙 유도", "백도어 감각", "마무리 슬라이더"],

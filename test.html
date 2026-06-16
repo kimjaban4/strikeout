@@ -206,6 +206,7 @@
       const titleEl = document.getElementById("title");
       const connEl = document.getElementById("conn");
       const fileWarnEl = document.getElementById("fileWarn");
+      injectRunToolsPanel();
       let autoRefresh = true;
       let bridgeMode = null; // "direct" | "rpc"
       let bridgeOk = false;
@@ -218,6 +219,28 @@
       let detectInFlight = false;
 
       if (location.protocol === "file:") fileWarnEl.hidden = false;
+
+      function injectRunToolsPanel() {
+        const pitchCtls = document.getElementById("pitchCtls");
+        const host = pitchCtls?.closest("section.box");
+        if (!host || document.getElementById("runToolsBox")) return;
+        const box = document.createElement("section");
+        box.className = "box";
+        box.id = "runToolsBox";
+        box.innerHTML = `
+          <h2>런 / 미션 / 카드</h2>
+          <div class="row">
+            <button class="mini green" data-act="rewardStageCard">스테이지 카드 보상</button>
+            <button class="mini" data-act="dugoutChoice">더그아웃 선택</button>
+          </div>
+          <div class="row">
+            <button class="mini" data-act="revealBatterWeakness">타자 약점 공개</button>
+            <button class="mini" data-act="revealRivalWeakness">라이벌 약점 공개</button>
+          </div>
+          <p class="hint">목표 공개 후 덕아웃 선택, 달성 완료 상태, 공략 힌트 후보, 의심 단계, 3~4장 스테이지 카드 보상은 아래 디버그 패널에도 표시됩니다.</p>
+        `;
+        host.parentElement.insertBefore(box, host);
+      }
 
       window.addEventListener("message", (event) => {
         const data = event.data;
@@ -263,6 +286,7 @@
       function S() {
         if (bridgeMode === "rpc") return snap;
         const m = MP();
+        if (m?.debug?.testConsoleSnapshot) return m.debug.testConsoleSnapshot();
         if (m?.state) return m.state;
         return DBG()?.state || null;
       }
@@ -470,6 +494,39 @@
         },
         async rewardNormal() { await ensurePitcher(); await gameExec(`MountPsycho.debug.openRewardDraft("테스트 보상", null, "normal")`); },
         async rewardTag() { await ensurePitcher(); await gameExec(`MountPsycho.debug.openRewardDraft("스테이지 클리어 보상", null, "stageTag")`); },
+        async rewardStageCard() {
+          await ensurePitcher();
+          await gameExec(`(() => {
+            const d = MountPsycho.debug, s = MountPsycho.state;
+            s.lastStageResult = d.calculateStageResult();
+            d.openRewardDraft("스테이지 카드 보상", null, "stageCard");
+          })()`);
+        },
+        async dugoutChoice() {
+          await ensurePitcher();
+          await gameExec(`(() => {
+            const d = MountPsycho.debug, s = MountPsycho.state;
+            s.pendingDugoutChoices = d.generateDugoutChoices();
+            s.dugoutPending = true;
+            d.openDugoutChoiceOverlay();
+          })()`);
+        },
+        async revealBatterWeakness() {
+          await ensurePitcher();
+          await gameExec(`(() => {
+            const d = MountPsycho.debug;
+            d.revealBatterWeakness(d.currentBatter(), { force: true });
+            d.render();
+          })()`);
+        },
+        async revealRivalWeakness() {
+          await ensurePitcher();
+          await gameExec(`(() => {
+            const d = MountPsycho.debug;
+            d.revealRivalWeakness({ force: true });
+            d.render();
+          })()`);
+        },
         async rewardCore() {
           await ensurePitcher();
           const code = `(() => {
@@ -625,13 +682,41 @@
           " | 주자 " + s.bases.map((b, i) => b ? (i + 1) + "루" : "-").join(" ") +
           " | 실점 " + s.runs);
         lines.push("[진행] 스테이지 " + (s.stageIndex + 1) + " · " + s.inning + "이닝 · 타순 " + ((s.batterIndex % 9) + 1) + "번 · " + s.pitchCount + "구");
+        if (s.run) {
+          const run = s.run;
+          lines.push("");
+          lines.push("[이번 목표] STAGE " + run.stageNumber + " · " + run.stageName +
+            " | 클리어 " + run.clearRuns + "점 이하 / 실패 " + run.failRuns + "점 이상");
+          if (run.mission) {
+            const status = run.mission.liveStatus || (run.mission.status === "success" ? "달성 완료" : (run.mission.status === "fail" ? "실패" : "진행 중"));
+            lines.push("  이번 이닝 목표: " + (run.mission.actionText || run.mission.title) + " · " + status);
+            lines.push("  " + (run.mission.reward || "성공하면 다음 이닝 첫 타자 약점 공개"));
+          } else {
+            lines.push("  이번 이닝에는 추가 목표가 없습니다");
+          }
+          lines.push("  라이벌 " + run.rival.name + ": " + (run.rival.actionText || run.rival.goalText) +
+            " | 장타 " + run.rival.longHitsAllowed + " / 출루 " + run.rival.onBaseAllowed);
+          lines.push("  별 예상: " + run.stars.label + " (" + run.stars.suspicionAverage + "%)");
+          lines.push("  보유 카드: " + (run.ownedRewardCards.length
+            ? run.ownedRewardCards.map(c => c.name + (c.stack > 1 ? " x" + c.stack : "")).join(", ")
+            : "없음"));
+          if (run.activeDugoutEffects.length) {
+            lines.push("  더그아웃 효과: " + run.activeDugoutEffects.map(e => e.title + "(" + e.turns + ")").join(", "));
+          }
+          if (run.pendingDugoutChoices.length) {
+            lines.push("  더그아웃 선택지: " + run.pendingDugoutChoices.map(c => c.title).join(", "));
+          }
+          if (run.cardTriggerLog.length) {
+            lines.push("  카드 발동: " + run.cardTriggerLog.map(c => c.cardName + " " + c.text).join(" / "));
+          }
+        }
         if (s.pitcher) {
           const st = s.pitcher.stats;
           const tagNames = s.pitcher.tagNames;
           lines.push("");
           lines.push("[투수] " + s.pitcher.name + " (" + s.pitcher.style + ")");
           if (tagNames) {
-            lines.push("  핵심:" + tagNames.core + " | 진화:" + (tagNames.evolution || "-") + " | 보조:" + tagNames.bonus + " | 약점:" + tagNames.weakness);
+            lines.push("  핵심:" + tagNames.core + " | 진화:" + (tagNames.evolution || "-") + " | 보조:" + tagNames.bonus + " | 공략 힌트:" + tagNames.weakness);
           } else {
             const d = DBG();
             const coreName = d?.tagById(s.pitcher.coreTagId)?.name || s.pitcher.coreTagId || "-";
