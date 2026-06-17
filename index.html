@@ -301,12 +301,10 @@
     <div id="mobileGameShell" class="mobile-game-shell" aria-label="모바일 경기 화면">
       <header class="mobile-game-header">
         <div class="mobile-brand">
-          <img
-            class="mobile-brand-logo"
-            src="assets/images/title/main-title.png"
-            alt="마운드 심리전"
-            decoding="async"
-          />
+          <div id="mobileStageThemeSummary" class="mobile-stage-theme-summary">
+            <span>스테이지</span>
+            <strong>테마 준비</strong>
+          </div>
         </div>
         <div class="mobile-score-summary">
           <span>이닝<b id="mobileInningText">1 / 3</b></span>
@@ -322,16 +320,15 @@
             <i data-base="2"></i><i data-base="3"></i><i data-base="1"></i><i class="is-home"></i>
           </div>
         </div>
+        <section id="mobileMissionCard" class="mobile-mission-card">
+          <span class="mobile-mission-label">미션</span>
+          <div>
+            <strong id="mobileMissionTitle">초구 선점</strong>
+            <small id="mobileMissionCondition">초구 스트라이크 1회</small>
+          </div>
+          <b id="mobileMissionStatus">0/1</b>
+        </section>
       </header>
-
-      <section id="mobileMissionCard" class="mobile-mission-card">
-        <span class="mobile-mission-label">이닝<br />미션</span>
-        <div>
-          <strong id="mobileMissionTitle">초구 선점</strong>
-          <small id="mobileMissionCondition">초구 스트라이크 1회</small>
-        </div>
-        <b id="mobileMissionStatus">0/1</b>
-      </section>
 
       <section class="mobile-field-scene">
         <div class="mobile-field-bg" aria-hidden="true"></div>
@@ -341,8 +338,7 @@
           <span id="mobilePitcherTags">태그 준비 중</span>
         </article>
         <article class="mobile-player-card mobile-batter-summary">
-          <small>타석의 상대 <em id="mobileBattingSlot">1번</em></small>
-          <strong id="mobileBatterName">-</strong>
+          <strong><span id="mobileBatterName">-</span><em id="mobileBattingSlot">1번타자</em></strong>
           <span id="mobileBatterTags">상대 분석 중</span>
           <div class="mobile-suspicion-row">
             <i><u id="mobileSuspicionFill"></u></i>
@@ -355,12 +351,22 @@
         <div id="mobileStrikeZone" class="mobile-strike-zone" aria-label="투구 코스 선택"></div>
       </section>
 
+      <section class="mobile-mid-panel" aria-label="투수 예측과 승부기록">
+        <article class="mobile-duel-read-card">
+          <span>흐름 <b id="mobileDuelReadFlow">보통</b></span>
+          <span>추천 <b id="mobileDuelReadPitch">대기</b></span>
+          <span>간파 위험 <b id="mobileDuelReadRisk">□□□</b></span>
+        </article>
+        <article class="mobile-recent-log-card">
+          <header>
+            <strong>승부기록</strong>
+            <button id="mobileRecentLogMore" class="mobile-inline-more" type="button" aria-controls="logList">더보기</button>
+          </header>
+          <div id="mobileRecentLog" class="mobile-recent-log-list"></div>
+        </article>
+      </section>
+
       <section class="mobile-control-panel">
-        <nav class="mobile-control-tabs" aria-label="경기 정보 탭">
-          <button id="mobilePitchTab" class="is-active" type="button">구종</button>
-          <button id="mobileLogTab" type="button">승부기록</button>
-          <button id="mobileInfoTab" type="button">정보</button>
-        </nav>
         <div id="mobilePitchButtons" class="mobile-pitch-buttons"></div>
         <div id="mobileReleasePanel" class="mobile-release-panel" data-state="idle">
           <div><span>릴리즈 타이밍</span><strong id="mobileReleaseGrade">대기</strong></div>
@@ -373,13 +379,11 @@
             <strong id="mobileRecommendTitle">조언 대기</strong>
             <small id="mobileRecommendText">타자 반응을 확인하세요.</small>
           </article>
-          <button id="mobileThrowButton" class="mobile-throw-button" type="button" disabled>
-            <span>투구</span><i aria-hidden="true">●</i>
-          </button>
         </div>
       </section>
 
       <button id="mobilePanelBackdrop" class="mobile-panel-backdrop" type="button" aria-label="정보 패널 닫기" hidden></button>
+      <aside id="mobilePlayerDetailPanel" class="mobile-player-detail-panel" hidden></aside>
       <aside id="mobileInfoPanel" class="mobile-info-panel" hidden>
         <header><strong id="mobileInfoPanelTitle">승부기록</strong><button id="mobileInfoPanelClose" type="button">닫기</button></header>
         <div id="mobileInfoPanelBody"></div>

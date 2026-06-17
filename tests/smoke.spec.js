@@ -24,7 +24,7 @@ async function chooseFirstPitcher(page) {
 async function chooseMobilePitchAndZone(page) {
   await page.locator("#mobilePitchButtons .mobile-pitch-button").first().click();
   await page.locator("#mobileStrikeZone .mobile-zone-button.is-strike").first().click();
-  await expect(page.locator("#mobileThrowButton")).toBeEnabled();
+  await expect(page.locator("#mobileReleasePanel")).toBeVisible();
 }
 
 test("boots to title and pitcher select", async ({ page }) => {
@@ -56,7 +56,7 @@ test("uses mobile shell as the main game screen on wide and narrow viewports", a
 
     const layout = await page.evaluate(() => {
       const shell = document.querySelector("#mobileGameShell").getBoundingClientRect();
-      const parts = [".mobile-game-header", "#mobileMissionCard", ".mobile-field-scene", ".mobile-control-panel"]
+      const parts = [".mobile-game-header", ".mobile-field-scene", ".mobile-mid-panel", ".mobile-control-panel"]
         .map((selector) => document.querySelector(selector).getBoundingClientRect());
       return {
         shellVisible: shell.width > 0 && shell.height > 0,
@@ -72,9 +72,11 @@ test("mobile pitch controls render and unlock throw after choosing a zone", asyn
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
 
-  const mobilePitchCount = await page.evaluate(() => Math.min(4, window.MountPsycho.state.pitcher.repertoire.length));
+  const mobilePitchCount = await page.evaluate(() => Math.min(5, window.MountPsycho.state.pitcher.repertoire.length));
   await expect(page.locator("#mobilePitchButtons .mobile-pitch-button")).toHaveCount(mobilePitchCount);
-  await expect(page.locator("#mobileThrowButton")).toBeDisabled();
+  await expect(page.locator("#mobilePitchButtons .mobile-pitch-button > b")).toHaveCount(0);
+  await expect(page.locator("#mobilePitchButtons .mobile-pitch-button").first()).toHaveAttribute("data-burden", /stable|warn|danger/);
+  await expect(page.locator("#mobileDuelReadRisk")).toHaveText(/\d+%/);
   await expect(page.locator("#mobileReleasePanel")).toBeHidden();
 
   await chooseMobilePitchAndZone(page);
@@ -86,10 +88,51 @@ test("mobile throw records a log entry", async ({ page }) => {
   await chooseFirstPitcher(page);
   await chooseMobilePitchAndZone(page);
 
-  await page.locator("#mobileThrowButton").click();
-  await page.locator("#mobileLogTab").click();
+  await page.locator("#mobileReleasePanel").click();
+  await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).toBeVisible({ timeout: 8000 });
+  await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).not.toHaveClass(/is-batter-marker/);
+  await expect(page.locator("#mobileRecentLog")).toContainText("타자 변경:");
+  await expect(page.locator("#mobileRecentLog")).toContainText(/km\/h/);
+  await page.locator("#mobileRecentLogMore").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
   await expect(page.locator("#mobileInfoPanelBody .log-item").first()).toBeVisible({ timeout: 8000 });
+});
+
+test("mobile player tags open detail modal with tag text", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+
+  await page.locator("[data-mobile-batter-tag]").first().click();
+  await expect(page.locator("#mobilePlayerDetailPanel")).toBeVisible();
+  await expect(page.locator("#mobilePlayerDetailPanel .mobile-detail-tag-text")).toBeVisible();
+  await expect(page.locator("#mobilePlayerDetailPanel .mobile-detail-tags button").first()).toHaveAttribute("data-tier", /bronze|silver|gold|platinum/);
+  await expect(page.locator("#mobileInfoPanel")).toBeHidden();
+});
+
+test("mobile player cards open centered detail modal", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+
+  await expect(page.locator("#mobileBattingSlot")).toContainText("번");
+  await expect(page.locator("#mobileBatterTags button").first()).toHaveAttribute("data-tier", /bronze|silver|gold|platinum/);
+
+  await page.locator(".mobile-pitcher-summary").click();
+  await expect(page.locator("#mobilePlayerDetailPanel")).toBeVisible();
+  await expect(page.locator(".mobile-pitcher-summary")).toHaveClass(/is-selected/);
+  await expect(page.locator("#mobilePanelBackdrop")).toBeVisible();
+  await expect(page.locator("#mobilePlayerDetailPanel")).toContainText("주요 능력");
+  await expect(page.locator("#mobilePlayerDetailPanel")).toContainText("핵심태그");
+  await expect(page.locator("#mobilePlayerDetailPanel")).not.toContainText("구종 정보");
+
+  await page.locator("[data-mobile-detail-close]").click();
+  await expect(page.locator("#mobilePlayerDetailPanel")).toBeHidden();
+
+  await page.locator(".mobile-batter-summary").click();
+  await expect(page.locator("#mobilePlayerDetailPanel")).toBeVisible();
+  await expect(page.locator(".mobile-batter-summary")).toHaveClass(/is-selected/);
+
+  await page.locator("[data-mobile-detail-close]").click();
+  await expect(page.locator("#mobilePlayerDetailPanel")).toBeHidden();
 });
 
 test("mobile pitcher choices stay inside narrow cards", async ({ page }) => {

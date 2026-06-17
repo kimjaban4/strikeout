@@ -2164,6 +2164,26 @@ h2 {
   text-align: center;
 }
 
+.reward-rarity-badge {
+  align-self: flex-start;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #e6f0f7;
+  color: #27506d;
+  font-size: 0.7rem;
+  font-weight: 1000;
+}
+
+.reward-rarity-badge--rare {
+  background: #e8e9ff;
+  color: #3f4595;
+}
+
+.reward-rarity-badge--core {
+  background: #ffe3a6;
+  color: #7a4a05;
+}
+
 .reward-choice-card > span {
   min-width: 0;
   flex: 1 1 auto;

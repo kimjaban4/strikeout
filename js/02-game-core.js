@@ -932,6 +932,7 @@ function createStageRunState(stageIndex = 0) {
     courseStreakKey: "",
     courseStreak: 0,
     missionResults: {},
+    missionOverrides: {},
     inningStats: {},
     rewardBoost: { choiceBonus: 0, rareBonus: 0, coreBonus: 0, guaranteedRare: 0, coreChoiceBonus: 0 },
     rival: {
@@ -973,7 +974,22 @@ function currentInningTracking() {
 }
 
 function currentMission() {
+  const run = ensureStageRunState();
+  if (state.inning === 1) {
+    if (!run.missionOverrides[1]) run.missionOverrides[1] = randomFirstInningMission(run.stageIndex);
+    return run.missionOverrides[1];
+  }
   return stageConfig().missions.find((mission) => mission.inning === state.inning) || null;
+}
+
+function randomFirstInningMission(stageIndex = state.stageIndex) {
+  const prefix = `s${stageIndex + 1}_i1`;
+  return pick([
+    { id: `${prefix}_first_strike`, inning: 1, title: "초구 스트라이크 1회 이상", type: "firstPitchStrikesAtLeast", threshold: 1 },
+    { id: `${prefix}_no_walk`, inning: 1, title: "볼넷 없이 이닝 종료", type: "noWalk" },
+    { id: `${prefix}_low_suspicion`, inning: 1, title: "배합 간파도 낮게 유지", type: "suspicionEndBelow", threshold: 65 },
+    { id: `${prefix}_no_three_pitch`, inning: 1, title: "같은 구종 3연속 금지", type: "maxPitchStreakBelow", threshold: 3 }
+  ]);
 }
 
 function missionActionText(mission) {
@@ -1294,7 +1310,7 @@ function revealBatterWeakness(batter, options = {}) {
   const label = options.label || "공략 보조태그 공개";
   addLog(label, `${batter.name}: ${tag?.name || tagId}`);
   showTutorialStep("weakness");
-  showEventBanner(label, "reward", GAME_TIMING.weaknessBanner);
+  showEventBanner("다음타자\n약점공개", "reward", GAME_TIMING.weaknessBanner);
   return tag;
 }
 
@@ -3362,6 +3378,7 @@ function beginGameWithPitcher(pitcher) {
   state.nextBatterSuspicionBonus = 0;
   state.nextPitchControlBonus = 0;
   state.lastAtBatMemory = null;
+  state.mobilePitchRecords = [];
   state.patternMemory = createPatternMemory();
   state.pendingGameOver = false;
   state.runStats = createRunStats();
@@ -4744,14 +4761,20 @@ function majorResultTone(result) {
 }
 
 function swingFeedbackText(result) {
+  if (result.result === "ball") return "BALL";
+  if (result.result === "calledStrike") return "STRIKE";
+  if (result.result === "swingingStrike") return "헛스윙";
+  if (result.result === "foul") return "FOUL";
   if (!result.swung) return "";
   if (result.timingValue > 0.78) return "FULL SWING";
   if (result.timingValue > 0.62) return "GOOD SWING";
-  if (result.timingValue > 0.42) return "CHECK SWING";
+  if (result.timingValue >= 0.49 && result.timingValue <= 0.53) return "CHECK SWING";
   return "WEAK SWING";
 }
 
 function swingFeedbackTone(result) {
+  if (result.result === "ball") return "good";
+  if (result.result === "calledStrike" || result.result === "swingingStrike" || result.result === "foul") return "warn";
   if (result.timingValue > 0.7) return "danger";
   if (result.timingValue > 0.45) return "warn";
   return "good";
@@ -5004,6 +5027,7 @@ function applyPitchResult(result) {
   const title = pitchLogTitle(result);
   const text = pitchLogText(result);
   const revealText = targetRevealText(result);
+  recordMobilePitchResult(result);
   state.lastPitchCall = pitchCall(result);
   playResultSound(result);
   if (state.balls === 3 && state.strikes === 2) {
@@ -5015,7 +5039,9 @@ function applyPitchResult(result) {
   if (majorText) showEventBanner(majorText, majorResultTone(result), GAME_TIMING.eventBannerPitchResult);
 
   const swingFeedback = swingFeedbackText(result);
+  const call = pitchCall(result);
   if (swingFeedback) queueTiming(swingFeedback, swingFeedbackTone(result));
+  else if (call.label) queueTiming(call.label, call.type === "strike" ? "warn" : call.type === "ball" ? "good" : "danger");
   els.batterFigure.classList.toggle("swing", result.swung);
 
   window.setTimeout(() => {
@@ -6340,14 +6366,16 @@ function rewardRowHtml(label, value) {
 
 function renderCoreEvolutionRewardCard(reward, index) {
   const selected = state.rewardKind === "coreEvolution" && state.selectedRewardIndex === index;
+  const rarity = reward.rarity || (reward.type === "coreEvolution" ? "core" : "common");
   return `
-    <button class="reward-choice-card core-evolution-card${selected ? " is-selected" : ""}" type="button" data-reward-index="${index}">
+    <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(rarity)}${selected ? " is-selected" : ""}" type="button" data-reward-index="${index}">
       <header class="core-evo-head">
         ${coreEvolutionIconHtml(reward.icon)}
         <div class="core-evo-titles">
           <strong class="core-evo-name">${escapeHtml(reward.title)}</strong>
           <span class="core-evo-sub">${escapeHtml(rewardUnifiedSubtitle(reward))}</span>
         </div>
+        <span class="reward-rarity-badge reward-rarity-badge--${escapeHtml(rarity)}">${escapeHtml(cardRarityLabel(rarity))}</span>
       </header>
       <div class="core-evo-body">
         ${rewardRowHtml("조건", rewardUnifiedCondition(reward))}
@@ -6521,6 +6549,7 @@ function addLog(title, text) {
   while (els.logList.children.length > 18) {
     els.logList.lastElementChild.remove();
   }
+  renderMobileRecentLog();
 }
 
 function renderCountIndicator(element, value, total, label) {
@@ -6973,6 +7002,7 @@ function updateCardToggle(button, expanded, label) {
 
 const MOBILE_PORTRAIT_QUERY = "(min-width: 0px)";
 let mobilePanelMode = "";
+let mobileSelectedCard = "";
 
 function isMobilePortraitLayout() {
   return true;
@@ -6996,7 +7026,14 @@ function syncGameOverlayUi() {
 function closeMobileSheets() {
   mobilePanelMode = "";
   if (els.mobileInfoPanel) els.mobileInfoPanel.hidden = true;
+  if (els.mobilePlayerDetailPanel) {
+    els.mobilePlayerDetailPanel.hidden = true;
+    els.mobilePlayerDetailPanel.innerHTML = "";
+  }
   if (els.mobilePanelBackdrop) els.mobilePanelBackdrop.hidden = true;
+  mobileSelectedCard = "";
+  els.mobileGameShell?.querySelector(".mobile-pitcher-summary")?.classList.remove("is-selected");
+  els.mobileGameShell?.querySelector(".mobile-batter-summary")?.classList.remove("is-selected");
   els.mobilePitchTab?.classList.add("is-active");
   els.mobileLogTab?.classList.remove("is-active");
   els.mobileInfoTab?.classList.remove("is-active");
@@ -7024,12 +7061,13 @@ function renderMobileZones() {
 
 function renderMobilePitchButtons() {
   if (!els.mobilePitchButtons || !state.pitcher) return;
-  els.mobilePitchButtons.innerHTML = state.pitcher.repertoire.slice(0, 4).map((pitch, index) => {
+  els.mobilePitchButtons.innerHTML = state.pitcher.repertoire.slice(0, 5).map((pitch) => {
     if (MP.ensurePitchRuntime) MP.ensurePitchRuntime(pitch);
     const burdenValue = Math.min(100, Math.max(0, pitch.burden || 0));
     const burdenLabel = MP.burdenLabel ? MP.burdenLabel(burdenValue) : "안정";
-    return `<button class="mobile-pitch-button${state.selectedPitchId === pitch.id ? " is-selected" : ""}" type="button" data-mobile-pitch="${escapeHtml(pitch.id)}" ${pitchInputLocked({ includeRelease: false }) ? "disabled" : ""}>
-      <b>${index + 1}</b><img src="${pitchIconUrl(pitch)}" alt=""><strong>${escapeHtml(pitch.name)}</strong><small>${pitchVelocityKmh(pitch)}km/h</small><em>${escapeHtml(burdenLabel)}</em>
+    const burdenTone = burdenValue >= 70 ? "danger" : burdenValue >= 45 ? "warn" : "stable";
+    return `<button class="mobile-pitch-button${state.selectedPitchId === pitch.id ? " is-selected" : ""}" type="button" data-mobile-pitch="${escapeHtml(pitch.id)}" data-burden="${burdenTone}" ${pitchInputLocked({ includeRelease: false }) ? "disabled" : ""}>
+      <img src="${pitchIconUrl(pitch)}" alt=""><strong>${escapeHtml(pitch.name)}</strong><small>${pitchVelocityKmh(pitch)}km/h</small><em>${escapeHtml(burdenLabel)}</em>
     </button>`;
   }).join("");
 }
@@ -7040,8 +7078,151 @@ function mobilePitcherTagText() {
   const names = [];
   const core = state.pitcher.coreTagId ? tagById(state.pitcher.coreTagId) : null;
   if (core?.name) names.push(core.name);
-  (state.pitcher.bonusTags || []).slice(0, 2).forEach((id) => names.push(supportTagDisplayName(id)));
+  (state.pitcher.bonusTags || []).slice(0, 5).forEach((id) => names.push(supportTagDisplayName(id)));
   return names.filter(Boolean).slice(0, 2).join(" · ") || state.pitcher.style || "균형형 투수";
+}
+
+function mobileTagChipsHtml(text, kind) {
+  return String(text || "")
+    .split(/(?:\s*·\s*|\s*쨌\s*)/)
+    .map((tag) => tag.trim())
+    .filter(Boolean)
+    .slice(0, 7)
+    .map((tag) => `<button type="button" data-mobile-${kind}-tag="${escapeHtml(tag)}">${escapeHtml(tag)}</button>`)
+    .join("");
+}
+
+function mobileTagTierFromNumber(tier) {
+  if (tier >= 4) return "platinum";
+  if (tier >= 3) return "gold";
+  if (tier >= 2) return "silver";
+  return "bronze";
+}
+
+function mobileTagButtonsHtml(items, kind) {
+  return (items || [])
+    .filter((item) => item?.label)
+    .slice(0, 7)
+    .map((item) => `<button type="button" data-tier="${escapeHtml(item.tier || "bronze")}" data-mobile-${kind}-tag="${escapeHtml(item.label)}">${escapeHtml(item.label)}</button>`)
+    .join("");
+}
+
+function mobilePitcherTagItems() {
+  if (!state.pitcher) return [];
+  ensurePitcherTagFields(state.pitcher);
+  const items = [];
+  if (state.pitcher.style) items.push({ label: state.pitcher.style, tier: "gold", section: "core", text: state.pitcher.style });
+  const core = state.pitcher.coreTagId ? tagById(state.pitcher.coreTagId) : null;
+  if (core?.name) items.push({ label: core.name, tier: "platinum", section: "core", text: tagDescriptionForPitcher(core) });
+  (state.pitcher.bonusTags || []).forEach((id) => {
+    const tag = tagById(id);
+    const label = supportTagDisplayName(id);
+    items.push({
+      label,
+      tier: mobileTagTierFromNumber(supportTagTier(state.pitcher, id)),
+      section: "support",
+      text: tag?.description || pitcherTagDetailText(label)
+    });
+  });
+  return items;
+}
+
+function mobileBatterTagItems(batter) {
+  return batterInfoLines(batter).slice(0, 7).map((label, index) => {
+    const danger = batterTagToneClass(label).includes("weakness");
+    const tier = danger ? "danger" : batter?.isBoss && index === 0 ? "platinum" : index === 0 ? "gold" : index === 1 ? "silver" : "bronze";
+    return { label, tier, text: tagDetailText(label, batter) };
+  });
+}
+
+function mobilePitcherTagChipsHtml() {
+  return mobileTagButtonsHtml(mobilePitcherTagItems(), "pitcher");
+}
+
+function mobileBatterTagChipsHtml(batter) {
+  return mobileTagButtonsHtml(mobileBatterTagItems(batter), "batter");
+}
+
+function mobileBatterMetaText(batter) {
+  if (!batter) return "1번타자";
+  const labels = [`${batter.slot || 1}번타자`];
+  if (batter.isBoss) labels.push("보스");
+  if (batter.isRival) labels.push("키맨");
+  return labels.join(" · ");
+}
+
+function mobileModalTagButtonsHtml(items) {
+  return (items || []).map((tag) => `<button type="button" data-tier="${escapeHtml(tag.tier || "bronze")}" data-mobile-modal-tag="${escapeHtml(tag.label)}" data-mobile-modal-tag-text="${escapeHtml(tag.text || tag.label)}">${escapeHtml(tag.label)}</button>`).join("");
+}
+
+function mobilePitcherStatusHtml() {
+  const mental = state.pitcher?.stats?.멘탈 ?? 60;
+  const maxBurden = Math.max(0, ...(state.pitcher?.repertoire || []).map((pitch) => pitch.burden || 0));
+  const releaseLabel = state.lastReleaseResult?.label || (mental >= 70 ? "안정 릴리즈" : mental >= 55 ? "보통 릴리즈" : "흔들림 주의");
+  const mentalLabel = mental >= 70 ? "안정" : mental >= 55 ? "보통" : "주의";
+  const burdenLabel = maxBurden >= 70 ? "관리 필요" : maxBurden >= 45 ? "주의" : "안정";
+  return `<div class="mobile-detail-status"><span><b>릴리즈</b><em>${escapeHtml(releaseLabel)}</em></span><span><b>멘탈</b><em>${escapeHtml(mentalLabel)}</em></span><span><b>구종 피로도</b><em>${escapeHtml(burdenLabel)}</em></span></div>`;
+}
+
+function pitcherTagDetailText(label) {
+  const tag = [...coreTagCatalog, ...supportTags()].find((item) => item.name === label || supportTagDisplayName(item.id) === label);
+  return tag?.description || `${label} 태그입니다. 투수 운영과 타자 반응에 영향을 줍니다.`;
+}
+
+function showMobileModalTagDetail(title, text) {
+  const box = els.mobilePlayerDetailPanel?.querySelector("[data-mobile-detail-tag-text]");
+  if (!box) return;
+  box.innerHTML = `<strong>${escapeHtml(title)}</strong><p>${escapeHtml(text)}</p>`;
+  box.hidden = false;
+}
+
+function mobileStatsGridHtml(stats, limit = 5) {
+  return Object.entries(stats || {})
+    .slice(0, limit)
+    .map(([key, value]) => `<b><span>${escapeHtml(key)}</span><em>${escapeHtml(value)}</em></b>`)
+    .join("");
+}
+
+function renderMobilePlayerDetail() {
+  if (!els.mobilePlayerDetailPanel) return;
+  els.mobileGameShell?.querySelector(".mobile-pitcher-summary")?.classList.toggle("is-selected", mobileSelectedCard === "pitcher");
+  els.mobileGameShell?.querySelector(".mobile-batter-summary")?.classList.toggle("is-selected", mobileSelectedCard === "batter");
+  if (!mobileSelectedCard || !state.pitcher) {
+    els.mobilePlayerDetailPanel.hidden = true;
+    els.mobilePlayerDetailPanel.innerHTML = "";
+    return;
+  }
+  const batter = currentBatter();
+  if (mobileSelectedCard === "pitcher") {
+    const tags = mobilePitcherTagItems();
+    const coreTags = mobileModalTagButtonsHtml(tags.filter((tag) => tag.section === "core"));
+    const supportTagsHtml = mobileModalTagButtonsHtml(tags.filter((tag) => tag.section !== "core"));
+    els.mobilePlayerDetailPanel.innerHTML = `
+      <header><div><strong>${escapeHtml(state.pitcher.name || "-")}</strong></div><button class="mobile-detail-close" type="button" data-mobile-detail-close>×</button></header>
+      <section class="mobile-detail-section"><strong>주요 능력</strong><div class="mobile-detail-grid">${mobileStatsGridHtml(state.pitcher.stats, 5)}</div></section>
+      <section class="mobile-detail-section"><strong>핵심태그</strong><div class="mobile-detail-tags">${coreTags || "<span>태그 없음</span>"}</div><div class="mobile-detail-tag-text" data-mobile-detail-tag-text hidden></div></section>
+      <section class="mobile-detail-section"><strong>보조태그</strong><div class="mobile-detail-tags">${supportTagsHtml || "<span>태그 없음</span>"}</div></section>
+      <section class="mobile-detail-section"><strong>현재 상태</strong>${mobilePitcherStatusHtml()}</section>
+    `;
+  } else {
+    const tags = mobileBatterTagItems(batter)
+      .map((tag) => `<button type="button" data-tier="${escapeHtml(tag.tier || "bronze")}" data-mobile-modal-tag="${escapeHtml(tag.label)}" data-mobile-modal-tag-text="${escapeHtml(tag.text)}">${escapeHtml(tag.label)}</button>`)
+      .join("");
+    const recent = (state.mobilePitchRecords || [])
+      .filter((item) => item.type !== "batter")
+      .slice(0, 2)
+      .map((item) => `<span>${escapeHtml(item.pitch)} ${item.speed}km/h / ${escapeHtml(item.outcome)}</span>`)
+      .join("");
+    els.mobilePlayerDetailPanel.innerHTML = `
+      <header><div><strong>${escapeHtml(batter?.name || "-")}</strong></div><button class="mobile-detail-close" type="button" data-mobile-detail-close>×</button></header>
+      <section class="mobile-detail-section"><strong>주요 능력</strong><div class="mobile-detail-grid">${mobileStatsGridHtml(batter?.stats, 5)}</div></section>
+      <section class="mobile-detail-section"><strong>태그</strong><div class="mobile-detail-tags">${tags}</div><div class="mobile-detail-tag-text" data-mobile-detail-tag-text hidden></div></section>
+      <section class="mobile-detail-section"><strong>최근 승부 기록</strong><div class="mobile-detail-pitches">${recent || "<span>기록 없음</span>"}</div></section>
+    `;
+  }
+  els.mobilePlayerDetailPanel.dataset.kind = mobileSelectedCard;
+  els.mobilePlayerDetailPanel.hidden = false;
+  if (els.mobilePanelBackdrop) els.mobilePanelBackdrop.hidden = false;
 }
 
 function renderMobileRelease() {
@@ -7075,8 +7256,76 @@ function renderMobileRelease() {
   }
 }
 
+function renderMobileDuelRead(recommendation) {
+  if (!els.mobileDuelReadFlow) return;
+  const confidence = recommendation?.confidence || 0;
+  const suspicion = Math.round(clamp(state.atBat?.suspicion || 0, 0, 100));
+  els.mobileDuelReadFlow.textContent = confidence >= 76 ? "강함" : confidence >= 58 ? "보통" : "흐림";
+  els.mobileDuelReadPitch.textContent = recommendation?.title || "대기";
+  els.mobileDuelReadRisk.textContent = `${suspicion}%`;
+}
+
+function mobilePitchOutcomeLabel(result) {
+  if (result.result === "ball" && state.balls >= 3) return "볼넷";
+  if (["calledStrike", "swingingStrike"].includes(result.result) && state.strikes >= 2) return "삼진";
+  return {
+    ball: "볼",
+    calledStrike: "스트라이크",
+    swingingStrike: "헛스윙",
+    foul: "파울",
+    inPlayOut: "범타",
+    doublePlay: "병살",
+    single: "안타",
+    double: "2루타",
+    homerun: "홈런",
+    error: "실책"
+  }[result.result] || "결과";
+}
+
+function recordMobilePitchResult(result) {
+  recordMobileBatterStart(currentBatter());
+  const records = state.mobilePitchRecords || [];
+  const pitch = result.pitch || {};
+  records.unshift({
+    no: state.atBat?.pitchHistory?.length || state.pitchCount || records.length + 1,
+    pitch: pitch.name || "투구",
+    speed: pitchVelocityKmh(pitch),
+    note: result.clue || result.detail || result.specialEffect?.label || result.mindEffect?.label || result.timingLabel || result.location?.label || "",
+    outcome: mobilePitchOutcomeLabel(result),
+    result: result.result || ""
+  });
+  state.mobilePitchRecords = records.slice(0, 7);
+}
+
+function recordMobileBatterStart(batter) {
+  const records = state.mobilePitchRecords || [];
+  const key = `${state.inning}:${state.batterIndex}:${batter?.name || ""}`;
+  if (records.some((item) => item.type === "batter" && item.key === key)) return;
+  records.unshift({ type: "batter", key, batter: batter?.name || "타자" });
+  state.mobilePitchRecords = records.slice(0, 7);
+}
+
+function renderMobileRecentLog() {
+  if (!els.mobileRecentLog) return;
+  const card = els.mobileRecentLog.closest(".mobile-recent-log-card");
+  const items = state.mobilePitchRecords || [];
+  const shouldShow = items.length > 0;
+  if (card) card.hidden = false;
+  if (!shouldShow) {
+    els.mobileRecentLog.innerHTML = '<p class="mobile-recent-log-empty">아직 투구 기록 없음</p>';
+    return;
+  }
+  els.mobileRecentLog.innerHTML = items.map((item) => {
+    if (item.type === "batter") {
+      return `<div class="mobile-recent-log-row is-batter-marker" data-result="batter"><span class="mobile-recent-log-text"><span class="mobile-recent-log-line"><b>타자 변경: ${escapeHtml(item.batter)}</b></span></span></div>`;
+    }
+    return `<div class="mobile-recent-log-row" data-result="${escapeHtml(item.result)}"><strong class="mobile-recent-log-count">${item.no}구</strong><span class="mobile-recent-log-text"><span class="mobile-recent-log-line"><b>${escapeHtml(item.pitch)} ${item.speed}km/h</b><em>/ ${escapeHtml(item.outcome)}</em></span><small>${escapeHtml(item.note || "타자 반응 확인")}</small></span></div>`;
+  }).join("");
+}
+
 function renderMobileInfoPanel() {
   if (!els.mobileInfoPanelBody || !mobilePanelMode) return;
+  if (mobilePanelMode === "tag") return;
   if (mobilePanelMode === "log") {
     els.mobileInfoPanelTitle.textContent = "승부기록";
     els.mobileInfoPanelBody.innerHTML = els.logList?.innerHTML || '<p class="mobile-empty-info">아직 승부기록이 없습니다.</p>';
@@ -7113,7 +7362,11 @@ function renderMobileGameUi() {
   const liveStatus = liveMissionStatus(mission, missionStats, missionResult);
   const recommendation = state.atBat?.recommendation;
   const batterTags = batter ? batterInfoLines(batter).slice(0, 2).join(" · ") : "상대 분석 중";
+  const theme = MP.getStageTheme?.(state.stageThemeId);
 
+  if (els.mobileStageThemeSummary) {
+    els.mobileStageThemeSummary.innerHTML = `<span>STAGE ${currentStageNumber()}</span><strong>${escapeHtml(theme?.name || stageConfig().name || "테마")}</strong>`;
+  }
   els.mobileInningText.textContent = `${Math.min(state.inning, currentStageInnings())} / ${currentStageInnings()}`;
   els.mobileRunsText.textContent = state.runs;
   els.mobileTargetText.textContent = `${currentStageRunLimit()}실점 시 종료`;
@@ -7126,14 +7379,16 @@ function renderMobileGameUi() {
   });
 
   els.mobileMissionCard.hidden = !mission;
+  els.mobileMissionCard.classList.toggle("is-complete", liveStatus?.className === "is-complete");
+  els.mobileMissionCard.classList.toggle("is-fail", liveStatus?.className === "is-fail");
   els.mobileMissionTitle.textContent = mission ? missionDisplayName(mission) : "추가 미션 없음";
   els.mobileMissionCondition.textContent = mission ? missionConditionText(mission) : "이번 이닝은 기본 운영";
   els.mobileMissionStatus.textContent = mission ? missionCompactStatus(liveStatus) : "대기";
   els.mobilePitcherName.textContent = state.pitcher.name || "-";
-  els.mobilePitcherTags.textContent = mobilePitcherTagText();
+  els.mobilePitcherTags.innerHTML = mobilePitcherTagChipsHtml();
   els.mobileBatterName.textContent = batter?.name || "-";
-  els.mobileBattingSlot.textContent = `${batter?.slot || 1}번${batter?.isBoss ? " BOSS" : batter?.isRival ? " RIVAL" : ""}`;
-  els.mobileBatterTags.textContent = batterTags;
+  els.mobileBatterTags.innerHTML = mobileBatterTagChipsHtml(batter);
+  els.mobileBattingSlot.textContent = mobileBatterMetaText(batter);
   const suspicion = clamp(state.atBat?.suspicion || 0, 0, 100);
   els.mobileSuspicionText.textContent = `${Math.round(suspicion)}%`;
   els.mobileSuspicionFill.style.width = `${suspicion}%`;
@@ -7141,6 +7396,9 @@ function renderMobileGameUi() {
   renderMobileZones();
   renderMobilePitchButtons();
   renderMobileRelease();
+  renderMobileDuelRead(recommendation);
+  renderMobileRecentLog();
+  renderMobilePlayerDetail();
   els.mobileRecommendConfidence.textContent = recommendation ? (recommendation.confidence >= 76 ? "높음" : recommendation.confidence >= 58 ? "보통" : "불명") : "불명";
   els.mobileRecommendTitle.textContent = recommendation?.title || "조언 대기";
   els.mobileRecommendText.textContent = recommendation?.text || "타자 반응을 확인하세요.";
@@ -8151,18 +8409,14 @@ function confirmStageTheme(themeId) {
 
 function showBatterEntryBanner() {
   if (state.gameOver) return;
-  const batter = currentBatter();
-  if (batter.isBoss) {
-    showEventBanner(`보스배터\n${batter.name}`, "boss", GAME_TIMING.bossBanner);
-    return;
-  }
   showNextBatterBanner();
 }
 
 function showNextBatterBanner() {
   if (state.gameOver) return;
   const batter = currentBatter();
-  showEventBanner(`NEXT BATTER · ${batter.slot}번 ${batter.name}`, "next", GAME_TIMING.nextBatterBanner);
+  const role = batter.isBoss ? "보스 · " : "";
+  showEventBanner(`NEXT BATTER\n${role}${batter.slot}번 타자 ${batter.name}`, "next", GAME_TIMING.nextBatterBanner);
 }
 
 function hideBallSprite() {
@@ -8295,6 +8549,9 @@ function bindUiEvents() {
   els.mobileLogMore?.addEventListener("click", () => {
     openMobilePanel("log");
   });
+  els.mobileRecentLogMore?.addEventListener("click", () => {
+    openMobilePanel("log");
+  });
   els.mobilePitchTab?.addEventListener("click", () => closeMobileSheets());
   els.mobileLogTab?.addEventListener("click", () => openMobilePanel("log"));
   els.mobileInfoTab?.addEventListener("click", () => openMobilePanel("info"));
@@ -8308,6 +8565,46 @@ function bindUiEvents() {
   els.mobileStrikeZone?.addEventListener("click", (event) => {
     const button = event.target.closest?.("[data-mobile-zone]");
     if (button) handleCourseClick(button.dataset.mobileZone, button.dataset.targetRow, button.dataset.targetCol, button.dataset.intent);
+  });
+  els.mobileGameShell?.addEventListener("click", (event) => {
+    const closeButton = event.target.closest?.("[data-mobile-detail-close]");
+    if (closeButton) {
+      closeMobileSheets();
+      return;
+    }
+    const modalTag = event.target.closest?.("[data-mobile-modal-tag]");
+    if (modalTag) {
+      showMobileModalTagDetail(modalTag.dataset.mobileModalTag, modalTag.dataset.mobileModalTagText || "");
+      return;
+    }
+    const batterTag = event.target.closest?.("[data-mobile-batter-tag]");
+    if (batterTag) {
+      const tag = batterTag.dataset.mobileBatterTag;
+      mobileSelectedCard = "batter";
+      renderMobilePlayerDetail();
+      showMobileModalTagDetail(tag, tagDetailText(tag, currentBatter()));
+      return;
+    }
+    const pitcherTag = event.target.closest?.("[data-mobile-pitcher-tag]");
+    if (pitcherTag) {
+      const tag = pitcherTag.dataset.mobilePitcherTag;
+      mobileSelectedCard = "pitcher";
+      renderMobilePlayerDetail();
+      showMobileModalTagDetail(tag, pitcherTagDetailText(tag));
+      return;
+    }
+    const playerCard = event.target.closest?.(".mobile-player-card");
+    if (playerCard?.classList.contains("mobile-pitcher-summary")) {
+      mobileSelectedCard = mobileSelectedCard === "pitcher" ? "" : "pitcher";
+      if (mobileSelectedCard) renderMobilePlayerDetail();
+      else closeMobileSheets();
+      return;
+    }
+    if (playerCard?.classList.contains("mobile-batter-summary")) {
+      mobileSelectedCard = mobileSelectedCard === "batter" ? "" : "batter";
+      if (mobileSelectedCard) renderMobilePlayerDetail();
+      else closeMobileSheets();
+    }
   });
   els.mobilePanelBackdrop?.addEventListener("click", closeMobileSheets);
   els.mobileInfoPanelClose?.addEventListener("click", closeMobileSheets);
