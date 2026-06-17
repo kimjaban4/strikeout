@@ -1278,7 +1278,7 @@
   }
 }
 
-@media (min-width: 721px) {
+@media (min-width: 721px) and (hover: hover) and (pointer: fine) {
   body {
     display: grid;
     place-items: center;
