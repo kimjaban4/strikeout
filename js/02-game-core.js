@@ -973,17 +973,13 @@ function currentInningTracking() {
   return state.currentInningStats;
 }
 
-function missionForInning(inning = state.inning) {
+function currentMission() {
   const run = ensureStageRunState();
-  if (inning === 1) {
+  if (state.inning === 1) {
     if (!run.missionOverrides[1]) run.missionOverrides[1] = randomFirstInningMission(run.stageIndex);
     return run.missionOverrides[1];
   }
-  return stageConfig().missions.find((mission) => mission.inning === inning) || null;
-}
-
-function currentMission() {
-  return missionForInning(state.inning);
+  return stageConfig().missions.find((mission) => mission.inning === state.inning) || null;
 }
 
 function randomFirstInningMission(stageIndex = state.stageIndex) {
@@ -1551,7 +1547,7 @@ function missionCompactStatus(liveStatus) {
 function finalizeInningMission(inningNumber) {
   const run = ensureStageRunState();
   const stats = run.inningStats[inningNumber] || state.currentInningStats;
-  const mission = missionForInning(inningNumber);
+  const mission = stageConfig().missions.find((item) => item.inning === inningNumber);
   if (!mission || !stats) return null;
   stats.suspicionEnd = Math.round(state.atBat?.suspicion || stats.suspicionEnd || 0);
   const success = missionSuccess(mission, stats);
@@ -2915,26 +2911,6 @@ function recommendationForCategory(category, batter) {
   return {
     title: `${pitchName}로 타이밍 교란`,
     text: "느린 공 계열로 앞 타이밍을 흔들 수 있습니다. 중앙 실투만 피하세요."
-  };
-}
-
-function recommendationForCategory(category, batter) {
-  const pitchName = representativePitchName(category);
-  if (category === "fast") {
-    return {
-      title: `${pitchName}으로 타이밍 압박`,
-      text: batter.stats.선구 > 72 ? "빠른 공은 존 끝으로 붙여야 효과가 큽니다. 중앙 승부는 오래 보고 따라올 수 있습니다." : "몸쪽이나 높은 존 빠른 공으로 배트 시작을 늦추는 운영입니다."
-    };
-  }
-  if (category === "breaking") {
-    return {
-      title: `${pitchName}으로 헛스윙 유도`,
-      text: "변화구 궤적에 배트가 따라 나오기 쉬운 상황입니다. 낮은 바깥쪽이면 헛스윙이나 약한 타구를 기대할 수 있습니다."
-    };
-  }
-  return {
-    title: `${pitchName}으로 완급 흔들기`,
-    text: "빠른 공 기준으로 기다리는 타자에게 느린 계열을 섞어 스윙 시작을 늦춥니다. 낮은 바깥쪽이면 앞쪽 타이밍을 빼앗기 좋고, 중앙 실투는 피하세요."
   };
 }
 
@@ -7024,12 +7000,12 @@ function updateCardToggle(button, expanded, label) {
   });
 }
 
-const MOBILE_PORTRAIT_QUERY = "(max-width: 720px) and (orientation: portrait)";
+const MOBILE_PORTRAIT_QUERY = "(min-width: 0px)";
 let mobilePanelMode = "";
 let mobileSelectedCard = "";
 
 function isMobilePortraitLayout() {
-  return window.matchMedia(MOBILE_PORTRAIT_QUERY).matches;
+  return true;
 }
 
 function syncGameOverlayUi() {
@@ -7180,12 +7156,12 @@ function mobileModalTagButtonsHtml(items) {
 }
 
 function mobilePitcherStatusHtml() {
+  const mental = state.pitcher?.stats?.멘탈 ?? 60;
   const maxBurden = Math.max(0, ...(state.pitcher?.repertoire || []).map((pitch) => pitch.burden || 0));
-  const control = state.pitcher?.stats?.제구 ?? 60;
-  const releaseLabel = state.lastReleaseResult?.label || (control >= 70 ? "안정 릴리즈" : control >= 55 ? "보통 릴리즈" : "흔들림 주의");
-  const commandLabel = control >= 70 ? "안정" : control >= 55 ? "보통" : "주의";
+  const releaseLabel = state.lastReleaseResult?.label || (mental >= 70 ? "안정 릴리즈" : mental >= 55 ? "보통 릴리즈" : "흔들림 주의");
+  const mentalLabel = mental >= 70 ? "안정" : mental >= 55 ? "보통" : "주의";
   const burdenLabel = maxBurden >= 70 ? "관리 필요" : maxBurden >= 45 ? "주의" : "안정";
-  return `<div class="mobile-detail-status"><span><b>릴리즈</b><em>${escapeHtml(releaseLabel)}</em></span><span><b>제구</b><em>${escapeHtml(commandLabel)}</em></span><span><b>구종 피로도</b><em>${escapeHtml(burdenLabel)}</em></span></div>`;
+  return `<div class="mobile-detail-status"><span><b>릴리즈</b><em>${escapeHtml(releaseLabel)}</em></span><span><b>멘탈</b><em>${escapeHtml(mentalLabel)}</em></span><span><b>구종 피로도</b><em>${escapeHtml(burdenLabel)}</em></span></div>`;
 }
 
 function pitcherTagDetailText(label) {
@@ -7193,31 +7169,10 @@ function pitcherTagDetailText(label) {
   return tag?.description || `${label} 태그입니다. 투수 운영과 타자 반응에 영향을 줍니다.`;
 }
 
-function showMobileModalTagDetail(title, text, sourceButton = null) {
-  const panel = els.mobilePlayerDetailPanel;
-  if (!panel) return;
-  panel.querySelectorAll("[data-mobile-detail-tag-text]").forEach((item) => {
-    if (!sourceButton || !sourceButton.closest(".mobile-detail-section")?.contains(item)) item.hidden = true;
-  });
-  const section = sourceButton?.closest?.(".mobile-detail-section");
-  const tagList = sourceButton?.closest?.(".mobile-detail-tags");
-  let box = section ? Array.from(section.children).find((item) => item.matches?.("[data-mobile-detail-tag-text]")) : null;
-  if (!box && section && tagList) {
-    box = document.createElement("div");
-    box.className = "mobile-detail-tag-text";
-    box.dataset.mobileDetailTagText = "";
-    box.hidden = true;
-    tagList.insertAdjacentElement("afterend", box);
-  }
-  if (!box) box = panel.querySelector("[data-mobile-detail-tag-text]");
+function showMobileModalTagDetail(title, text) {
+  const box = els.mobilePlayerDetailPanel?.querySelector("[data-mobile-detail-tag-text]");
   if (!box) return;
-  if (!box.hidden && box.dataset.activeTag === title) {
-    box.hidden = true;
-    box.dataset.activeTag = "";
-    return;
-  }
   box.innerHTML = `<strong>${escapeHtml(title)}</strong><p>${escapeHtml(text)}</p>`;
-  box.dataset.activeTag = title;
   box.hidden = false;
 }
 
@@ -7226,34 +7181,6 @@ function mobileStatsGridHtml(stats, limit = 5) {
     .slice(0, limit)
     .map(([key, value]) => `<b><span>${escapeHtml(key)}</span><em>${escapeHtml(value)}</em></b>`)
     .join("");
-}
-
-function mobileBatterSlashStats(batter) {
-  const stats = batter?.stats || {};
-  const contact = stats.컨택 ?? 60;
-  const power = stats.파워 ?? 60;
-  const eye = stats.선구 ?? 60;
-  const avg = clamp(0.215 + contact * 0.00155 + eye * 0.00045 + (batter?.isBoss ? 0.018 : 0), 0.22, 0.36);
-  const obp = clamp(avg + 0.045 + eye * 0.0007, avg + 0.035, 0.46);
-  const slg = clamp(avg + 0.12 + power * 0.0022, 0.34, 0.62);
-  return {
-    AVG: avg.toFixed(3).replace(/^0/, ""),
-    OBP: obp.toFixed(3).replace(/^0/, ""),
-    SLG: slg.toFixed(3).replace(/^0/, ""),
-    OPS: (obp + slg).toFixed(3).replace(/^0/, "")
-  };
-}
-
-function mobileBatterScoutingHtml(batter) {
-  const slash = mobileBatterSlashStats(batter);
-  return `<div class="mobile-scout-report"><div class="mobile-scout-stats">${Object.entries(slash)
-    .map(([key, value]) => `<span><b>${escapeHtml(key)}</b><em>${escapeHtml(value)}</em></span>`)
-    .join("")}</div><p>${escapeHtml(batter?.hint || "스카우트 리포트 없음")}</p></div>`;
-}
-
-function mobilePitcherStatsHtml() {
-  const stats = Object.fromEntries(Object.entries(state.pitcher?.stats || {}).filter(([key]) => !String(key).includes("멘탈")));
-  return mobileStatsGridHtml(stats, 4);
 }
 
 function renderMobilePlayerDetail() {
@@ -7272,7 +7199,7 @@ function renderMobilePlayerDetail() {
     const supportTagsHtml = mobileModalTagButtonsHtml(tags.filter((tag) => tag.section !== "core"));
     els.mobilePlayerDetailPanel.innerHTML = `
       <header><div><strong>${escapeHtml(state.pitcher.name || "-")}</strong></div><button class="mobile-detail-close" type="button" data-mobile-detail-close>×</button></header>
-      <section class="mobile-detail-section"><strong>주요 능력</strong><div class="mobile-detail-grid">${mobilePitcherStatsHtml()}</div></section>
+      <section class="mobile-detail-section"><strong>주요 능력</strong><div class="mobile-detail-grid">${mobileStatsGridHtml(state.pitcher.stats, 5)}</div></section>
       <section class="mobile-detail-section"><strong>핵심태그</strong><div class="mobile-detail-tags">${coreTags || "<span>태그 없음</span>"}</div><div class="mobile-detail-tag-text" data-mobile-detail-tag-text hidden></div></section>
       <section class="mobile-detail-section"><strong>보조태그</strong><div class="mobile-detail-tags">${supportTagsHtml || "<span>태그 없음</span>"}</div></section>
       <section class="mobile-detail-section"><strong>현재 상태</strong>${mobilePitcherStatusHtml()}</section>
@@ -7288,7 +7215,6 @@ function renderMobilePlayerDetail() {
       .join("");
     els.mobilePlayerDetailPanel.innerHTML = `
       <header><div><strong>${escapeHtml(batter?.name || "-")}</strong></div><button class="mobile-detail-close" type="button" data-mobile-detail-close>×</button></header>
-      <section class="mobile-detail-section"><strong>스카우트 리포트</strong>${mobileBatterScoutingHtml(batter)}</section>
       <section class="mobile-detail-section"><strong>주요 능력</strong><div class="mobile-detail-grid">${mobileStatsGridHtml(batter?.stats, 5)}</div></section>
       <section class="mobile-detail-section"><strong>태그</strong><div class="mobile-detail-tags">${tags}</div><div class="mobile-detail-tag-text" data-mobile-detail-tag-text hidden></div></section>
       <section class="mobile-detail-section"><strong>최근 승부 기록</strong><div class="mobile-detail-pitches">${recent || "<span>기록 없음</span>"}</div></section>
@@ -7375,7 +7301,7 @@ function recordMobileBatterStart(batter) {
   const records = state.mobilePitchRecords || [];
   const key = `${state.inning}:${state.batterIndex}:${batter?.name || ""}`;
   if (records.some((item) => item.type === "batter" && item.key === key)) return;
-  records.unshift({ type: "batter", key, batter: `${batter?.slot || 1}번타자 ${batter?.name || ""}`.trim() });
+  records.unshift({ type: "batter", key, batter: batter?.name || "타자" });
   state.mobilePitchRecords = records.slice(0, 7);
 }
 
@@ -7391,7 +7317,7 @@ function renderMobileRecentLog() {
   }
   els.mobileRecentLog.innerHTML = items.map((item) => {
     if (item.type === "batter") {
-      return `<div class="mobile-recent-log-row is-batter-marker" data-result="batter"><span class="mobile-recent-log-text"><span class="mobile-recent-log-line"><b>타자변경 → ${escapeHtml(item.batter)}</b></span></span></div>`;
+      return `<div class="mobile-recent-log-row is-batter-marker" data-result="batter"><span class="mobile-recent-log-text"><span class="mobile-recent-log-line"><b>타자 변경: ${escapeHtml(item.batter)}</b></span></span></div>`;
     }
     return `<div class="mobile-recent-log-row" data-result="${escapeHtml(item.result)}"><strong class="mobile-recent-log-count">${item.no}구</strong><span class="mobile-recent-log-text"><span class="mobile-recent-log-line"><b>${escapeHtml(item.pitch)} ${item.speed}km/h</b><em>/ ${escapeHtml(item.outcome)}</em></span><small>${escapeHtml(item.note || "타자 반응 확인")}</small></span></div>`;
   }).join("");
@@ -8483,18 +8409,14 @@ function confirmStageTheme(themeId) {
 
 function showBatterEntryBanner() {
   if (state.gameOver) return;
-  const batter = currentBatter();
-  if (batter.isBoss) {
-    showEventBanner(`보스타자 등장\n${batter.slot}번 타자 ${batter.name}`, "boss", GAME_TIMING.bossBanner);
-    return;
-  }
   showNextBatterBanner();
 }
 
 function showNextBatterBanner() {
   if (state.gameOver) return;
   const batter = currentBatter();
-  showEventBanner(`NEXT BATTER\n${batter.slot}번 타자 ${batter.name}`, "next", GAME_TIMING.nextBatterBanner);
+  const role = batter.isBoss ? "보스 · " : "";
+  showEventBanner(`NEXT BATTER\n${role}${batter.slot}번 타자 ${batter.name}`, "next", GAME_TIMING.nextBatterBanner);
 }
 
 function hideBallSprite() {
@@ -8652,7 +8574,7 @@ function bindUiEvents() {
     }
     const modalTag = event.target.closest?.("[data-mobile-modal-tag]");
     if (modalTag) {
-      showMobileModalTagDetail(modalTag.dataset.mobileModalTag, modalTag.dataset.mobileModalTagText || "", modalTag);
+      showMobileModalTagDetail(modalTag.dataset.mobileModalTag, modalTag.dataset.mobileModalTagText || "");
       return;
     }
     const batterTag = event.target.closest?.("[data-mobile-batter-tag]");
@@ -8660,8 +8582,7 @@ function bindUiEvents() {
       const tag = batterTag.dataset.mobileBatterTag;
       mobileSelectedCard = "batter";
       renderMobilePlayerDetail();
-      const button = Array.from(els.mobilePlayerDetailPanel?.querySelectorAll("[data-mobile-modal-tag]") || []).find((item) => item.dataset.mobileModalTag === tag);
-      showMobileModalTagDetail(tag, tagDetailText(tag, currentBatter()), button);
+      showMobileModalTagDetail(tag, tagDetailText(tag, currentBatter()));
       return;
     }
     const pitcherTag = event.target.closest?.("[data-mobile-pitcher-tag]");
@@ -8669,8 +8590,7 @@ function bindUiEvents() {
       const tag = pitcherTag.dataset.mobilePitcherTag;
       mobileSelectedCard = "pitcher";
       renderMobilePlayerDetail();
-      const button = Array.from(els.mobilePlayerDetailPanel?.querySelectorAll("[data-mobile-modal-tag]") || []).find((item) => item.dataset.mobileModalTag === tag);
-      showMobileModalTagDetail(tag, pitcherTagDetailText(tag), button);
+      showMobileModalTagDetail(tag, pitcherTagDetailText(tag));
       return;
     }
     const playerCard = event.target.closest?.(".mobile-player-card");
