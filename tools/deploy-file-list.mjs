@@ -3,7 +3,6 @@ export const deployFiles = [
   "styles.css",
   "server.js",
   "game.js",
-  "배포_README.md",
   "assets/images/stadium.png",
   "js/00-constants.js",
   "js/01-state.js",
