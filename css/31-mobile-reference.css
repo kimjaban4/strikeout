@@ -3,7 +3,7 @@
   display: none;
 }
 
-@media all {
+@media (max-width: 720px) {
   html,
   body {
     width: 100%;
@@ -18,7 +18,10 @@
     display: none !important;
   }
 
+  body:has(#titleOverlay:not([hidden])) .mobile-game-shell,
+  body:has(#tutorialOverlay:not([hidden])) .mobile-game-shell,
   body.game-overlay-open .mobile-game-shell {
+    display: none !important;
     visibility: hidden;
     pointer-events: none;
   }
@@ -319,6 +322,8 @@
     position: absolute;
     z-index: 3;
     left: 10px;
+    display: grid;
+    align-content: center;
     width: calc(100% - 20px);
     height: 54px;
     min-height: 0;
@@ -629,6 +634,45 @@
     font-size: 11px;
     font-style: normal;
     font-weight: 900;
+  }
+
+  .mobile-scout-report {
+    display: grid;
+    gap: 7px;
+  }
+
+  .mobile-scout-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .mobile-scout-stats span {
+    display: grid;
+    gap: 2px;
+    padding: 5px 4px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.08);
+    text-align: center;
+  }
+
+  .mobile-scout-stats b {
+    color: #ffb0b0;
+    font-size: 9px;
+  }
+
+  .mobile-scout-stats em {
+    color: #fff;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 950;
+  }
+
+  .mobile-scout-report p {
+    margin: 0;
+    color: #dbeeff;
+    font-size: 10px;
+    line-height: 1.35;
   }
 
   .mobile-detail-note {

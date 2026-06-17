@@ -358,7 +358,7 @@ MP.dugoutChoiceCatalog = [
 ];
 
 MP.GAME_TIMING = {
-  timingFeedbackDelay: 430,
+  timingFeedbackDelay: 620,
   pitchResultCleanup: 1450,
   courseFlash: 460,
   weaknessBanner: 1250,
