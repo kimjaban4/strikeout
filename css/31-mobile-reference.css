@@ -10,7 +10,7 @@
     height: 100%;
     min-width: 0;
     overflow: hidden;
-    background: #e8f2f5;
+    background: #03111f;
   }
 
   body > .app-shell,
@@ -28,30 +28,25 @@
     --m-line: rgba(151, 184, 211, 0.25);
     --m-panel: #0a2134;
     position: fixed;
-    inset: auto;
-    left: calc((100dvw - min(430px, calc(100dvw - 24px))) / 2);
-    top: max(12px, env(safe-area-inset-top, 0px));
+    inset: 0;
     z-index: 20;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto 96px;
-    width: min(430px, calc(100dvw - 24px));
-    height: min(860px, calc(100dvh - 24px));
+    grid-template-rows: auto minmax(0, 1fr) auto clamp(108px, 28dvw, 132px);
+    width: 100dvw;
+    height: 100dvh;
     color: #edf6ff;
     background: #03111f;
     font-family: Arial, "Malgun Gothic", sans-serif;
     overflow: hidden;
-    border: 1px solid rgba(151, 184, 211, 0.28);
-    border-radius: 18px;
-    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.48);
   }
 
   .mobile-game-header {
     position: relative;
     z-index: 5;
     display: grid;
-    grid-template-columns: 190px minmax(0, 1fr) 40px;
-    grid-template-rows: 40px 36px;
+    grid-template-columns: minmax(160px, 43dvw) minmax(0, 1fr) clamp(40px, 10dvw, 46px);
+    grid-template-rows: clamp(40px, 10.4dvw, 46px) clamp(36px, 9.2dvw, 42px);
     gap: 5px 7px;
     padding: calc(5px + env(safe-area-inset-top, 0px)) 10px 0;
     background: linear-gradient(180deg, #020c17, #061929);
@@ -325,7 +320,7 @@
     z-index: 3;
     left: 10px;
     width: calc(100% - 20px);
-    height: 54px;
+    height: clamp(56px, 14.6dvw, 66px);
     min-height: 0;
     padding: 5px 9px 5px 42px;
     border: 1px solid rgba(175, 202, 224, 0.38);
@@ -337,7 +332,7 @@
   }
 
   .mobile-pitcher-summary { top: 7px; }
-  .mobile-batter-summary { top: 66px; }
+  .mobile-batter-summary { top: calc(13px + clamp(56px, 14.6dvw, 66px)); }
   .mobile-player-card::before {
     position: absolute;
     left: 10px;
@@ -363,7 +358,7 @@
     gap: 3px;
     max-width: 118px;
     color: #c7d9ea;
-    font-size: 9px;
+    font-size: clamp(9px, 2.35dvw, 11px);
     font-weight: 900;
     line-height: 1;
     overflow: hidden;
@@ -386,7 +381,7 @@
     gap: 5px;
     margin-top: 0;
     max-width: 100%;
-    font-size: 15px;
+    font-size: clamp(15px, 3.9dvw, 18px);
     line-height: 18px;
     overflow: hidden;
     white-space: nowrap;
@@ -430,7 +425,7 @@
     border-radius: 4px;
     background: rgba(9, 80, 142, 0.62);
     color: #a9dcff;
-    font-size: 9px;
+    font-size: clamp(9px, 2.35dvw, 11px);
     font-style: normal;
     font-weight: 900;
     line-height: 1;
@@ -453,7 +448,7 @@
     z-index: 82;
     left: 50%;
     top: 50%;
-    width: min(360px, calc(100vw - 28px));
+    width: min(420px, calc(100dvw - 20px));
     max-height: min(74dvh, 560px);
     transform: translate(-50%, -50%);
     padding: 14px 14px 12px;
@@ -719,7 +714,7 @@
 
   .mobile-mid-panel {
     display: grid;
-    grid-template-rows: 34px 156px;
+    grid-template-rows: clamp(38px, 9.6dvw, 46px) clamp(176px, 45dvw, 216px);
     gap: 6px;
     padding: 6px 10px;
     background: linear-gradient(180deg, rgba(5, 18, 31, 0.3), #061827 22%);
@@ -745,7 +740,7 @@
     gap: 5px;
     min-width: 0;
     color: #30cfff;
-    font-size: 10px;
+    font-size: clamp(10px, 2.55dvw, 12px);
     font-weight: 900;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -757,7 +752,7 @@
     max-width: 100%;
     margin-left: 0;
     color: #8be84a;
-    font-size: 11px;
+    font-size: clamp(11px, 2.85dvw, 13px);
     overflow: hidden;
     text-overflow: ellipsis;
     text-align: center;
@@ -765,16 +760,16 @@
   }
 
   .mobile-duel-read-card span:nth-child(2) {
-    font-size: 12px;
+    font-size: clamp(12px, 3.05dvw, 15px);
   }
 
   .mobile-duel-read-card span:nth-child(2) b {
     color: #ffe36b;
-    font-size: 13px;
+    font-size: clamp(13px, 3.35dvw, 16px);
   }
 
   .mobile-recent-log-card {
-    height: 156px;
+    height: clamp(176px, 45dvw, 216px);
     min-height: 0;
     padding: 6px 7px;
     border: 1px solid rgba(92, 151, 255, 0.72);
@@ -807,7 +802,7 @@
 
   .mobile-recent-log-list {
     display: grid;
-    grid-auto-rows: minmax(42px, auto);
+    grid-auto-rows: minmax(clamp(44px, 11dvw, 54px), auto);
     gap: 4px;
     height: calc(100% - 20px);
     overflow-y: auto;
@@ -1028,7 +1023,7 @@
   .mobile-pitch-buttons {
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 4px;
+    gap: clamp(4px, 1.3dvw, 7px);
     min-width: 0;
     height: 100%;
   }
@@ -1036,11 +1031,11 @@
   .mobile-pitch-button {
     position: relative;
     display: grid;
-    grid-template-rows: 28px 13px 10px 13px;
+    grid-template-rows: clamp(34px, 8.8dvw, 42px) clamp(15px, 3.8dvw, 18px) clamp(12px, 3dvw, 14px) clamp(15px, 3.8dvw, 18px);
     justify-items: center;
     height: 100%;
     min-width: 0;
-    padding: 3px 2px 3px;
+    padding: clamp(4px, 1.1dvw, 6px) 3px;
     border: 1px solid var(--m-line);
     border-radius: 9px;
     background: rgba(18, 43, 63, 0.95);
@@ -1054,8 +1049,8 @@
   }
 
   .mobile-pitch-button img {
-    width: 28px;
-    height: 28px;
+    width: clamp(34px, 8.8dvw, 42px);
+    height: clamp(34px, 8.8dvw, 42px);
     border-radius: 50%;
     object-fit: cover;
     clip-path: circle(48% at 50% 50%);
@@ -1063,14 +1058,14 @@
   }
   .mobile-pitch-button strong {
     max-width: 100%;
-    font-size: 9px;
-    line-height: 13px;
+    font-size: clamp(10px, 2.55dvw, 12px);
+    line-height: clamp(15px, 3.8dvw, 18px);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .mobile-pitch-button small { color: #c4d3e0; font-size: 7px; line-height: 10px; white-space: nowrap; }
+  .mobile-pitch-button small { color: #c4d3e0; font-size: clamp(8px, 2dvw, 10px); line-height: clamp(12px, 3dvw, 14px); white-space: nowrap; }
   .mobile-pitch-button em {
     align-self: end;
     width: calc(100% - 8px);
@@ -1078,7 +1073,7 @@
     border-radius: 5px;
     background: #1f5a42;
     color: #9cf0a7;
-    font-size: 8px;
+    font-size: clamp(9px, 2.25dvw, 11px);
     font-style: normal;
     text-align: center;
   }
@@ -1098,9 +1093,9 @@
   .mobile-release-panel {
     position: fixed;
     left: 50%;
-    bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    bottom: calc(clamp(104px, 28dvw, 132px) + env(safe-area-inset-bottom, 0px));
     z-index: 78;
-    width: min(374px, calc(100vw - 28px));
+    width: min(420px, calc(100dvw - 20px));
     min-height: 86px;
     transform: translate(-50%, 14px) scale(0.98);
     display: grid;
@@ -1305,7 +1300,7 @@
   .mobile-info-panel {
     left: 50%;
     right: auto;
-    width: min(430px, calc(100vw - 24px));
+    width: min(430px, calc(100dvw - 20px));
     transform: translateX(-50%);
   }
 }
