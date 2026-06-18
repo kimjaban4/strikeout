@@ -6626,6 +6626,8 @@ button.card-toggle {
 .title-screen-overlay {
   position: fixed;
   inset: 0;
+  width: 100dvw;
+  height: 100dvh;
   z-index: 400;
   overflow: hidden;
   background: #000;
@@ -6645,11 +6647,11 @@ body:has(#titleOverlay:not([hidden])) .bgm-toggle {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 100dvh;
-  min-height: 100vh;
+  width: 100dvw;
+  height: 100dvh;
+  min-height: 0;
   background: #000;
+  overflow: hidden;
 }
 
 .title-screen-art {
