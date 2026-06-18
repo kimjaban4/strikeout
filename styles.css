@@ -5496,8 +5496,52 @@ button.card-toggle {
 }
 
 @media (max-width: 760px) {
+  .pitcher-select-overlay {
+    align-items: start;
+    width: 100dvw;
+    height: 100dvh;
+    padding: 10px;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .pitcher-select-box {
+    width: calc(100dvw - 20px);
+    max-height: calc(100dvh - 20px);
+    padding: 14px;
+    overflow-y: auto;
+    box-sizing: border-box;
+  }
+
+  .pitcher-select-box h2 {
+    margin: 0;
+    font-size: 1.35rem;
+  }
+
   .pitcher-choice-list {
     grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .pitcher-choice-card {
+    min-height: 112px !important;
+    gap: 6px;
+    padding: 12px !important;
+  }
+
+  .choice-number {
+    width: 26px;
+    height: 26px;
+  }
+
+  .pitcher-choice-card strong {
+    font-size: 1.15rem;
+  }
+
+  .pitcher-choice-card em,
+  .pitcher-choice-card small {
+    font-size: 0.78rem;
   }
 
   .reward-choice-list,
