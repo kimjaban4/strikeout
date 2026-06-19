@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="css/15-mission-focus-card.css?v=20260611-mission-compact" />
     <link rel="stylesheet" href="css/16-plate-scene-hud.css?v=20260611-plate-center" />
     <link rel="stylesheet" href="css/20-pitch-selection.css?v=20260610-main-title" />
-    <link rel="stylesheet" href="css/31-mobile-reference.css?v=20260619-responsive-all-mobile-2" />
+    <link rel="stylesheet" href="css/31-mobile-reference.css?v=20260619-reward-recommend-mobile" />
   </head>
   <body>
     <button id="bgmToggle" class="bgm-toggle" type="button" aria-pressed="false" title="BGM 끄기">BGM</button>
@@ -217,7 +217,7 @@
                 <strong id="suspicionText">0%</strong>
               </div>
               <div class="suspicion-track"><i id="suspicionFill"></i></div>
-              <small id="suspicionHint">같은 흐름이 반복되면 타자가 기다리기 시작합니다.</small>
+              <small id="suspicionHint">같은 패턴이 반복되면 타자가 기다리기 시작합니다.</small>
             </div>
             <button
               id="mobileBatterToggle"
@@ -354,7 +354,7 @@
 
       <section class="mobile-mid-panel" aria-label="투수 예측과 승부기록">
         <article class="mobile-duel-read-card">
-          <span>흐름 <b id="mobileDuelReadFlow">보통</b></span>
+          <span>예측 <b id="mobileDuelReadFlow">보통</b></span>
           <span>추천 <b id="mobileDuelReadPitch">대기</b></span>
           <span>간파 위험 <b id="mobileDuelReadRisk">□□□</b></span>
         </article>
@@ -370,7 +370,7 @@
       <section class="mobile-control-panel">
         <div id="mobileReleasePanel" class="mobile-release-panel" data-state="idle">
           <div><span>릴리즈 타이밍</span><strong id="mobileReleaseGrade">대기</strong></div>
-          <div class="mobile-release-labels"><span>빠름</span><b id="mobileReleaseMode">안정 릴리즈</b><span>늦음</span></div>
+          <div class="mobile-release-labels"><span>빠름</span><b id="mobileReleaseMode">정확 구간 대기</b><span>늦음</span></div>
           <div class="mobile-release-track"><i></i><u></u><b id="mobileReleaseCursor"></b></div>
         </div>
         <div class="mobile-action-row">
@@ -438,7 +438,7 @@
       <div class="reward-box">
         <p class="eyebrow">ROGUELIKE REWARD</p>
         <h2 id="rewardTitle">승부 보상</h2>
-        <p id="rewardReason">방금 승부로 흐름을 가져왔습니다.</p>
+        <p id="rewardReason">방금 승부로 보상 기회를 얻었습니다.</p>
         <div id="rewardChoiceList" class="reward-choice-list"></div>
         <button id="rewardConfirmButton" class="reward-confirm-button" type="button" hidden disabled>이 보상 선택</button>
       </div>
@@ -448,7 +448,7 @@
       <div class="reward-box dugout-box">
         <p class="eyebrow">DUGOUT CHOICE</p>
         <h2 id="dugoutTitle">덕아웃 작전 선택</h2>
-        <p id="dugoutReason">다음 이닝을 어떤 흐름으로 풀지 고르세요.</p>
+        <p id="dugoutReason">다음 이닝을 어떤 예측으로 풀지 고르세요.</p>
         <div id="dugoutChoiceList" class="dugout-choice-list"></div>
       </div>
     </div>
@@ -456,10 +456,10 @@
     <div id="mobileSheetBackdrop" class="mobile-sheet-backdrop" hidden aria-hidden="true"></div>
 
     <!-- 순서 고정: constants → state → core -->
-    <script src="js/00-constants.js?v=20260610-mission-toggle"></script>
+    <script src="js/00-constants.js?v=20260619-reward-recommend-mobile"></script>
     <script src="js/01-state.js?v=20260610-mission-toggle"></script>
     <script src="js/03-pitch-progression.js?v=20260610-mission-toggle"></script>
     <script src="js/04-stage-theme.js?v=20260610-mission-toggle"></script>
-    <script src="js/02-game-core.js?v=20260610-mission-toggle"></script>
+    <script src="js/02-game-core.js?v=20260619-reward-recommend-mobile"></script>
   </body>
 </html>

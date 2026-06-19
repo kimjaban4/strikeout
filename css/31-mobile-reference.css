@@ -1653,3 +1653,152 @@
     font-size: 8px;
   }
 }
+
+@media (orientation: portrait) {
+  .reward-overlay,
+  .dugout-overlay {
+    place-items: center;
+  }
+
+  .reward-box,
+  .dugout-box {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    max-height: calc(100dvh - 16px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    overflow: hidden;
+  }
+
+  .reward-box h2,
+  .dugout-box h2 {
+    font-size: clamp(20px, 6vw, 28px);
+  }
+
+  .reward-box > p:last-of-type,
+  .dugout-box > p:last-of-type {
+    font-size: clamp(12px, 3.4vw, 15px);
+    line-height: 1.22;
+  }
+
+  .reward-choice-list,
+  .dugout-choice-list {
+    display: grid;
+    grid-template-rows: repeat(3, minmax(0, 1fr));
+    min-height: 0;
+  }
+
+  .reward-choice-card,
+  .dugout-choice-card {
+    align-content: center;
+    min-height: 0;
+    max-height: 100%;
+    overflow: hidden;
+  }
+
+  .reward-choice-card.core-evolution-card {
+    min-height: 0;
+    padding: 6px 8px;
+  }
+
+  .core-evo-head {
+    flex-direction: row;
+    gap: 6px;
+    margin-bottom: 5px;
+  }
+
+  .core-evo-icon {
+    flex: 0 0 24px;
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+    font-size: 0.8rem;
+  }
+
+  .core-evo-titles {
+    text-align: left;
+  }
+
+  .core-evo-sub {
+    margin-top: 1px;
+    font-size: clamp(9px, 2.6vw, 11px);
+  }
+
+  .reward-choice-card strong,
+  .dugout-choice-card strong,
+  .core-evo-name {
+    font-size: clamp(15px, 4.4vw, 19px);
+    line-height: 1.08;
+  }
+
+  .reward-choice-card > span,
+  .dugout-choice-card p,
+  .core-evo-value {
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: clamp(10px, 3.1vw, 13px);
+    line-height: 1.24;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+
+  .core-evo-body {
+    gap: 3px;
+  }
+
+  .core-evo-row {
+    min-height: 0;
+    gap: 2px;
+    padding: 4px 6px;
+    border-radius: 6px;
+  }
+
+  .core-evo-label {
+    font-size: clamp(8px, 2.3vw, 10px);
+  }
+
+  .reward-card-foot {
+    gap: 3px;
+  }
+
+  .reward-chip {
+    padding: 2px 6px;
+    font-size: clamp(9px, 2.6vw, 11px);
+  }
+
+  .reward-rarity-badge,
+  .reward-chip--rarity-bronze,
+  .reward-chip--rarity-silver,
+  .reward-chip--rarity-gold,
+  .reward-chip--rarity-platinum {
+    color: #0d2135;
+  }
+
+  .reward-rarity-badge--bronze,
+  .reward-chip--rarity-bronze {
+    background: #ffe3c2;
+  }
+
+  .reward-rarity-badge--silver,
+  .reward-chip--rarity-silver {
+    background: #e7eef6;
+  }
+
+  .reward-rarity-badge--gold,
+  .reward-chip--rarity-gold {
+    background: #ffe58b;
+  }
+
+  .reward-rarity-badge--platinum,
+  .reward-chip--rarity-platinum {
+    background: #dcf8ff;
+  }
+
+  .mobile-release-panel {
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0.98);
+  }
+
+  .mobile-release-panel.is-active {
+    transform: translate(-50%, -50%) scale(1);
+  }
+}

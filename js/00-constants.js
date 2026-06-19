@@ -99,7 +99,7 @@ MP.categoryNames = {
   offspeed: "느린공"
 };
 
-MP.stageInnings = [3, 5, 7];
+MP.stageInnings = [3, 3, 3];
 MP.RELEASE_TIMING_SPEED = 0.8;
 
 MP.stageConfigs = [
@@ -129,7 +129,7 @@ MP.stageConfigs = [
   {
     id: "analysis_lineup",
     name: "분석타선",
-    innings: 5,
+    innings: 3,
     clearRuns: 4,
     stableRuns: 2,
     perfectRuns: 1,
@@ -155,7 +155,7 @@ MP.stageConfigs = [
   {
     id: "championship_lineup",
     name: "챔피언십타선",
-    innings: 7,
+    innings: 3,
     clearRuns: 5,
     stableRuns: 3,
     perfectRuns: 2,
