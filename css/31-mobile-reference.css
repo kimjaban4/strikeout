@@ -1379,3 +1379,277 @@
   .mobile-pitch-button img { width: 28px; height: 28px; }
   .mobile-pitch-button strong { font-size: 9px; }
 }
+
+@media (orientation: portrait) {
+  .mobile-game-shell {
+    --m-log-height: clamp(168px, 30dvh, 300px);
+    --m-card-height: clamp(50px, 13vw, 66px);
+    --m-zone-size: min(clamp(152px, 48vw, 214px), clamp(146px, 32dvh, 214px));
+    --m-pitch-width: clamp(96px, 29vw, 132px);
+    --m-pitch-row: clamp(46px, 12.6vw, 62px);
+    grid-template-rows: auto minmax(0, 1fr) minmax(150px, var(--m-log-height)) 0;
+  }
+
+  .mobile-field-scene {
+    min-height: 0;
+  }
+
+  .mobile-player-card {
+    height: var(--m-card-height);
+  }
+
+  .mobile-batter-summary {
+    top: calc(13px + var(--m-card-height));
+  }
+
+  .mobile-pitch-buttons {
+    left: clamp(7px, 2.4vw, 12px);
+    top: calc(var(--m-card-height) + var(--m-card-height) + 18px);
+    width: var(--m-pitch-width);
+    max-height: calc(100% - var(--m-card-height) - var(--m-card-height) - 26px);
+    grid-auto-rows: minmax(var(--m-pitch-row), auto);
+    gap: clamp(5px, 1.3vw, 8px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-pitch-button {
+    grid-template-columns: clamp(34px, 9vw, 44px) minmax(0, 1fr);
+    min-height: var(--m-pitch-row);
+    padding: clamp(4px, 1.2vw, 6px);
+  }
+
+  .mobile-pitch-button img {
+    width: clamp(34px, 9vw, 44px);
+    height: clamp(34px, 9vw, 44px);
+  }
+
+  .mobile-pitch-button strong {
+    font-size: clamp(10px, 3vw, 14px);
+  }
+
+  .mobile-strike-zone {
+    left: clamp(190px, 60vw, calc(100% - 82px));
+    top: clamp(188px, 61%, 72%);
+    width: var(--m-zone-size);
+    height: var(--m-zone-size);
+  }
+
+  .mobile-release-panel {
+    top: clamp(96px, 19dvh, 150px);
+    width: min(360px, calc(100vw - 24px));
+    min-height: clamp(74px, 11dvh, 86px);
+    grid-template-rows: 18px 16px minmax(24px, 1fr);
+    padding: clamp(8px, 2vw, 10px) 12px;
+  }
+
+  .mobile-mid-panel {
+    grid-template-rows: clamp(36px, 8.8vw, 44px) minmax(0, 1fr);
+    min-height: 0;
+    padding: 6px clamp(7px, 2.4vw, 10px) calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-recent-log-card {
+    height: auto;
+    min-height: 0;
+  }
+
+  .mobile-recent-log-list {
+    grid-auto-rows: minmax(clamp(40px, 10.5vw, 54px), auto);
+  }
+}
+
+@media (max-height: 640px) and (orientation: portrait) {
+  .mobile-game-shell {
+    --m-log-height: clamp(150px, 28dvh, 190px);
+    --m-card-height: clamp(46px, 12vw, 56px);
+    --m-zone-size: min(clamp(142px, 45vw, 184px), clamp(136px, 30dvh, 184px));
+    --m-pitch-width: clamp(90px, 28vw, 112px);
+    --m-pitch-row: clamp(42px, 11.5vw, 52px);
+  }
+
+  .mobile-game-header {
+    grid-template-rows: clamp(36px, 9.8vw, 42px) clamp(32px, 8.8vw, 38px);
+    gap: 4px 6px;
+  }
+
+  .mobile-strike-zone {
+    top: clamp(174px, 60%, 71%);
+  }
+
+  .mobile-release-panel {
+    top: clamp(88px, 17dvh, 122px);
+  }
+}
+
+@media (orientation: portrait) {
+  .reward-overlay,
+  .dugout-overlay {
+    place-items: start center;
+    height: 100dvh;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 8px calc(8px + env(safe-area-inset-bottom, 0px));
+    overflow: hidden;
+  }
+
+  .reward-box,
+  .dugout-box {
+    width: min(380px, calc(100vw - 16px));
+    max-height: calc(100dvh - 16px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    padding: clamp(11px, 3.4vw, 16px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .reward-box h2,
+  .dugout-box h2 {
+    margin: 2px 0 6px;
+    font-size: clamp(24px, 6.8vw, 32px);
+    line-height: 1.05;
+  }
+
+  .reward-box > p:last-of-type,
+  .dugout-box > p:last-of-type {
+    font-size: clamp(14px, 3.9vw, 18px);
+    line-height: 1.32;
+  }
+
+  .reward-choice-list,
+  .dugout-choice-list {
+    grid-template-columns: 1fr;
+    gap: clamp(7px, 2vw, 10px);
+    margin-top: clamp(8px, 2.6vw, 12px);
+  }
+
+  .reward-choice-card,
+  .dugout-choice-card {
+    min-height: 0;
+    gap: 5px;
+    padding: clamp(9px, 3vw, 13px);
+  }
+
+  .reward-choice-card strong,
+  .dugout-choice-card strong {
+    font-size: clamp(17px, 5.2vw, 22px);
+    line-height: 1.12;
+  }
+
+  .reward-choice-card p,
+  .dugout-choice-card p {
+    font-size: clamp(12px, 3.7vw, 15px);
+    line-height: 1.34;
+  }
+}
+
+@media (max-height: 640px) and (orientation: portrait) {
+  .reward-box h2,
+  .dugout-box h2 {
+    font-size: clamp(22px, 6.2vw, 27px);
+  }
+
+  .reward-box > p:last-of-type,
+  .dugout-box > p:last-of-type {
+    font-size: clamp(13px, 3.7vw, 16px);
+  }
+
+  .reward-choice-card,
+  .dugout-choice-card {
+    padding: 9px 10px;
+  }
+}
+
+@media (max-width: 340px) and (orientation: portrait) {
+  .mobile-game-header {
+    grid-template-columns: minmax(126px, 1fr) minmax(112px, 1.05fr) 38px;
+    grid-template-rows: 38px 34px;
+    gap: 4px;
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+
+  .mobile-stage-theme-summary {
+    padding: 4px 6px;
+  }
+
+  .mobile-stage-theme-summary span {
+    font-size: 8px;
+  }
+
+  .mobile-stage-theme-summary strong {
+    font-size: 10px;
+  }
+
+  .mobile-score-summary {
+    overflow: hidden;
+  }
+
+  .mobile-score-summary span {
+    font-size: 7px;
+  }
+
+  .mobile-score-summary b {
+    font-size: 11px;
+  }
+
+  .mobile-score-summary span:last-child b {
+    max-width: 100%;
+    font-size: 8px;
+    line-height: 1.05;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+  }
+
+  .mobile-new-game::before {
+    font-size: 20px;
+  }
+
+  .mobile-count-strip {
+    padding-left: 6px;
+    padding-right: 34px;
+  }
+
+  .mobile-count-strip > div > b {
+    font-size: 13px;
+  }
+
+  .mobile-count-strip span i {
+    width: 7px;
+    height: 7px;
+  }
+
+  .mobile-bases {
+    right: 9px;
+    width: 18px;
+    height: 18px;
+  }
+
+  .mobile-bases i {
+    width: 7px;
+    height: 7px;
+  }
+
+  .mobile-mission-card {
+    grid-template-columns: 34px minmax(0, 1fr) 32px;
+    gap: 4px;
+    min-height: 34px;
+  }
+
+  .mobile-mission-label {
+    height: 22px;
+    font-size: 8px;
+  }
+
+  .mobile-mission-card strong {
+    font-size: 8px;
+  }
+
+  .mobile-mission-card small {
+    font-size: 7px;
+  }
+
+  .mobile-mission-card > b {
+    font-size: 8px;
+  }
+}
