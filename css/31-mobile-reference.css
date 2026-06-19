@@ -1033,13 +1033,13 @@
   .mobile-pitch-buttons {
     position: absolute;
     z-index: 6;
-    left: clamp(8px, 2.7vw, 14px);
-    top: clamp(122px, 34vw, 148px);
+    left: clamp(7px, 2.4vw, 12px);
+    top: clamp(118px, 32vw, 142px);
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-auto-rows: minmax(clamp(38px, 10vw, 46px), auto);
-    gap: clamp(4px, 1.15vw, 6px);
-    width: clamp(78px, 24vw, 104px);
+    grid-auto-rows: minmax(clamp(48px, 12.8vw, 60px), auto);
+    gap: clamp(5px, 1.35vw, 8px);
+    width: clamp(92px, 28vw, 124px);
     min-width: 0;
     height: auto;
   }
@@ -1047,17 +1047,17 @@
   .mobile-pitch-button {
     position: relative;
     display: grid;
-    grid-template-columns: clamp(26px, 7.4vw, 32px) minmax(0, 1fr);
+    grid-template-columns: clamp(34px, 9vw, 42px) minmax(0, 1fr);
     grid-template-rows: auto auto auto;
     align-items: center;
     column-gap: 5px;
     justify-items: stretch;
-    min-height: clamp(38px, 10vw, 46px);
+    min-height: clamp(48px, 12.8vw, 60px);
     height: auto;
     min-width: 0;
-    padding: 4px 5px;
+    padding: 5px 6px;
     border: 1px solid var(--m-line);
-    border-radius: 7px;
+    border-radius: 8px;
     background: rgba(18, 43, 63, 0.9);
     color: #fff;
     overflow: hidden;
@@ -1071,8 +1071,8 @@
   .mobile-pitch-button img {
     grid-column: 1;
     grid-row: 1 / 4;
-    width: clamp(26px, 7.4vw, 32px);
-    height: clamp(26px, 7.4vw, 32px);
+    width: clamp(34px, 9vw, 42px);
+    height: clamp(34px, 9vw, 42px);
     border-radius: 50%;
     object-fit: cover;
     clip-path: circle(48% at 50% 50%);
@@ -1082,8 +1082,8 @@
     grid-column: 2;
     grid-row: 1;
     max-width: 100%;
-    font-size: clamp(9px, 2.35vw, 11px);
-    line-height: 1.15;
+    font-size: clamp(11px, 3vw, 14px);
+    line-height: 1.1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1093,7 +1093,7 @@
     grid-column: 2;
     grid-row: 2;
     color: #c4d3e0;
-    font-size: clamp(7px, 1.85vw, 9px);
+    font-size: clamp(8px, 2.15vw, 10px);
     line-height: 1.1;
     white-space: nowrap;
   }
@@ -1107,8 +1107,8 @@
     border-radius: 4px;
     background: #1f5a42;
     color: #9cf0a7;
-    font-size: clamp(7px, 1.9vw, 9px);
-    line-height: 1.1;
+    font-size: clamp(8px, 2.25vw, 10px);
+    line-height: 1.2;
     font-style: normal;
     text-align: center;
   }
@@ -1128,11 +1128,11 @@
   .mobile-release-panel {
     position: fixed;
     left: 50%;
-    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    top: calc(50% - clamp(224px, 62vw, 250px));
     z-index: 78;
-    width: min(420px, calc(100vw - 20px));
+    width: min(360px, calc(100vw - 24px));
     min-height: 86px;
-    transform: translate(-50%, 14px) scale(0.98);
+    transform: translate(-50%, -10px) scale(0.98);
     display: grid;
     grid-template-rows: 20px 18px 28px;
     gap: 5px;
@@ -1331,24 +1331,24 @@
   }
 
   .mobile-pitch-buttons {
-    top: clamp(112px, 31vw, 132px);
-    width: clamp(76px, 23vw, 98px);
-    grid-auto-rows: minmax(38px, auto);
+    top: clamp(108px, 29vw, 128px);
+    width: clamp(86px, 26vw, 112px);
+    grid-auto-rows: minmax(44px, auto);
   }
 
   .mobile-pitch-button {
-    min-height: 38px;
-    padding: 3px 4px;
+    min-height: 44px;
+    padding: 4px 5px;
   }
 
   .mobile-pitch-button img {
-    width: 26px;
-    height: 26px;
+    width: 32px;
+    height: 32px;
   }
 
   .mobile-pitch-button strong {
-    font-size: 9px;
-    line-height: 13px;
+    font-size: 10px;
+    line-height: 12px;
   }
 
   .mobile-pitch-button small {
@@ -1374,8 +1374,8 @@
   .mobile-brand-logo { height: 38px; }
   .mobile-score-summary b { font-size: 12px; }
   .mobile-control-panel { grid-template-rows: minmax(0, 1fr); gap: 0; }
-  .mobile-pitch-buttons { gap: 3px; width: 76px; }
-  .mobile-pitch-button { min-height: 36px; }
-  .mobile-pitch-button img { width: 24px; height: 24px; }
+  .mobile-pitch-buttons { gap: 3px; width: 82px; }
+  .mobile-pitch-button { min-height: 40px; }
+  .mobile-pitch-button img { width: 28px; height: 28px; }
   .mobile-pitch-button strong { font-size: 9px; }
 }
