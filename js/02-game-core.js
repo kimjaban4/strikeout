@@ -7172,6 +7172,12 @@ function pitcherTagDetailText(label) {
 function showMobileModalTagDetail(title, text) {
   const box = els.mobilePlayerDetailPanel?.querySelector("[data-mobile-detail-tag-text]");
   if (!box) return;
+  if (!box.hidden && box.dataset.activeTag === title) {
+    box.hidden = true;
+    box.dataset.activeTag = "";
+    return;
+  }
+  box.dataset.activeTag = title;
   box.innerHTML = `<strong>${escapeHtml(title)}</strong><p>${escapeHtml(text)}</p>`;
   box.hidden = false;
 }

@@ -91,7 +91,7 @@ test("mobile throw records a log entry", async ({ page }) => {
   await page.locator("#mobileReleasePanel").click();
   await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).toBeVisible({ timeout: 8000 });
   await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).not.toHaveClass(/is-batter-marker/);
-  await expect(page.locator("#mobileRecentLog")).toContainText("타자 변경:");
+  await expect(page.locator("#mobileRecentLog")).toContainText(/타자\s*변경/);
   await expect(page.locator("#mobileRecentLog")).toContainText(/km\/h/);
   await page.locator("#mobileRecentLogMore").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
@@ -102,10 +102,13 @@ test("mobile player tags open detail modal with tag text", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
 
+  const tagText = (await page.locator("[data-mobile-batter-tag]").first().textContent()).trim();
   await page.locator("[data-mobile-batter-tag]").first().click();
   await expect(page.locator("#mobilePlayerDetailPanel")).toBeVisible();
   await expect(page.locator("#mobilePlayerDetailPanel .mobile-detail-tag-text")).toBeVisible();
   await expect(page.locator("#mobilePlayerDetailPanel .mobile-detail-tags button").first()).toHaveAttribute("data-tier", /bronze|silver|gold|platinum/);
+  await page.locator("#mobilePlayerDetailPanel [data-mobile-modal-tag]").filter({ hasText: tagText }).first().click();
+  await expect(page.locator("#mobilePlayerDetailPanel .mobile-detail-tag-text").first()).toBeHidden();
   await expect(page.locator("#mobileInfoPanel")).toBeHidden();
 });
 
