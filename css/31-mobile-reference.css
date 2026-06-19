@@ -35,7 +35,7 @@
     z-index: 20;
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr) auto clamp(108px, 28vw, 132px);
+    grid-template-rows: auto minmax(0, 1fr) auto 0;
     width: 100vw !important;
     min-width: 100vw !important;
     max-width: 100vw !important;
@@ -723,7 +723,7 @@
 
   .mobile-mid-panel {
     display: grid;
-    grid-template-rows: clamp(38px, 9.6vw, 46px) clamp(176px, 45vw, 216px);
+    grid-template-rows: clamp(38px, 9.6vw, 46px) clamp(220px, 54vw, 288px);
     gap: 6px;
     padding: 6px 10px;
     background: linear-gradient(180deg, rgba(5, 18, 31, 0.3), #061827 22%);
@@ -778,7 +778,7 @@
   }
 
   .mobile-recent-log-card {
-    height: clamp(176px, 45vw, 216px);
+    height: clamp(220px, 54vw, 288px);
     min-height: 0;
     padding: 6px 7px;
     border: 1px solid rgba(92, 151, 255, 0.72);
@@ -917,13 +917,13 @@
   .mobile-strike-zone {
     position: absolute;
     z-index: 4;
-    left: 50%;
-    top: 64%;
+    left: 59%;
+    top: 62%;
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     grid-template-rows: repeat(5, 1fr);
-    width: clamp(150px, 49vw, 190px);
-    height: clamp(150px, 49vw, 190px);
+    width: clamp(146px, 47vw, 190px);
+    height: clamp(146px, 47vw, 190px);
     transform: translate(-50%, -50%);
     border: 2px solid rgba(255, 255, 255, 0.9);
     background: rgba(0, 15, 25, 0.35);
@@ -1021,33 +1021,44 @@
     grid-template-rows: minmax(0, 1fr);
     gap: 7px;
     min-height: 0;
-    height: 100%;
-    padding: 4px 10px calc(10px + env(safe-area-inset-bottom, 0px));
-    border-radius: 15px 15px 0 0;
-    background: linear-gradient(180deg, #0a2134, #061827);
-    box-shadow: 0 -12px 28px rgba(0, 0, 0, 0.3);
+    height: 0;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
     box-sizing: border-box;
+    overflow: visible;
   }
 
   .mobile-pitch-buttons {
+    position: absolute;
+    z-index: 6;
+    left: clamp(8px, 2.7vw, 14px);
+    top: clamp(122px, 34vw, 148px);
     display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: clamp(4px, 1.3vw, 7px);
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: minmax(clamp(38px, 10vw, 46px), auto);
+    gap: clamp(4px, 1.15vw, 6px);
+    width: clamp(78px, 24vw, 104px);
     min-width: 0;
-    height: 100%;
+    height: auto;
   }
 
   .mobile-pitch-button {
     position: relative;
     display: grid;
-    grid-template-rows: clamp(34px, 8.8vw, 42px) clamp(15px, 3.8vw, 18px) clamp(12px, 3vw, 14px) clamp(15px, 3.8vw, 18px);
-    justify-items: center;
-    height: 100%;
+    grid-template-columns: clamp(26px, 7.4vw, 32px) minmax(0, 1fr);
+    grid-template-rows: auto auto auto;
+    align-items: center;
+    column-gap: 5px;
+    justify-items: stretch;
+    min-height: clamp(38px, 10vw, 46px);
+    height: auto;
     min-width: 0;
-    padding: clamp(4px, 1.1vw, 6px) 3px;
+    padding: 4px 5px;
     border: 1px solid var(--m-line);
-    border-radius: 9px;
-    background: rgba(18, 43, 63, 0.95);
+    border-radius: 7px;
+    background: rgba(18, 43, 63, 0.9);
     color: #fff;
     overflow: hidden;
   }
@@ -1058,31 +1069,46 @@
   }
 
   .mobile-pitch-button img {
-    width: clamp(34px, 8.8vw, 42px);
-    height: clamp(34px, 8.8vw, 42px);
+    grid-column: 1;
+    grid-row: 1 / 4;
+    width: clamp(26px, 7.4vw, 32px);
+    height: clamp(26px, 7.4vw, 32px);
     border-radius: 50%;
     object-fit: cover;
     clip-path: circle(48% at 50% 50%);
     mix-blend-mode: screen;
   }
   .mobile-pitch-button strong {
+    grid-column: 2;
+    grid-row: 1;
     max-width: 100%;
-    font-size: clamp(10px, 2.55vw, 12px);
-    line-height: clamp(15px, 3.8vw, 18px);
+    font-size: clamp(9px, 2.35vw, 11px);
+    line-height: 1.15;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .mobile-pitch-button small { color: #c4d3e0; font-size: clamp(8px, 2vw, 10px); line-height: clamp(12px, 3vw, 14px); white-space: nowrap; }
+  .mobile-pitch-button small {
+    grid-column: 2;
+    grid-row: 2;
+    color: #c4d3e0;
+    font-size: clamp(7px, 1.85vw, 9px);
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
   .mobile-pitch-button em {
-    align-self: end;
-    width: calc(100% - 8px);
-    padding: 2px 0;
-    border-radius: 5px;
+    grid-column: 2;
+    grid-row: 3;
+    align-self: center;
+    width: 100%;
+    padding: 1px 0;
+    border-radius: 4px;
     background: #1f5a42;
     color: #9cf0a7;
-    font-size: clamp(9px, 2.25vw, 11px);
+    font-size: clamp(7px, 1.9vw, 9px);
+    line-height: 1.1;
     font-style: normal;
     text-align: center;
   }
@@ -1102,7 +1128,7 @@
   .mobile-release-panel {
     position: fixed;
     left: 50%;
-    bottom: calc(clamp(104px, 28vw, 132px) + env(safe-area-inset-bottom, 0px));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
     z-index: 78;
     width: min(420px, calc(100vw - 20px));
     min-height: 86px;
@@ -1289,29 +1315,35 @@
 
 @media (max-height: 820px) and (orientation: portrait) {
   .mobile-game-shell {
-    grid-template-rows: auto minmax(0, 1fr) auto 104px;
+    grid-template-rows: auto minmax(0, 1fr) auto 0;
   }
 
   .mobile-mid-panel {
-    grid-template-rows: 40px clamp(150px, 38vw, 172px);
+    grid-template-rows: 40px clamp(200px, 50vw, 238px);
   }
 
   .mobile-recent-log-card {
-    height: clamp(150px, 38vw, 172px);
+    height: clamp(200px, 50vw, 238px);
   }
 
   .mobile-control-panel {
-    padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 0;
+  }
+
+  .mobile-pitch-buttons {
+    top: clamp(112px, 31vw, 132px);
+    width: clamp(76px, 23vw, 98px);
+    grid-auto-rows: minmax(38px, auto);
   }
 
   .mobile-pitch-button {
-    grid-template-rows: 30px 13px 10px 13px;
-    padding: 4px 3px;
+    min-height: 38px;
+    padding: 3px 4px;
   }
 
   .mobile-pitch-button img {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
   }
 
   .mobile-pitch-button strong {
@@ -1332,7 +1364,7 @@
 }
 
 @media (max-width: 370px) and (orientation: portrait) {
-  .mobile-game-shell { grid-template-rows: auto minmax(0, 1fr) auto 96px; }
+  .mobile-game-shell { grid-template-rows: auto minmax(0, 1fr) auto 0; }
   .mobile-game-header {
     grid-template-columns: 176px minmax(0, 1fr) 44px;
     gap: 6px;
@@ -1341,9 +1373,9 @@
   }
   .mobile-brand-logo { height: 38px; }
   .mobile-score-summary b { font-size: 12px; }
-  .mobile-control-panel { grid-template-rows: minmax(0, 1fr); gap: 6px; }
-  .mobile-pitch-buttons { gap: 3px; }
-  .mobile-pitch-button { grid-template-rows: 28px 13px 10px 13px; }
-  .mobile-pitch-button img { width: 28px; height: 28px; }
+  .mobile-control-panel { grid-template-rows: minmax(0, 1fr); gap: 0; }
+  .mobile-pitch-buttons { gap: 3px; width: 76px; }
+  .mobile-pitch-button { min-height: 36px; }
+  .mobile-pitch-button img { width: 24px; height: 24px; }
   .mobile-pitch-button strong { font-size: 9px; }
 }
