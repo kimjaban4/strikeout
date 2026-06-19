@@ -8573,6 +8573,13 @@ function bindUiEvents() {
     if (button) handleCourseClick(button.dataset.mobileZone, button.dataset.targetRow, button.dataset.targetCol, button.dataset.intent);
   });
   els.mobileGameShell?.addEventListener("click", (event) => {
+    if (
+      state.releaseTiming?.active &&
+      !event.target.closest?.("[data-mobile-pitch], [data-mobile-zone], #mobileReleasePanel")
+    ) {
+      finishReleaseTiming();
+      return;
+    }
     const closeButton = event.target.closest?.("[data-mobile-detail-close]");
     if (closeButton) {
       closeMobileSheets();
