@@ -237,14 +237,285 @@ function tagById(tagId) {
   );
 }
 
+const MAX_SUPPORT_TAGS = 3;
+const STAGE_CARD_EXCLUDED_IDS = new Set(["R007", "R008", "R014"]);
+const CONDITIONAL_CARD_RULES = {
+  preventSameTypeRepeatStages: 2
+};
+
 function ensurePitcherTagFields(pitcher) {
   if (!pitcher) return;
   pitcher.coreEvolutionId = pitcher.coreEvolutionId || null;
-  pitcher.bonusTags = pitcher.bonusTags || [];
+  pitcher.bonusTags = [...new Set(pitcher.bonusTags || [])].slice(0, MAX_SUPPORT_TAGS);
   pitcher.bonusTagTiers = pitcher.bonusTagTiers || {};
   pitcher.bonusTags.forEach((tagId) => {
     if (!pitcher.bonusTagTiers[tagId]) pitcher.bonusTagTiers[tagId] = 1;
   });
+}
+
+const CORE_XP_THRESHOLDS = {
+  silver: 4,
+  gold: 9,
+  evolution1: 15,
+  evolution2: 24
+};
+
+const CORE_XP_GAIN_LIMIT = {
+  perAtBat: 1,
+  perInning: 2,
+  perStage: 5
+};
+
+const PITCH_TIER_XP = {
+  bronze: 3,
+  silver: 7,
+  gold: 12
+};
+
+const GROWTH_TIER_RANK = {
+  none: 0,
+  bronze: 1,
+  silver: 2,
+  gold: 3,
+  platinum: 4
+};
+
+const GROWTH_TIER_LABEL = {
+  none: "무등급",
+  bronze: "브론즈",
+  silver: "실버",
+  gold: "골드",
+  platinum: "플래티넘"
+};
+
+function coreTierFromXp(xp = 0) {
+  if (xp >= CORE_XP_THRESHOLDS.gold) return "gold";
+  if (xp >= CORE_XP_THRESHOLDS.silver) return "silver";
+  return "bronze";
+}
+
+function pitchTierFromXp(xp = 0) {
+  if (xp >= PITCH_TIER_XP.gold) return "gold";
+  if (xp >= PITCH_TIER_XP.silver) return "silver";
+  if (xp >= PITCH_TIER_XP.bronze) return "bronze";
+  return "none";
+}
+
+function ensurePitcherGrowthFields(pitcher = state.pitcher) {
+  if (!pitcher) return null;
+  ensurePitcherTagFields(pitcher);
+  pitcher.coreXp = Number.isFinite(pitcher.coreXp) ? pitcher.coreXp : 0;
+  pitcher.coreTier = pitcher.coreTier || coreTierFromXp(pitcher.coreXp);
+  pitcher.pitchMastery = pitcher.pitchMastery || {};
+  (pitchLibrary || []).forEach((pitch) => {
+    if (!pitcher.pitchMastery[pitch.id]) {
+      pitcher.pitchMastery[pitch.id] = { xp: 0, tier: "none" };
+    }
+  });
+  pitcher.weaknessTagId = pitcher.weaknessTagId || null;
+  pitcher.pendingCoreEvolutionReward = pitcher.pendingCoreEvolutionReward || null;
+  pitcher.pendingPitchUpgradeReward = pitcher.pendingPitchUpgradeReward || null;
+  pitcher.bossData = Number.isFinite(pitcher.bossData) ? pitcher.bossData : 0;
+  pitcher.rewardHistory = pitcher.rewardHistory || {};
+  pitcher.rewardHistory.conditionTypesByStage = pitcher.rewardHistory.conditionTypesByStage || [];
+  pitcher.coreXpLimits = pitcher.coreXpLimits || {};
+  return pitcher;
+}
+
+function resetStageGrowthSummary() {
+  state.stageGrowthSummary = {
+    stageIndex: state.stageIndex,
+    coreXp: 0,
+    bossData: 0,
+    growthMarks: 0,
+    pitchXp: 0,
+    pitchTierUps: []
+  };
+  state.stageGrowthSummaryLogged = false;
+}
+
+function createGrowthResult() {
+  return {
+    visible: false,
+    coreXpGain: 0,
+    coreTierBefore: "bronze",
+    coreTierAfter: "bronze",
+    coreTierUp: false,
+    pitchGrowth: [],
+    bossDataGain: 0,
+    weaknessProgress: 0,
+    bonusTagProgress: 0,
+    pendingCoreEvolution: false,
+    pendingPitchUpgrade: false,
+    detailReason: []
+  };
+}
+
+function shouldShowGrowthMark(growthResult) {
+  return (
+    growthResult.coreXpGain > 0 ||
+    growthResult.coreTierUp ||
+    growthResult.pitchGrowth.some((growth) => growth.tierUp) ||
+    growthResult.bossDataGain > 0 ||
+    growthResult.weaknessProgress > 0 ||
+    growthResult.bonusTagProgress > 0 ||
+    growthResult.pendingCoreEvolution ||
+    growthResult.pendingPitchUpgrade
+  );
+}
+
+function growthResultIsOut(title, result) {
+  return title === "STRIKE OUT!" || title === "DOUBLE PLAY!" || result?.result === "inPlayOut";
+}
+
+function shouldGrantCoreXp(title, result) {
+  if (!growthResultIsOut(title, result)) return false;
+  if (result?.batter?.isBoss) return true;
+  if (title === "DOUBLE PLAY!") return true;
+  return !result?.targetMatch;
+}
+
+function grantCoreXp(pitcher, requested, result) {
+  const limits = pitcher.coreXpLimits || {};
+  if (limits.stageIndex !== state.stageIndex) {
+    limits.stageIndex = state.stageIndex;
+    limits.stageGain = 0;
+  }
+  if (limits.inning !== state.inning) {
+    limits.inning = state.inning;
+    limits.inningGain = 0;
+  }
+  const atBatCap = result?.result === "doublePlay" ? 2 : CORE_XP_GAIN_LIMIT.perAtBat;
+  const cappedRequest = Math.min(requested, atBatCap);
+  const remainingInning = Math.max(0, CORE_XP_GAIN_LIMIT.perInning - (limits.inningGain || 0));
+  const remainingStage = Math.max(0, CORE_XP_GAIN_LIMIT.perStage - (limits.stageGain || 0));
+  const gain = Math.max(0, Math.min(cappedRequest, remainingInning, remainingStage));
+  if (gain > 0) {
+    pitcher.coreXp += gain;
+    limits.inningGain = (limits.inningGain || 0) + gain;
+    limits.stageGain = (limits.stageGain || 0) + gain;
+  }
+  pitcher.coreXpLimits = limits;
+  return gain;
+}
+
+function grantPitchMasteryXp(pitcher, result) {
+  const pitchId = result?.pitch?.id;
+  if (!pitchId) return null;
+  const mastery = pitcher.pitchMastery[pitchId] || { xp: 0, tier: "none" };
+  const tierBefore = mastery.tier || pitchTierFromXp(mastery.xp);
+  mastery.xp = (mastery.xp || 0) + 1;
+  mastery.tier = pitchTierFromXp(mastery.xp);
+  pitcher.pitchMastery[pitchId] = mastery;
+  return {
+    pitchId,
+    pitchName: result.pitch.name || pitchId,
+    xpGain: 1,
+    tierBefore,
+    tierAfter: mastery.tier,
+    tierUp: GROWTH_TIER_RANK[mastery.tier] > GROWTH_TIER_RANK[tierBefore]
+  };
+}
+
+function recordStageGrowth(growthResult) {
+  if (!state.stageGrowthSummary || state.stageGrowthSummary.stageIndex !== state.stageIndex) resetStageGrowthSummary();
+  const summary = state.stageGrowthSummary;
+  summary.coreXp += growthResult.coreXpGain;
+  summary.bossData += growthResult.bossDataGain;
+  summary.pitchXp += growthResult.pitchGrowth.reduce((sum, growth) => sum + (growth.xpGain || 0), 0);
+  if (growthResult.visible) summary.growthMarks += 1;
+  growthResult.pitchGrowth
+    .filter((growth) => growth.tierUp)
+    .forEach((growth) => {
+      summary.pitchTierUps.push({
+        pitchId: growth.pitchId,
+        pitchName: growth.pitchName,
+        tier: growth.tierAfter
+      });
+    });
+}
+
+function processAtBatGrowth(result, title) {
+  const growthResult = createGrowthResult();
+  const pitcher = ensurePitcherGrowthFields();
+  if (!pitcher || !result || !growthResultIsOut(title, result)) {
+    state.lastGrowthResult = growthResult;
+    return growthResult;
+  }
+
+  const coreXpBefore = pitcher.coreXp;
+  growthResult.coreTierBefore = pitcher.coreTier || coreTierFromXp(pitcher.coreXp);
+  const pitchGrowth = grantPitchMasteryXp(pitcher, result);
+  if (pitchGrowth) growthResult.pitchGrowth.push(pitchGrowth);
+
+  if (shouldGrantCoreXp(title, result)) {
+    const requestedCoreXp = title === "DOUBLE PLAY!" ? 2 : 1;
+    growthResult.coreXpGain = grantCoreXp(pitcher, requestedCoreXp, result);
+    if (growthResult.coreXpGain > 0) growthResult.detailReason.push("핵심 성향 경험 축적");
+  }
+
+  if (result.batter?.isBoss) {
+    pitcher.bossData += 1;
+    growthResult.bossDataGain = 1;
+    growthResult.detailReason.push("보스 데이터 획득");
+  }
+
+  const coreTierAfter = coreTierFromXp(pitcher.coreXp);
+  growthResult.coreTierAfter = coreTierAfter;
+  growthResult.coreTierUp = GROWTH_TIER_RANK[coreTierAfter] > GROWTH_TIER_RANK[growthResult.coreTierBefore];
+  pitcher.coreTier = coreTierAfter;
+  growthResult.pendingCoreEvolution =
+    !pitcher.coreEvolutionId && coreXpBefore < CORE_XP_THRESHOLDS.evolution1 && pitcher.coreXp >= CORE_XP_THRESHOLDS.evolution1;
+  if (growthResult.pendingCoreEvolution) pitcher.pendingCoreEvolutionReward = true;
+  growthResult.pendingPitchUpgrade = growthResult.pitchGrowth.some((growth) => growth.tierUp);
+  if (growthResult.pendingPitchUpgrade) {
+    pitcher.pendingPitchUpgradeReward = growthResult.pitchGrowth.find((growth) => growth.tierUp)?.pitchId || null;
+  }
+  growthResult.visible = shouldShowGrowthMark(growthResult);
+  state.lastGrowthResult = growthResult;
+  recordStageGrowth(growthResult);
+  return growthResult;
+}
+
+function growthMarkLabel(growthResult) {
+  if (!growthResult?.visible) return "";
+  const pitchTierUp = growthResult.pitchGrowth?.find((growth) => growth.tierUp);
+  const pitchXp = growthResult.pitchGrowth?.reduce((sum, growth) => sum + (growth.xpGain || 0), 0) || 0;
+  const details = [];
+  if (growthResult.coreTierUp) details.push(`핵심 ${GROWTH_TIER_LABEL[growthResult.coreTierAfter] || growthResult.coreTierAfter}`);
+  else if (growthResult.coreXpGain > 0) details.push(`핵심 +${growthResult.coreXpGain}`);
+  if (pitchTierUp) details.push(`${pitchTierUp.pitchName} ${GROWTH_TIER_LABEL[pitchTierUp.tierAfter] || pitchTierUp.tierAfter}`);
+  else if (pitchXp > 0) details.push(`구종 +${pitchXp}`);
+  if (growthResult.bossDataGain > 0) details.push("보스 데이터");
+  if (growthResult.pendingCoreEvolution) details.push("진화 준비");
+  return details.slice(0, 2).join(" · ") || "누적";
+}
+
+function appendGrowthMark(text, growthResult) {
+  if (!growthResult?.visible) return text;
+  const label = growthMarkLabel(growthResult);
+  return `${text}<div class="growth-log-mark"><strong>성장+</strong><span>${escapeHtml(label)}</span></div>`;
+}
+
+function stageGrowthSummaryHtml() {
+  const summary = state.stageGrowthSummary;
+  if (!summary) return "";
+  const lines = [];
+  if (summary.coreXp > 0) lines.push(`핵심 성향 경험 +${summary.coreXp}`);
+  const tierUps = summary.pitchTierUps.map((growth) => `${growth.pitchName} ${GROWTH_TIER_LABEL[growth.tier] || growth.tier}`);
+  if (tierUps.length) lines.push(`구종 숙련 상승: ${[...new Set(tierUps)].join(", ")}`);
+  else if (summary.pitchXp > 0) lines.push(`구종 숙련 누적 +${summary.pitchXp}`);
+  if (summary.bossData > 0) lines.push(`보스 데이터 +${summary.bossData}`);
+  if (!lines.length) return "";
+  return `<div class="log-lines">${lines.map((line) => `<p>${escapeHtml(line)}</p>`).join("")}</div>`;
+}
+
+function logStageGrowthSummaryOnce() {
+  if (state.stageGrowthSummaryLogged) return;
+  const growthSummary = stageGrowthSummaryHtml();
+  if (!growthSummary) return;
+  state.stageGrowthSummaryLogged = true;
+  addLog("스테이지 성장 요약", growthSummary);
 }
 
 function coreEvolutionById(evolutionId) {
@@ -337,8 +608,7 @@ function supportTagTier(pitcher, tagId) {
 function supportTagDisplayName(tagId, pitcher = state.pitcher) {
   const tag = tagById(tagId);
   if (!tag) return tagId;
-  const tier = supportTagTier(pitcher, tagId);
-  return tier > 1 ? `${tag.name} +${tier - 1}` : tag.name;
+  return tag.name;
 }
 
 function scaleTagEffects(effects, multiplier) {
@@ -360,8 +630,6 @@ function tagEffectsForPitcher(tag, pitcher = state.pitcher) {
 
 function tagDescriptionForPitcher(tag, pitcher = state.pitcher) {
   if (!tag) return "";
-  const tier = tag.type === "bonus" ? supportTagTier(pitcher, tag.id) : 1;
-  if (tier > 1) return `${tag.description} (강화 ${tier}단계)`;
   return tag.description;
 }
 
@@ -480,6 +748,7 @@ function rewardCardControlBonus(pitch, aimed, intent) {
   if (pitch.id === "four" && hasRewardCard("C001")) bonus += stack("C001") * 5;
   if ((state.atBat?.pitchHistory?.length || 0) <= 1 && hasRewardCard("C007")) bonus += stack("C007") * 5;
   if (state.balls >= 3 && hasRewardCard("C008")) bonus += stack("C008") * 5;
+  if (state.balls >= 2 && hasRewardCard("R018")) bonus += 4;
   if (aimed.row >= 2 && hasRewardCard("C009")) bonus += stack("C009") * 4;
   if (state.balls === 3 && state.strikes === 2 && hasRewardCard("R012")) bonus += 10;
   if (previousPitch?.pitchId === pitch.id && hasRewardCard("R005")) bonus += 2;
@@ -563,11 +832,11 @@ function rewardCardPitchEffect(pitch, location, plannedCourse, pattern, batter) 
     effect.quality += 4;
     effect.contactQuality -= 3;
   }
-  if (hasRewardCard("K007")) {
+  if (hasRewardCard("K007") || hasRewardCard("R020")) {
     const recent = (state.atBat?.choiceHistory || []).slice(-2);
     const currentFamily = pitchFamily(pitch.category);
     if (recent.length >= 2 && recent.every((entry) => entry.family !== currentFamily)) {
-      effect.contactQuality -= 8;
+      effect.contactQuality -= hasRewardCard("K007") ? 8 : 5;
       effect.label = "배합 배신";
     }
   }
@@ -1221,8 +1490,9 @@ function stageRewardRarityPlan(result) {
 }
 
 function pickRewardCardByRarity(rarity, usedIds = new Set()) {
-  const candidates = rewardCardCatalog.filter((card) => card.rarity === rarity && !usedIds.has(card.id) && rewardCardCanAppear(card));
-  const fallback = rewardCardCatalog.filter((card) => !usedIds.has(card.id) && rewardCardCanAppear(card));
+  const canUse = (card) => !STAGE_CARD_EXCLUDED_IDS.has(card.id) && !usedIds.has(card.id) && rewardCardCanAppear(card);
+  const candidates = rewardCardCatalog.filter((card) => card.rarity === rarity && canUse(card));
+  const fallback = rewardCardCatalog.filter(canUse);
   return pick(candidates.length ? candidates : fallback);
 }
 
@@ -1243,6 +1513,59 @@ function toRewardCardChoice(card, reason = "") {
   };
 }
 
+function recentConditionalCardTypes() {
+  const history = ensurePitcherGrowthFields()?.rewardHistory?.conditionTypesByStage || [];
+  return new Set(
+    history
+      .filter((item) => state.stageIndex - (item.stageIndex ?? -99) < CONDITIONAL_CARD_RULES.preventSameTypeRepeatStages)
+      .map((item) => item.type)
+  );
+}
+
+function markConditionalCardType(reward) {
+  if (!reward?.conditionType) return;
+  const pitcher = ensurePitcherGrowthFields();
+  if (!pitcher) return;
+  const history = pitcher.rewardHistory.conditionTypesByStage || [];
+  history.push({ stageIndex: state.stageIndex, type: reward.conditionType });
+  pitcher.rewardHistory.conditionTypesByStage = history.slice(-8);
+}
+
+function conditionalStageCardCandidates(result) {
+  const blocked = recentConditionalCardTypes();
+  const choices = [];
+  if (!blocked.has("pitchUpgrade") && MP.collectPitchUpgradeCandidates && MP.pickWeightedPitchUpgrades) {
+    const picked = MP.pickWeightedPitchUpgrades(MP.collectPitchUpgradeCandidates("스테이지 보상", result), 1)[0];
+    if (picked) choices.push({ ...picked, rarity: "rare", conditionType: "pitchUpgrade", recommendReason: "조건 카드" });
+  }
+  if (!blocked.has("weaknessMitigation")) {
+    const weaknessId =
+      state.pitcher?.weaknessTagId ||
+      state.pitcher?.revealedWeaknessTags?.[0] ||
+      state.pitcher?.hiddenWeaknessTags?.[0] ||
+      null;
+    if (weaknessId) {
+      const tag = tagById(weaknessId);
+      choices.push({
+        type: "weaknessMitigation",
+        weaknessTagId: weaknessId,
+        rarity: "rare",
+        conditionType: "weaknessMitigation",
+        title: `${tag?.name || "약점"} 완화`,
+        desc: "투수의 약한 흐름 하나를 덜어냅니다.",
+        effectText: "약점 태그 1개 완화",
+        operation: "다음 스테이지부터 해당 약점 노출을 줄입니다.",
+        recommendReason: "조건 카드"
+      });
+    }
+  }
+  if (!blocked.has("bonusTag")) {
+    const tagChoice = generateStageTagChoices()[0];
+    if (tagChoice) choices.push({ ...tagChoice, rarity: "rare", conditionType: "bonusTag", recommendReason: "조건 카드" });
+  }
+  return choices;
+}
+
 function generateStageCardChoices() {
   const result = state.lastStageResult || calculateStageResult();
   const run = ensureStageRunState();
@@ -1261,31 +1584,29 @@ function generateStageCardChoices() {
     (result.rivalGoalMet ? (stageConfig(result.stageIndex).rival?.reward?.choiceBonus || 0) : 0) +
     (run.rewardBoost.choiceBonus || 0) +
     (run.highlight.successes && hasRewardCard("R013") ? 1 : 0);
-  const required = [];
-  if (coreChoiceBonus > 0) required.push("core");
-  if (guaranteedRare > 0) required.push("rare");
-  const plan = [...required, ...stageRewardRarityPlan(result)];
-  if (extraChoiceQuality > 0) {
-    const commonIndex = plan.findIndex((rarity) => rarity === "common");
-    if (commonIndex >= 0) plan[commonIndex] = "rare";
-  }
-  plan.forEach((rarity) => {
-    if (choices.length >= maxStageCardChoices) return;
-    const card = pickRewardCardByRarity(rarity, used);
-    if (!card) return;
+  const conditionChoice = sample(conditionalStageCardCandidates(result), 1)[0] || null;
+  const normalCount = conditionChoice ? 1 : 2;
+  while (choices.length < normalCount) {
+    const card = pickRewardCardByRarity("common", used);
+    if (!card) break;
     used.add(card.id);
-    const reason = rarity === "core" ? "핵심 보상" : rarity === "rare" && required.includes("rare") ? "희귀 보장 보상" : `${result.starLabel} 보상`;
-    choices.push(toRewardCardChoice(card, reason));
-  });
+    choices.push(toRewardCardChoice(card, `${result.starLabel} 보상`));
+  }
+  if (conditionChoice) choices.push(conditionChoice);
+  const plan = stageRewardRarityPlan(result);
+  let gradeRarity = coreChoiceBonus > 0 ? "core" : guaranteedRare > 0 || extraChoiceQuality > 0 ? "rare" : plan.find((rarity) => rarity !== "common") || "rare";
+  const gradeCard = pickRewardCardByRarity(gradeRarity, used) || pickRewardCardByRarity("rare", used);
+  if (gradeCard) {
+    used.add(gradeCard.id);
+    choices.push(toRewardCardChoice(gradeCard, gradeRarity === "core" ? "핵심 보상" : "등급 보상"));
+  }
   while (choices.length < maxStageCardChoices) {
     const card = pickRewardCardByRarity("common", used);
     if (!card) break;
     used.add(card.id);
     choices.push(toRewardCardChoice(card, `${result.starLabel} 보상`));
   }
-  return choices
-    .sort((a, b) => raritySortValue(b.rarity) - raritySortValue(a.rarity))
-    .slice(0, maxStageCardChoices);
+  return choices.slice(0, maxStageCardChoices);
 }
 
 function cardEffectMultiplier() {
@@ -2742,10 +3063,12 @@ function applyMixingRelief(pitch, plannedCourse, batter) {
   if (pitcherHasTag("pattern_shuffler") && last.category !== pitch.category) {
     delta -= 2;
   }
-  if (hasRewardCard("K007")) {
+  if (hasRewardCard("K007") || hasRewardCard("R020")) {
     const currentFamily = pitchFamily(pitch.category);
     const recent = (state.atBat?.choiceHistory || []).slice(-2);
-    if (recent.length >= 2 && recent.every((entry) => entry.family !== currentFamily)) delta -= 4;
+    if (recent.length >= 2 && recent.every((entry) => entry.family !== currentFamily)) {
+      delta -= hasRewardCard("K007") ? 4 : 3;
+    }
   }
 
   const learnRate = batter.mind?.patternLearn ?? 1;
@@ -2983,6 +3306,14 @@ function generatePitcher(portrait = pick(pitcherPortraits)) {
     baseTags: [coreTagId],
     bonusTags: [],
     bonusTagTiers: {},
+    coreXp: 0,
+    coreTier: "bronze",
+    pitchMastery: {},
+    weaknessTagId: null,
+    pendingCoreEvolutionReward: null,
+    pendingPitchUpgradeReward: null,
+    bossData: 0,
+    rewardHistory: { conditionTypesByStage: [] },
     hiddenWeaknessTags: sample(weaknessPool, 2),
     revealedWeaknessTags: []
   };
@@ -3299,6 +3630,8 @@ function startGame() {
   state.pendingRunComplete = false;
   state.pendingRunCompleteMessage = "";
   state.lastStageResult = null;
+  state.lastGrowthResult = null;
+  state.stageGrowthSummary = null;
   state.nextBatterSuspicionBonus = 0;
   state.nextPitchControlBonus = 0;
   state.releaseTiming = null;
@@ -3338,6 +3671,7 @@ function beginGameWithPitcher(pitcher) {
   startBgm();
   state.pitcher = pitcher;
   ensurePitcherTagFields(state.pitcher);
+  ensurePitcherGrowthFields(state.pitcher);
   assignStartingBonusTag(state.pitcher);
   state.catcher = pick(catcherTypes);
   state.stageIndex = 0;
@@ -3393,6 +3727,8 @@ function beginGameWithPitcher(pitcher) {
   state.pendingRunComplete = false;
   state.pendingRunCompleteMessage = "";
   state.lastStageResult = null;
+  state.lastGrowthResult = null;
+  resetStageGrowthSummary();
   state.nextBatterSuspicionBonus = 0;
   state.nextPitchControlBonus = 0;
   state.lastAtBatMemory = null;
@@ -3467,6 +3803,7 @@ function startAtBat() {
     const firstBatterSuspicion = dugoutEffectValue("firstBatterSuspicion");
     if (firstBatterSuspicion) state.atBat.suspicion = clamp((state.atBat.suspicion || 0) + firstBatterSuspicion, 0, 100);
     if (hasRewardCard("R008")) revealBatterWeakness(currentBatter());
+    if (hasRewardCard("R019") && state.batterIndex < 3) markBatterWeaknessCandidates(currentBatter(), 3);
     if (dugoutEffectValue("revealNextFirstWeakness")) revealBatterWeakness(currentBatter());
     if (dugoutEffectValue("revealCourseWeakness")) revealBatterWeakness(currentBatter(), { category: "zone" });
     if (dugoutEffectValue("candidateNextFirstWeakness")) markBatterWeaknessCandidates(currentBatter(), dugoutEffectValue("candidateNextFirstWeakness"));
@@ -4819,11 +5156,6 @@ function atBatMemoryFrom(title, result) {
   };
 }
 
-function strikeoutRewardReason(result) {
-  if (result.batter.isBoss) return result.result === "calledStrike" ? "보스 타자 루킹삼진" : "보스 타자 스윙삼진";
-  return result.result === "calledStrike" ? "루킹 삼진 보상" : "스윙 삼진 보상";
-}
-
 function hitTitle(result) {
   if (result.result === "single" && result.hitType === "texas") return "TEXAS HIT!";
   if (result.result === "single") return "BASE HIT!";
@@ -5098,7 +5430,6 @@ function applyPitchResult(result) {
         state.runStats.strikeouts += 1;
         if (result.batter.isBoss) state.runStats.bossOuts += 1;
         finishAtBat("STRIKE OUT!", pitchLogText(result, { reveal: revealText }), {
-          rewardReason: strikeoutRewardReason(result),
           result
         });
       } else {
@@ -5115,7 +5446,6 @@ function applyPitchResult(result) {
       addOut();
       if (result.batter.isBoss) state.runStats.bossOuts += 1;
       finishAtBat(result.outLabel || "FLY OUT!", pitchLogText(result, { reveal: revealText }), {
-        rewardReason: result.batter.isBoss ? "보스 타자 제압" : "",
         result
       });
       break;
@@ -5132,7 +5462,6 @@ function applyPitchResult(result) {
       state.runStats.doublePlays += 1;
       if (result.batter.isBoss) state.runStats.bossOuts += 1;
       finishAtBat("DOUBLE PLAY!", pitchLogText(result, { reveal: revealText }), {
-        rewardReason: result.pitch.category === "breaking" ? "변화구 병살 보너스" : "병살 보너스",
         result
       });
       break;
@@ -5244,6 +5573,7 @@ function advanceStage(themeId = state.stageThemeId) {
   state.batterIndex = 0;
   state.lineup = generateLineup(state.stageIndex);
   state.stageRun = createStageRunState(state.stageIndex);
+  resetStageGrowthSummary();
   state.currentInningStats = null;
   state.currentAtBatMeta = null;
   state.pendingDugoutChoices = [];
@@ -5316,7 +5646,9 @@ function addOut(count = 1) {
 }
 
 function finishAtBat(title, text, options = {}) {
-  addLog(title, text);
+  const growthResult = processAtBatGrowth(options.result, title);
+  addLog(title, appendGrowthMark(text, growthResult));
+  recordMobileGrowthMark(growthResult);
   state.lastAtBatMemory = atBatMemoryFrom(title, options.result);
   if (options.result && MP.processPitchProgressionAtBatEnd) {
     MP.processPitchProgressionAtBatEnd(options.result, title, state.lastPitchPattern);
@@ -5338,6 +5670,9 @@ function finishAtBat(title, text, options = {}) {
     window.setTimeout(() => {
       if (!state.gameOver) showInningChangeOverlay(transition);
     }, GAME_TIMING.inningTransitionDelay);
+  }
+  if (state.pendingRunComplete || state.awaitingThemeSelection) {
+    logStageGrowthSummaryOnce();
   }
   if (options.rewardReason) {
     state.afterRewardStageOverlay = stageOverlay;
@@ -5804,13 +6139,11 @@ function toSupportReward(tag, reason = "랜덤 후보") {
 }
 
 function toSupportUpgradeReward(tag, reason = "마스터리 강화") {
-  const tier = supportTagTier(state.pitcher, tag.id);
-  const nextTier = tier + 1;
   return {
     type: "supportUpgrade",
     tagId: tag.id,
-    title: `${tag.name} 강화 +${nextTier - 1}`,
-    desc: `${tag.description} (강화 ${nextTier}단계 — 효과 ${nextTier}배)`,
+    title: `${tag.name} 강화`,
+    desc: `${tag.description} 효과가 더 강해집니다.`,
     categoryLabel: `보조태그 강화 · ${supportTagFamily(tag.id)}`,
     recommendReason: reason
   };
@@ -5887,7 +6220,7 @@ function applyRewardTier(reward, tier) {
     next.effectText = `${next.field === "control" ? "제구" : next.field} +${next.amount}`;
   } else if (next.type === "tag" || next.type === "supportUpgrade") {
     next.tierBoost = meta.tag;
-    next.effectText = `보조태그 단계 +${meta.tag}`;
+    next.effectText = "보조태그 효과 강화";
   } else if (next.type === "newPitch") {
     next.effectText = "새 구종 추가";
   }
@@ -5989,7 +6322,9 @@ function generateRewardChoices(reason, result) {
 }
 
 function generateStageTagChoices() {
+  ensurePitcherTagFields(state.pitcher);
   const owned = new Set([...(state.pitcher.bonusTags || [])]);
+  if (owned.size >= MAX_SUPPORT_TAGS) return generateSupportTagUpgradeChoices();
   const candidates = supportTags().filter((tag) => !owned.has(tag.id));
   if (!candidates.length) return generateSupportTagUpgradeChoices();
 
@@ -6165,13 +6500,22 @@ function openRewardDraft(reason, result, kind = "normal") {
     scheduleAutoAdvance(900);
     return;
   }
-  els.rewardTitle.textContent = kind === "coreEvolution" ? "핵심 진화 보상" : kind === "stageCard" ? "스테이지 보상" : reason;
+  els.rewardTitle.textContent =
+    kind === "coreEvolution"
+      ? "핵심 진화 보상"
+      : kind === "stageCard"
+        ? "스테이지 보상"
+        : kind === "stageTag"
+          ? "태그 강화 보상"
+          : reason;
   els.rewardReason.textContent =
     kind === "coreEvolution"
       ? "핵심 태그가 새 운영 방식으로 진화합니다."
       : kind === "stageCard"
         ? stageCardRewardReasonText()
-        : rewardReasonText(reason);
+        : kind === "stageTag"
+          ? "스테이지 종료 후 투수 성향을 한 번 정리합니다. 새 태그는 최대 3개까지만 보유합니다."
+          : rewardReasonText(reason);
   renderRewardChoices();
   if (els.rewardConfirmButton) {
     const isCoreEvo = kind === "coreEvolution";
@@ -6225,13 +6569,24 @@ function applyReward(index) {
   }
   if (reward.type === "tag") {
     ensurePitcherTagFields(state.pitcher);
-    const nextTags = [...new Set([...(state.pitcher.bonusTags || []), reward.tagId])];
+    const currentTags = [...new Set(state.pitcher.bonusTags || [])];
+    const nextTags = currentTags.includes(reward.tagId)
+      ? currentTags
+      : currentTags.length < MAX_SUPPORT_TAGS
+        ? [...currentTags, reward.tagId]
+        : currentTags;
     state.pitcher.bonusTags = nextTags;
     state.pitcher.bonusTagTiers[reward.tagId] = Math.max(state.pitcher.bonusTagTiers[reward.tagId] || 1, reward.tierBoost || 1);
   }
   if (reward.type === "supportUpgrade") {
     ensurePitcherTagFields(state.pitcher);
     state.pitcher.bonusTagTiers[reward.tagId] = (state.pitcher.bonusTagTiers[reward.tagId] || 1) + (reward.tierBoost || 1);
+  }
+  if (reward.type === "weaknessMitigation") {
+    const removeId = reward.weaknessTagId;
+    if (state.pitcher.weaknessTagId === removeId) state.pitcher.weaknessTagId = null;
+    state.pitcher.revealedWeaknessTags = (state.pitcher.revealedWeaknessTags || []).filter((tagId) => tagId !== removeId);
+    state.pitcher.hiddenWeaknessTags = (state.pitcher.hiddenWeaknessTags || []).filter((tagId) => tagId !== removeId);
   }
   if (reward.type === "coreEvolution") {
     ensurePitcherTagFields(state.pitcher);
@@ -6240,6 +6595,7 @@ function applyReward(index) {
   if (reward.type === "rewardCard") {
     state.ownedRewardCards = [...(state.ownedRewardCards || []), reward.cardId];
   }
+  markConditionalCardType(reward);
 
   state.runStats.rewards += 1;
   addLog("보상 획득", `${reward.title} · ${reward.operation || reward.desc}`);
@@ -6357,6 +6713,13 @@ function rewardChoiceMetaParts(reward) {
       { kind: "reason", text: reward.reason || "스테이지 활약" }
     ];
   }
+  if (reward.type === "weaknessMitigation") {
+    return [
+      ...tierPart,
+      { kind: "kind", text: "약점 완화" },
+      { kind: "reason", text: reward.recommendReason || "조건 카드" }
+    ];
+  }
   return reward.amount ? [...tierPart, { kind: "amount", text: `+${reward.amount}` }] : tierPart;
 }
 
@@ -6406,6 +6769,7 @@ function rewardUnifiedSubtitle(reward) {
   if (reward.type === "tag") return reward.categoryLabel || "보조태그 획득";
   if (reward.type === "supportUpgrade") return "보조태그 강화";
   if (reward.type === "rewardCard") return (reward.cardType || []).join(" / ") || cardRarityLabel(reward.rarity);
+  if (reward.type === "weaknessMitigation") return "약점 완화";
   if (reward.type === "pitchUpgrade") return "구종 강화";
   return "보상";
 }
@@ -6422,6 +6786,7 @@ function rewardUnifiedEffect(reward) {
   if (reward.type === "stat") return `${reward.stat} +${reward.amount}`;
   if (reward.type === "pitch") return `${reward.field === "control" ? "제구" : reward.field} +${reward.amount}`;
   if (reward.type === "pitchUpgrade") return `${reward.title} 효과 개방`;
+  if (reward.type === "weaknessMitigation") return "약점 태그 1개 완화";
   return rewardDisplayDescription(reward) || "-";
 }
 
@@ -6661,6 +7026,28 @@ function batterTagToneClass(tagName) {
   const tag = batterTagCatalog.find((item) => item.name === tagName);
   const weaknessIds = new Set(["breaking_weak", "inside_weak", "high_fast_vulnerable", "dp_risk"]);
   return tag && weaknessIds.has(tag.id) ? " weakness-chip is-revealed" : "";
+}
+
+function batterVisibleTagLimit(batter) {
+  if (batter?.isBoss) return 3;
+  return (state.stageIndex || 0) <= 0 ? 2 : 3;
+}
+
+function batterVisibleInfoLines(batter) {
+  return batterInfoLines(batter).slice(0, batterVisibleTagLimit(batter));
+}
+
+function batterDisplayTagTier(batter, label, index) {
+  if (batterTagToneClass(label).includes("weakness")) return "danger";
+  if (batter?.isBoss && index === 0) return "platinum";
+  if (index === 0) return (state.stageIndex || 0) <= 0 ? "silver" : "gold";
+  if (index === 1) return "silver";
+  return "bronze";
+}
+
+function batterDisplayTagRole(label, index) {
+  if (batterTagToneClass(label).includes("weakness")) return "weakness";
+  return index === 0 ? "strength" : "variance";
 }
 
 function tagDetailText(tag, batter) {
@@ -7015,14 +7402,15 @@ function render() {
   renderSlotBadge(batter);
   if (useCardUiV2) renderBatterTypeV2(batter);
   else {
-    const batterTags = batterInfoLines(batter);
-    const visibleBatterTags = batterTags.slice(0, 6);
+    const visibleBatterTags = batterVisibleInfoLines(batter);
     els.batterType.innerHTML = visibleBatterTags
       .map((line, index) => {
+        const tier = batterDisplayTagTier(batter, line, index);
         const breakAfter = index === 3 && visibleBatterTags.length > 4 ? '<span class="tag-break" aria-hidden="true"></span>' : "";
+        const role = batterDisplayTagRole(line, index);
         return `<button class="${index === 0 ? "type-main" : "type-tag"}" type="button" data-batter-tag="${escapeHtml(
           line
-        )}">${escapeHtml(line)}</button>${breakAfter}`;
+        )}" data-tier="${escapeHtml(tier)}" data-role="${escapeHtml(role)}">${escapeHtml(line)}</button>${breakAfter}`;
       })
       .join("");
   }
@@ -7180,10 +7568,11 @@ function mobileTagTierFromNumber(tier) {
 }
 
 function mobileTagButtonsHtml(items, kind) {
+  const limit = kind === "pitcher" || kind === "batter" ? 3 : 7;
   return (items || [])
     .filter((item) => item?.label)
-    .slice(0, 7)
-    .map((item) => `<button type="button" data-tier="${escapeHtml(item.tier || "bronze")}" data-mobile-${kind}-tag="${escapeHtml(item.label)}">${escapeHtml(item.label)}</button>`)
+    .slice(0, limit)
+    .map((item) => `<button type="button" data-tier="${escapeHtml(item.tier || "bronze")}" data-role="${escapeHtml(item.role || item.section || "tag")}" data-mobile-${kind}-tag="${escapeHtml(item.label)}">${escapeHtml(item.label)}</button>`)
     .join("");
 }
 
@@ -7208,10 +7597,10 @@ function mobilePitcherTagItems() {
 }
 
 function mobileBatterTagItems(batter) {
-  return batterInfoLines(batter).slice(0, 7).map((label, index) => {
-    const danger = batterTagToneClass(label).includes("weakness");
-    const tier = danger ? "danger" : batter?.isBoss && index === 0 ? "platinum" : index === 0 ? "gold" : index === 1 ? "silver" : "bronze";
-    return { label, tier, text: tagDetailText(label, batter) };
+  return batterVisibleInfoLines(batter).map((label, index) => {
+    const tier = batterDisplayTagTier(batter, label, index);
+    const role = batterDisplayTagRole(label, index);
+    return { label, tier, role, text: tagDetailText(label, batter) };
   });
 }
 
@@ -7344,11 +7733,20 @@ function renderMobileRelease() {
 
 function renderMobileDuelRead(recommendation) {
   if (!els.mobileDuelReadFlow) return;
-  const confidence = recommendation?.confidence || 0;
-  const suspicion = Math.round(clamp(state.atBat?.suspicion || 0, 0, 100));
-  els.mobileDuelReadFlow.textContent = confidence >= 76 ? "높음" : confidence >= 58 ? "보통" : "낮음";
+  const flowLabel = els.mobileDuelReadFlow.closest("span");
+  if (flowLabel?.firstChild) flowLabel.firstChild.textContent = "포수 ";
+  els.mobileDuelReadFlow.textContent = mobileCatcherLine();
   els.mobileDuelReadPitch.textContent = recommendation?.title || "대기";
-  els.mobileDuelReadRisk.textContent = `${suspicion}%`;
+  els.mobileDuelReadRisk.textContent = `${Math.round(clamp(state.atBat?.suspicion || 0, 0, 100))}%`;
+}
+
+function mobileCatcherLine() {
+  const suspicion = state.atBat?.suspicion || 0;
+  if (suspicion >= 70) return "반복 흐름 조심";
+  if (state.bases.some(Boolean)) return "주자 묶고 낮게";
+  if (state.balls >= 2) return "존 근처로 수습";
+  if (state.strikes >= 2) return "코스 보고 결정";
+  return "반응 보고 다음 코스";
 }
 
 function mobilePitchOutcomeLabel(result) {
@@ -7394,6 +7792,15 @@ function recordMobileBatterStart(batter) {
   state.mobilePitchRecords = records.slice(0, 7);
 }
 
+function recordMobileGrowthMark(growthResult) {
+  const label = growthMarkLabel(growthResult);
+  if (!label) return;
+  const records = state.mobilePitchRecords || [];
+  records.unshift({ type: "growth", label });
+  state.mobilePitchRecords = records.slice(0, 7);
+  renderMobileRecentLog();
+}
+
 function renderMobileRecentLog() {
   if (!els.mobileRecentLog) return;
   const card = els.mobileRecentLog.closest(".mobile-recent-log-card");
@@ -7408,6 +7815,9 @@ function renderMobileRecentLog() {
     if (item.type === "batter") {
       return `<div class="mobile-recent-log-row is-batter-marker" data-result="batter"><span class="mobile-recent-log-text"><span class="mobile-recent-log-line"><b>타자 변경: ${escapeHtml(item.batter)}</b></span></span></div>`;
     }
+    if (item.type === "growth") {
+      return `<div class="mobile-recent-log-row is-growth" data-result="growth"><strong class="mobile-recent-log-count">성장+</strong><span class="mobile-recent-log-text"><span class="mobile-recent-log-line"><b>${escapeHtml(item.label)}</b></span><small>투수 성향이 누적되었습니다.</small></span></div>`;
+    }
     return `<div class="mobile-recent-log-row" data-result="${escapeHtml(item.result)}"><strong class="mobile-recent-log-count">${item.no}구</strong><span class="mobile-recent-log-text"><span class="mobile-recent-log-line"><b>${escapeHtml(item.pitch)} ${item.speed}km/h</b><em>/ ${escapeHtml(item.outcome)}</em></span><small>${escapeHtml(item.note || "타자 반응 확인")}</small></span></div>`;
   }).join("");
 }
@@ -7421,7 +7831,7 @@ function renderMobileInfoPanel() {
     return;
   }
   const batter = currentBatter();
-  const batterTags = batter ? batterInfoLines(batter).slice(0, 5).join(" · ") : "상대 정보 없음";
+  const batterTags = batter ? batterVisibleInfoLines(batter).join(" · ") : "상대 정보 없음";
   const pitcherStats = state.pitcher?.stats ? Object.entries(state.pitcher.stats).map(([key, value]) => `${key} ${value}`).join(" · ") : "투수 정보 없음";
   const batterStats = batter?.stats ? Object.entries(batter.stats).map(([key, value]) => `${key} ${value}`).join(" · ") : "타자 정보 없음";
   els.mobileInfoPanelTitle.textContent = "선수 정보";
@@ -7450,7 +7860,6 @@ function renderMobileGameUi() {
   const missionStats = mission ? ensureStageRunState().inningStats[state.inning] || state.currentInningStats : null;
   const liveStatus = liveMissionStatus(mission, missionStats, missionResult);
   const recommendation = state.atBat?.recommendation;
-  const batterTags = batter ? batterInfoLines(batter).slice(0, 2).join(" · ") : "상대 분석 중";
   const theme = MP.getStageTheme?.(state.stageThemeId);
 
   if (els.mobileStageThemeSummary) {
@@ -7488,9 +7897,9 @@ function renderMobileGameUi() {
   renderMobileDuelRead(recommendation);
   renderMobileRecentLog();
   renderMobilePlayerDetail();
-  els.mobileRecommendConfidence.textContent = recommendation ? (recommendation.confidence >= 76 ? "높음" : recommendation.confidence >= 58 ? "보통" : "불명") : "불명";
-  els.mobileRecommendTitle.textContent = recommendation?.title || "조언 대기";
-  els.mobileRecommendText.textContent = recommendation?.text || "타자 반응을 확인하세요.";
+  els.mobileRecommendConfidence.textContent = "포수";
+  els.mobileRecommendTitle.textContent = "포수 한마디";
+  els.mobileRecommendText.textContent = mobileCatcherLine();
   if (mobilePanelMode) renderMobileInfoPanel();
 }
 
@@ -7699,12 +8108,13 @@ function renderBatterTypeV2(batter) {
 
 function renderBatterTypeV2(batter) {
   if (!els.batterType) return;
-  const tags = batterInfoLines(batter);
+  const tags = batterVisibleInfoLines(batter);
   const tagButtons = tags
-    .slice(0, 4)
     .map((line, index) => {
       const cls = `${index === 0 ? "type-main" : "type-tag"}${batterTagToneClass(line)}`;
-      return `<button class="${cls}" type="button" data-batter-tag="${escapeHtml(line)}">${escapeHtml(line)}</button>`;
+      const tier = batterDisplayTagTier(batter, line, index);
+      const role = batterDisplayTagRole(line, index);
+      return `<button class="${cls}" type="button" data-batter-tag="${escapeHtml(line)}" data-tier="${escapeHtml(tier)}" data-role="${escapeHtml(role)}">${escapeHtml(line)}</button>`;
     })
     .join("");
   const revealed = new Set(batter.revealedWeaknessTagIds || []);
@@ -8167,12 +8577,12 @@ function renderPitchButtons() {
   els.pitchButtons.innerHTML = state.pitcher.repertoire
     .map((pitch, index) => {
       if (MP.ensurePitchRuntime) MP.ensurePitchRuntime(pitch);
-      const level = pitch.level || 1;
       const burdenValue = Math.min(100, Math.max(0, pitch.burden || 0));
       const burdenTierLabel = MP.burdenLabel ? MP.burdenLabel(burdenValue) : "안정";
       const burdenTierId = MP.getBurdenModifiers ? MP.getBurdenModifiers(pitch).tierId : "stable";
       const selected = state.selectedPitchId === pitch.id;
-      const levelMeta = level > 1 ? ` · Lv.${level}` : "";
+      const masteryTier = state.pitcher?.pitchMastery?.[pitch.id]?.tier || "none";
+      const masteryMeta = GROWTH_TIER_LABEL[masteryTier] || "무등급";
       const hint = burdenUiHint(burdenTierId);
       return `
         <button
@@ -8192,7 +8602,7 @@ function renderPitchButtons() {
               <kbd>${index + 1}</kbd>
               <strong class="pitch-name">${escapeHtml(pitch.name)}</strong>
             </div>
-            <span class="pitch-meta">${escapeHtml(pitch.label)} · ${pitchVelocityKmh(pitch)}km/h${levelMeta}</span>
+            <span class="pitch-meta">${escapeHtml(pitch.label)} · ${pitchVelocityKmh(pitch)}km/h · ${escapeHtml(masteryMeta)}</span>
             <small class="pitch-role">${escapeHtml(pitch.note || "")}</small>
             <span class="pitch-burden-hint">${escapeHtml(hint)}</span>
           </div>
@@ -8645,15 +9055,27 @@ function bindUiEvents() {
   els.mobileLogTab?.addEventListener("click", () => openMobilePanel("log"));
   els.mobileInfoTab?.addEventListener("click", () => openMobilePanel("info"));
   els.mobileNewGameButton?.addEventListener("click", startGame);
-  els.mobileThrowButton?.addEventListener("click", () => finishReleaseTiming());
-  els.mobileReleasePanel?.addEventListener("click", () => finishReleaseTiming());
-  els.mobilePitchButtons?.addEventListener("click", (event) => {
-    const button = event.target.closest?.("[data-mobile-pitch]");
-    if (button) selectPitch(button.dataset.mobilePitch);
+  els.mobileThrowButton?.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    finishReleaseTiming();
   });
-  els.mobileStrikeZone?.addEventListener("click", (event) => {
+  els.mobileReleasePanel?.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    finishReleaseTiming();
+  });
+  els.mobilePitchButtons?.addEventListener("pointerdown", (event) => {
+    const button = event.target.closest?.("[data-mobile-pitch]");
+    if (button) {
+      event.preventDefault();
+      selectPitch(button.dataset.mobilePitch);
+    }
+  });
+  els.mobileStrikeZone?.addEventListener("pointerdown", (event) => {
     const button = event.target.closest?.("[data-mobile-zone]");
-    if (button) handleCourseClick(button.dataset.mobileZone, button.dataset.targetRow, button.dataset.targetCol, button.dataset.intent);
+    if (button) {
+      event.preventDefault();
+      handleCourseClick(button.dataset.mobileZone, button.dataset.targetRow, button.dataset.targetCol, button.dataset.intent);
+    }
   });
   els.mobileGameShell?.addEventListener("click", (event) => {
     if (
@@ -8715,7 +9137,10 @@ function bindUiEvents() {
     const button = event.target.closest?.(".zone-button");
     if (button) handleCourseClick(button.dataset.zone, button.dataset.targetRow, button.dataset.targetCol, button.dataset.intent);
   });
-  els.releaseTimingButton?.addEventListener("click", () => finishReleaseTiming());
+  els.releaseTimingButton?.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    finishReleaseTiming();
+  });
   els.batterType?.addEventListener("click", (event) => {
     const weaknessButton = event.target.closest?.("[data-batter-weakness]");
     if (weaknessButton) {
@@ -8738,9 +9163,12 @@ function bindUiEvents() {
     const button = event.target.closest?.("[data-pitcher-tag]");
     if (button) showPitcherTagDetail(button.dataset.pitcherTag, button);
   });
-  els.pitchButtons?.addEventListener("click", (event) => {
+  els.pitchButtons?.addEventListener("pointerdown", (event) => {
     const button = event.target.closest?.("button[data-pitch]");
-    if (button) selectPitch(button.dataset.pitch);
+    if (button) {
+      event.preventDefault();
+      selectPitch(button.dataset.pitch);
+    }
   });
   els.pitcherChoiceList?.addEventListener("click", (event) => {
     if (els.pitcherSelectOverlay?.classList.contains("is-revealing")) return;
@@ -8812,6 +9240,9 @@ MP.debug = {
   addOut,
   advanceStage,
   finishAtBat,
+  ensurePitcherGrowthFields,
+  processAtBatGrowth,
+  shouldShowGrowthMark,
   generateLineup,
   createPlan,
   openRewardDraft,
@@ -8984,6 +9415,12 @@ function setupTestConsoleBridge() {
         style: state.pitcher.style,
         coreTagId: state.pitcher.coreTagId,
         coreEvolutionId: state.pitcher.coreEvolutionId || null,
+        coreXp: state.pitcher.coreXp || 0,
+        coreTier: state.pitcher.coreTier || "bronze",
+        pitchMastery: { ...(state.pitcher.pitchMastery || {}) },
+        bossData: state.pitcher.bossData || 0,
+        pendingCoreEvolutionReward: state.pitcher.pendingCoreEvolutionReward || null,
+        pendingPitchUpgradeReward: state.pitcher.pendingPitchUpgradeReward || null,
         bonusTags: (state.pitcher.bonusTags || []).slice(),
         bonusTagTiers: { ...(state.pitcher.bonusTagTiers || {}) },
         revealedWeaknessTags: (state.pitcher.revealedWeaknessTags || []).slice(),
@@ -9009,6 +9446,10 @@ function setupTestConsoleBridge() {
         }
       };
     }
+    snap.growth = {
+      lastGrowthResult: state.lastGrowthResult || null,
+      stageGrowthSummary: state.stageGrowthSummary || null
+    };
     if (batter) {
       snap.currentBatter = {
         name: batter.name,

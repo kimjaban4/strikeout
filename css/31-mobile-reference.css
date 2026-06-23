@@ -809,6 +809,31 @@
     font-weight: 800;
   }
 
+  .mobile-duel-read-card span:nth-child(n+2),
+  .mobile-recommend-card,
+  .mobile-recommend-card > span,
+  .mobile-release-panel[data-state="idle"] {
+    display: none !important;
+  }
+
+  .mobile-duel-read-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .mobile-duel-read-card span:first-child {
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .mobile-duel-read-card span:first-child b {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+  }
+
   .mobile-recent-log-list {
     display: grid;
     grid-auto-rows: minmax(clamp(44px, 11vw, 54px), auto);
@@ -850,6 +875,20 @@
     grid-template-columns: minmax(0, 1fr);
     border-left: 3px solid #63c8ff;
     background: rgba(9, 80, 142, 0.28);
+  }
+
+  .mobile-recent-log-row.is-growth {
+    border-left: 3px solid #6bd28a;
+    background: rgba(28, 103, 58, 0.34) !important;
+  }
+
+  .mobile-recent-log-row.is-growth .mobile-recent-log-count {
+    color: #aef0bf;
+    font-size: 10px;
+  }
+
+  .mobile-recent-log-row.is-growth .mobile-recent-log-line b {
+    color: #e6ffed;
   }
 
   .mobile-recent-log-count {
@@ -1046,6 +1085,7 @@
 
   .mobile-pitch-button {
     position: relative;
+    touch-action: manipulation;
     display: grid;
     grid-template-columns: clamp(34px, 9vw, 42px) minmax(0, 1fr);
     grid-template-rows: auto auto auto;
@@ -1061,6 +1101,12 @@
     background: rgba(18, 43, 63, 0.9);
     color: #fff;
     overflow: hidden;
+  }
+
+  .mobile-release-panel,
+  .mobile-throw-button,
+  .mobile-strike-zone button {
+    touch-action: manipulation;
   }
 
   .mobile-pitch-button.is-selected {

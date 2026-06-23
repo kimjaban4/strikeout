@@ -809,6 +809,7 @@ h2 {
   color: #17304a !important;
   text-align: left;
   cursor: pointer;
+  touch-action: manipulation;
   box-shadow: none !important;
   transition: transform 140ms ease,
     box-shadow 140ms ease,
@@ -3149,6 +3150,26 @@ h2 {
   line-height: 1.45 !important;
 }
 
+.growth-log-mark {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  width: fit-content !important;
+  margin-top: 6px !important;
+  padding: 3px 7px !important;
+  border-radius: 4px !important;
+  background: #e8f7ee !important;
+  border: 1px solid #9ad8af !important;
+  color: #126b38 !important;
+  font-size: 0.74rem !important;
+  font-weight: 900 !important;
+}
+
+.growth-log-mark span {
+  color: #2b7a4b !important;
+  font-weight: 800 !important;
+}
+
 .log-lines {
   display: grid !important;
   gap: 3px !important;
@@ -4632,6 +4653,41 @@ button.card-toggle {
 .pitcher-tag.bonus,
 .batter-type .type-tag {
   background: rgba(18, 92, 142, 0.9) !important;
+}
+
+.batter-type .type-main[data-tier="bronze"],
+.batter-type .type-tag[data-tier="bronze"] {
+  border-color: rgba(148, 163, 184, 0.5) !important;
+  background: rgba(71, 85, 105, 0.92) !important;
+  color: #f8fafc !important;
+}
+
+.batter-type .type-main[data-tier="silver"],
+.batter-type .type-tag[data-tier="silver"] {
+  border-color: rgba(203, 213, 225, 0.62) !important;
+  background: rgba(100, 116, 139, 0.94) !important;
+  color: #ffffff !important;
+}
+
+.batter-type .type-main[data-tier="gold"],
+.batter-type .type-tag[data-tier="gold"] {
+  border-color: rgba(246, 195, 68, 0.72) !important;
+  background: rgba(176, 124, 28, 0.95) !important;
+  color: #fff9df !important;
+}
+
+.batter-type .type-main[data-tier="platinum"],
+.batter-type .type-tag[data-tier="platinum"] {
+  border-color: rgba(103, 232, 249, 0.76) !important;
+  background: rgba(14, 116, 144, 0.96) !important;
+  color: #ecfeff !important;
+}
+
+.batter-type .type-main[data-tier="danger"],
+.batter-type .type-tag[data-tier="danger"] {
+  border-color: rgba(248, 113, 113, 0.7) !important;
+  background: rgba(127, 29, 29, 0.94) !important;
+  color: #fff1f2 !important;
 }
 
 .pitcher-card .pitcher-tag-detail,
@@ -6152,6 +6208,7 @@ button.card-toggle {
   background: #fbfdff !important;
   color: #18344d !important;
   cursor: pointer !important;
+  touch-action: manipulation;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75) !important;
 }
 

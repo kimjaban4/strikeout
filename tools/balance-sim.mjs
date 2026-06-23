@@ -15,7 +15,8 @@ const DEFAULTS = {
   outDir: "balance-reports",
   runsDir: "balance-reports/runs",
   fullLog: false,
-  bot: "player"
+  bot: "player",
+  mobile: false
 };
 
 const MIME_TYPES = {
@@ -49,6 +50,7 @@ function parseArgs(argv) {
     else if (arg === "--full-log") options.fullLog = true;
     else if (arg === "--bot") options.bot = readValue() === "oracle" ? "oracle" : "player";
     else if (arg === "--oracle") options.bot = "oracle";
+    else if (arg === "--mobile") options.mobile = true;
     else if (arg === "--quick") {
       options.games = 3;
       options.maxPitches = 140;
@@ -142,8 +144,14 @@ async function installSeededRandom(page, seed) {
   }, seed);
 }
 
-async function preparePage(browser, baseUrl, gameSeed, pitcherIndex, botProfile = "player") {
-  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, locale: "ko-KR" });
+async function preparePage(browser, baseUrl, gameSeed, pitcherIndex, botProfile = "player", mobile = false) {
+  const viewport = mobile ? { width: 390, height: 844 } : { width: 1280, height: 900 };
+  const page = await browser.newPage({
+    viewport,
+    locale: "ko-KR",
+    isMobile: mobile,
+    hasTouch: mobile
+  });
   const errors = [];
   page.on("console", (message) => {
     if (message.type() === "error") errors.push(message.text());
@@ -153,7 +161,7 @@ async function preparePage(browser, baseUrl, gameSeed, pitcherIndex, botProfile 
   await installSeededRandom(page, gameSeed);
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => window.MountPsycho?.debugReady);
-  await page.evaluate(({ index, gameSeed, bot }) => {
+  await page.evaluate(({ index, gameSeed, bot, mobile }) => {
     const MP = window.MountPsycho;
     Object.keys(MP.GAME_TIMING || {}).forEach((key) => {
       if (typeof MP.GAME_TIMING[key] === "number") MP.GAME_TIMING[key] = 1;
@@ -164,11 +172,13 @@ async function preparePage(browser, baseUrl, gameSeed, pitcherIndex, botProfile 
       seed: gameSeed,
       simIndex: index + 1,
       botProfile: bot,
-      botConcept: bot === "player" ? "psych-command-anti-longball" : "oracle"
+      botConcept: bot === "player" ? "psych-command-anti-longball" : "oracle",
+      deviceProfile: mobile ? "mobile-portrait-390x844" : "desktop"
     });
+    MP.debug.startGame();
     const choices = MP.state.pitcherChoices || [];
     MP.debug.beginGameWithPitcher(choices[index % choices.length] || choices[0]);
-  }, { index: pitcherIndex, gameSeed, bot: botProfile });
+  }, { index: pitcherIndex, gameSeed, bot: botProfile, mobile });
   await settlePage(page);
   return { page, errors };
 }
@@ -468,7 +478,7 @@ function summarizeGame(index, seed, events, finalState, errors, transitions = []
 
 async function runGame(browser, baseUrl, options, gameIndex) {
   const gameSeed = options.seed + gameIndex * 7919;
-  const { page, errors } = await preparePage(browser, baseUrl, gameSeed, gameIndex, options.bot);
+  const { page, errors } = await preparePage(browser, baseUrl, gameSeed, gameIndex, options.bot, options.mobile);
   const events = [];
   const transitions = [];
   const rememberActions = (actions) => {

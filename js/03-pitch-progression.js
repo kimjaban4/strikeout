@@ -306,6 +306,10 @@ window.MountPsycho = window.MountPsycho || {};
     return row?.mult ?? 1;
   }
 
+  function pitchTierLabelForLevel(level) {
+    return ["무등급", "브론즈", "실버", "골드", "플래티넘"][Math.max(0, Math.min(4, (level || 1) - 1))];
+  }
+
   function canUpgradePitchTo(pitch, nextLevel) {
     ensurePitchRuntime(pitch);
     if (nextLevel > 5 || pitch.level >= nextLevel) return false;
@@ -343,7 +347,7 @@ window.MountPsycho = window.MountPsycho || {};
       type: "pitchUpgrade",
       pitchId: pitch.id,
       nextLevel,
-      title: `${pitch.name} Lv.${nextLevel}`,
+      title: `${pitch.name} ${pitchTierLabelForLevel(nextLevel)}`,
       desc: effectName,
       reason: reasonShort
     };
@@ -424,7 +428,7 @@ window.MountPsycho = window.MountPsycho || {};
     }
     if (pitch.id === "two" && level >= 3 && low) effect.contactQuality -= 6;
 
-    if (effect.quality || effect.swing) effect.label = `${pitch.name} Lv.${level}`;
+    if (effect.quality || effect.swing) effect.label = `${pitch.name} ${pitchTierLabelForLevel(level)}`;
     return effect;
   }
 
