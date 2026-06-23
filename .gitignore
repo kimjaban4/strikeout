@@ -7,6 +7,21 @@ balance-reports/
 *.log
 styles.consolidated.css
 
+# Local planning/docs (keep on disk, never commit)
+UI_정리_기획서.md
+게임_소개안.md
+게임기획서_현행.md
+게임시스템_기획서.md
+모바일_세로_UI_기획서.md
+배포_README.md
+인수인계_*.md
+
+# Local UI check screenshots
+mobile-*.png
+text-layer-*.png
+pitcher-select-*.png
+release-sync-*.png
+
 # Runtime uses the normalized English asset folders. Keep raw source images local.
 assets/images/투수/
 assets/images/타자/

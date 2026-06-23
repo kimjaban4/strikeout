@@ -1610,6 +1610,16 @@ function addCardTriggerLog(cardName, text) {
   addLog("카드 효과 발동", `${escapeHtml(cardName)}: ${escapeHtml(text)}`);
 }
 
+function addTagTriggerLog(tagName, text) {
+  if (!tagName || !text) return;
+  state.cardTriggerLog = [{ cardName: tagName, text }, ...(state.cardTriggerLog || [])].slice(0, 5);
+  addLog("태그 효과 발동", `${escapeHtml(tagName)}: ${escapeHtml(text)}`);
+}
+
+function pitchEffectChanged(before, after) {
+  return ["quality", "swing", "chase", "contact", "contactQuality", "doublePlayBonus"].some((key) => before[key] !== after[key]);
+}
+
 function applyCardSuspicionDelta(delta, cardName, text) {
   if (!delta || !state.atBat) return;
   state.atBat.suspicion = clamp((state.atBat.suspicion || 0) + delta, 0, 100);
@@ -4521,17 +4531,25 @@ function pitcherTagEffect(pitch, location, plannedCourse, atBat) {
     label: ""
   };
   const tags = pitcherAllTagIds().map(tagById).filter(Boolean);
+  let triggeredTag = "";
 
   tags.forEach((tag) => {
     const effects = tagEffectsForPitcher(tag, state.pitcher);
+    const before = { ...effect };
     applyTagLikeEffects(effect, effects, pitch, location);
-    if (!effect.label && tag.type === "bonus") effect.label = tag.name;
+    if (pitchEffectChanged(before, effect) && !triggeredTag) triggeredTag = tag.name;
+    if (!effect.label && pitchEffectChanged(before, effect) && tag.type === "bonus") effect.label = tag.name;
   });
 
   const evoEffects = activeEvolutionEffects(pitch, location, atBat, state.pitchIntent);
+  const beforeEvolution = { ...effect };
   applyTagLikeEffects(effect, evoEffects, pitch, location);
   const evolution = coreEvolutionById(state.pitcher?.coreEvolutionId);
-  if (evolution && Object.keys(evoEffects).length && !effect.label) effect.label = evolution.name;
+  if (evolution && pitchEffectChanged(beforeEvolution, effect)) {
+    if (!triggeredTag) triggeredTag = evolution.name;
+    if (!effect.label) effect.label = evolution.name;
+  }
+  if (triggeredTag) addTagTriggerLog(triggeredTag, "이번 공 보정 적용");
 
   return effect;
 }
@@ -6654,6 +6672,9 @@ function rewardChoiceMetaHtml(reward) {
 
 function rewardDisplayDescription(reward) {
   if (!reward) return "";
+  if (reward.type === "rewardCard") {
+    return reward.effectText || reward.desc || "";
+  }
   if (reward.themeReward) {
     return `${reward.desc || ""}`;
   }
@@ -6714,7 +6735,7 @@ function rewardUnifiedOperation(reward) {
   if (reward.operation) return reward.operation;
   if (reward.type === "tag") return "투수 보조태그에 추가";
   if (reward.type === "supportUpgrade") return "보유 태그 효과 상승";
-  if (reward.type === "rewardCard") return rewardDisplayDescription(reward);
+  if (reward.type === "rewardCard") return "조건을 만족하면 자동 발동";
   if (reward.type === "newPitch") return "새 구종 선택지 확보";
   if (reward.type === "pitchUpgrade") return reward.reason ? `${reward.reason} 흐름을 이어서 구종 숙련도를 올립니다.` : "활약한 구종을 더 안정적으로 운용합니다.";
   return reward.desc || "투수 성장에 반영";
@@ -7488,7 +7509,7 @@ function mobileTagTierFromNumber(tier) {
 }
 
 function mobileTagButtonsHtml(items, kind) {
-  const limit = kind === "pitcher" || kind === "batter" ? 3 : 7;
+  const limit = kind === "pitcher" || kind === "batter" ? 2 : 7;
   return (items || [])
     .filter((item) => item?.label)
     .slice(0, limit)
@@ -7500,7 +7521,6 @@ function mobilePitcherTagItems() {
   if (!state.pitcher) return [];
   ensurePitcherTagFields(state.pitcher);
   const items = [];
-  if (state.pitcher.style) items.push({ label: state.pitcher.style, tier: "gold", section: "core", text: state.pitcher.style });
   const core = state.pitcher.coreTagId ? tagById(state.pitcher.coreTagId) : null;
   if (core?.name) items.push({ label: core.name, tier: "platinum", section: "core", text: tagDescriptionForPitcher(core) });
   (state.pitcher.bonusTags || []).forEach((id) => {
