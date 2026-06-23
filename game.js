@@ -5021,10 +5021,10 @@ function beginGameWithPitcher(pitcher) {
   els.logList.innerHTML = "";
   beginInningTracking(1);
   state.atBat = null;
-  state.dugoutPending = true;
-  state.dugoutBeforeAtBat = true;
+  state.dugoutPending = false;
+  state.dugoutBeforeAtBat = false;
   state.dugoutAdvanceBatterOnConfirm = false;
-  state.pendingDugoutChoices = generateDugoutChoices();
+  state.pendingDugoutChoices = [];
   render();
   showStageThemeOverlay(currentStageNumber(), currentStageInnings());
   const coreTagName = tagById(state.pitcher.coreTagId)?.name || "핵심태그";
@@ -6847,10 +6847,10 @@ function advanceStage(themeId = state.stageThemeId) {
   state.lastStageResult = null;
   assignStageRival();
   beginInningTracking(1);
-  state.dugoutPending = true;
-  state.dugoutBeforeAtBat = true;
+  state.dugoutPending = false;
+  state.dugoutBeforeAtBat = false;
   state.dugoutAdvanceBatterOnConfirm = false;
-  state.pendingDugoutChoices = generateDugoutChoices();
+  state.pendingDugoutChoices = [];
   const themeName = MP.getStageTheme?.(state.stageThemeId)?.name || "";
   addLog(
     "스테이지 클리어",
@@ -7242,7 +7242,7 @@ function openDugoutChoiceOverlay() {
   if (els.dugoutReason) {
     const mission = currentMission();
     const missionText = mission ? missionActionText(mission) : "이번 이닝에는 추가 과제가 없습니다";
-    els.dugoutReason.textContent = `이번 과제: ${missionText} · 다음 이닝을 어떤 흐름으로 풀지 고르세요.`;
+    els.dugoutReason.textContent = `이번 과제: ${missionText} · 이번 이닝을 어떤 흐름으로 풀지 고르세요.`;
   }
   renderDugoutChoices();
   els.dugoutOverlay.hidden = false;
@@ -9030,9 +9030,6 @@ function renderMobileRecentLog() {
     if (item.type === "batter") {
       return `<div class="mobile-recent-log-row is-batter-marker" data-result="batter"><span class="mobile-recent-log-text"><span class="mobile-recent-log-line"><b>타자 변경: ${escapeHtml(item.batter)}</b></span></span></div>`;
     }
-    if (item.type === "growth") {
-      return `<div class="mobile-recent-log-row is-growth" data-result="growth"><strong class="mobile-recent-log-count">성장+</strong><span class="mobile-recent-log-text"><span class="mobile-recent-log-line"><b>${escapeHtml(item.label)}</b></span><small>투수 성향이 누적되었습니다.</small></span></div>`;
-    }
     return `<div class="mobile-recent-log-row" data-result="${escapeHtml(item.result)}"><strong class="mobile-recent-log-count">${item.no}구</strong><span class="mobile-recent-log-text"><span class="mobile-recent-log-line"><b>${escapeHtml(item.pitch)} ${item.speed}km/h</b><em>/ ${escapeHtml(item.outcome)}</em></span><small>${escapeHtml(item.note || "타자 반응 확인")}</small></span></div>`;
   }).join("");
 }
@@ -10061,6 +10058,7 @@ function startStageFromOverlay() {
   state.waitingNextBatter = false;
   els.stageOverlay?.classList.remove("show");
   if (els.stageOverlay) els.stageOverlay.hidden = true;
+  if (!state.dugoutPending && !state.atBat) startAtBat();
   render();
   if (state.dugoutPending) openDugoutChoiceOverlay();
   else showBatterEntryBanner();

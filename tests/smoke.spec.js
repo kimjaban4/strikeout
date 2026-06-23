@@ -25,6 +25,7 @@ async function chooseMobilePitchAndZone(page) {
   await page.locator("#mobilePitchButtons .mobile-pitch-button").first().click();
   await page.locator("#mobileStrikeZone .mobile-zone-button.is-strike").first().click();
   await expect(page.locator("#mobileReleasePanel")).toBeVisible();
+  await expect(page.locator("#mobileReleasePanel")).toHaveClass(/is-active/);
 }
 
 test("boots to title and pitcher select", async ({ page }) => {
@@ -88,7 +89,7 @@ test("mobile throw records a log entry", async ({ page }) => {
   await chooseFirstPitcher(page);
   await chooseMobilePitchAndZone(page);
 
-  await page.locator("#mobileReleasePanel").click();
+  await page.locator("#mobileReleasePanel").dispatchEvent("pointerdown");
   await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).toBeVisible({ timeout: 8000 });
   await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).not.toHaveClass(/is-batter-marker/);
   await expect(page.locator("#mobileRecentLog")).toContainText(/타자\s*변경/);
