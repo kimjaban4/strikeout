@@ -5919,7 +5919,7 @@ function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {})
 
 function pitchSwingProbability(context) {
   const { atBat, batter, targetMatch, inZone, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, mem, themeFx, centerSwingBonus } = context;
-  let swingProbability = inZone ? 0.46 : 0.16;
+  let swingProbability = inZone ? 0.46 : 0.21;
   if (atBat.approach === "적극") swingProbability += 0.13;
   if (atBat.approach === "신중") swingProbability -= 0.12;
   if (atBat.approach === "초구" && state.balls === 0 && state.strikes === 0) swingProbability += 0.22;
@@ -5938,7 +5938,7 @@ function pitchSwingProbability(context) {
     (mem.swingBonus || 0) +
     (themeFx.swing || 0);
   if (!inZone) swingProbability += mind.chase + tagEffect.chase + batterTag.chase + cardEffect.chase + batterMindEffect.chase + (mem.chasePenalty || 0) + (themeFx.chase || 0);
-  if (!inZone) swingProbability -= batter.stats.선구 / 230;
+  if (!inZone) swingProbability -= batter.stats.선구 / 280;
   return swingProbability;
 }
 
@@ -8986,11 +8986,12 @@ function recordMobilePitchResult(result) {
   recordMobileBatterStart(currentBatter());
   const records = state.mobilePitchRecords || [];
   const pitch = result.pitch || {};
+  const cause = result.specialEffect?.label || state.cardTriggerLog?.[0]?.cardName || "";
   records.unshift({
     no: state.atBat?.pitchHistory?.length || state.pitchCount || records.length + 1,
     pitch: pitch.name || "투구",
     speed: pitchVelocityKmh(pitch),
-    note: result.clue || result.detail || result.specialEffect?.label || result.mindEffect?.label || result.timingLabel || result.location?.label || "",
+    note: cause || result.clue || result.detail || result.mindEffect?.label || result.timingLabel || result.location?.label || "",
     outcome: mobilePitchOutcomeLabel(result),
     result: result.result || ""
   });
@@ -9008,17 +9009,14 @@ function recordMobileBatterStart(batter) {
 function recordMobileGrowthMark(growthResult) {
   const label = growthMarkLabel(growthResult);
   if (!label) return;
-  const records = state.mobilePitchRecords || [];
-  records.unshift({ type: "growth", label });
-  state.mobilePitchRecords = records.slice(0, 7);
-  renderMobileRecentLog();
+  showEventBanner(`성장+\n${label}`, "reward", 1200);
 }
 
 function renderMobileRecentLog() {
   if (!els.mobileRecentLog) return;
   const card = els.mobileRecentLog.closest(".mobile-recent-log-card");
   const items = state.mobilePitchRecords || [];
-  const shouldShow = items.length > 0;
+  const shouldShow = items.some((item) => item.type !== "batter");
   if (card) {
     card.hidden = false;
     card.classList.toggle("is-empty", !shouldShow);

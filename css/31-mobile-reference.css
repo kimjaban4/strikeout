@@ -723,7 +723,7 @@
 
   .mobile-mid-panel {
     display: grid;
-    grid-template-rows: clamp(38px, 9.6vw, 46px) clamp(220px, 54vw, 288px);
+    grid-template-rows: minmax(0, 1fr);
     gap: 6px;
     padding: 6px 10px;
     background: linear-gradient(180deg, rgba(5, 18, 31, 0.3), #061827 22%);
@@ -731,7 +731,7 @@
   }
 
   .mobile-mid-panel.is-log-empty {
-    grid-template-rows: clamp(38px, 9.6vw, 46px) 36px !important;
+    grid-template-rows: 36px !important;
   }
 
   .mobile-duel-read-card {
@@ -822,6 +822,7 @@
     font-weight: 800;
   }
 
+  .mobile-duel-read-card,
   .mobile-duel-read-card span:nth-child(n+2),
   .mobile-recommend-card,
   .mobile-recommend-card > span,
@@ -1378,7 +1379,7 @@
   }
 
   .mobile-mid-panel {
-    grid-template-rows: 40px clamp(200px, 50vw, 238px);
+    grid-template-rows: minmax(0, 1fr);
   }
 
   .mobile-recent-log-card {
@@ -1504,7 +1505,7 @@
   }
 
   .mobile-mid-panel {
-    grid-template-rows: clamp(36px, 8.8vw, 44px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
     min-height: 0;
     padding: 6px clamp(7px, 2.4vw, 10px) calc(6px + env(safe-area-inset-bottom, 0px));
   }
