@@ -730,6 +730,10 @@
     box-sizing: border-box;
   }
 
+  .mobile-mid-panel.is-log-empty {
+    grid-template-rows: clamp(38px, 9.6vw, 46px) 36px !important;
+  }
+
   .mobile-duel-read-card {
     display: grid;
     grid-template-columns: 0.85fr 1.7fr 0.95fr;
@@ -790,6 +794,15 @@
 
   .mobile-recent-log-card[hidden] {
     display: none !important;
+  }
+
+  .mobile-recent-log-card.is-empty {
+    height: 36px !important;
+    min-height: 36px;
+  }
+
+  .mobile-recent-log-card.is-empty .mobile-recent-log-list {
+    display: none;
   }
 
   .mobile-recent-log-card header {

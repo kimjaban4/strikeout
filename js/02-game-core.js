@@ -7754,7 +7754,11 @@ function renderMobileRecentLog() {
   const card = els.mobileRecentLog.closest(".mobile-recent-log-card");
   const items = state.mobilePitchRecords || [];
   const shouldShow = items.length > 0;
-  if (card) card.hidden = false;
+  if (card) {
+    card.hidden = false;
+    card.classList.toggle("is-empty", !shouldShow);
+    card.closest(".mobile-mid-panel")?.classList.toggle("is-log-empty", !shouldShow);
+  }
   if (!shouldShow) {
     els.mobileRecentLog.innerHTML = '<p class="mobile-recent-log-empty">아직 투구 기록 없음</p>';
     return;
