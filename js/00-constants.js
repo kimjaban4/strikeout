@@ -339,14 +339,11 @@ MP.rewardCardCatalog = [
   { id: "K005", rarity: "core", name: "분석 역이용", type: ["타자 분석", "심리전"], description: "공개된 공략 보조태그와 일치하는 투구에 성공하면 다음 승부가 더 쉬워집니다.", triggerCondition: "공략 보조태그 활용 성공", effectText: "다음 투구 성공률이 증가합니다.", stackType: "unique", synergyTags: ["공략 보조태그"], effects: { weaknessNextPitchControl: 7 } },
   { id: "K006", rarity: "core", name: "클러치 에이스", type: ["위기관리"], description: "득점권에서도 호흡을 유지해 손끝과 제구가 흔들리지 않습니다.", triggerCondition: "주자 2루 또는 3루", effectText: "득점권 멘탈과 제구가 상승합니다.", stackType: "unique", synergyTags: ["득점권"], effects: { scoringControl: 5, scoringQuality: 4 } },
   { id: "K007", rarity: "core", name: "배합 배신", type: ["심리전", "구종 운영"], description: "앞선 두 공과 다른 흐름으로 타자의 기다림을 끊습니다.", triggerCondition: "직전 2구와 다른 계열", effectText: "직전 2구와 다른 계열로 타자의 기다림을 흔듭니다.", stackType: "unique", synergyTags: ["배합"], effects: { patternBreaker: 1 } },
-  { id: "K008", rarity: "core", name: "결승구 설계", type: ["구종 운영", "보상 강화"], description: "2스트라이크 이후 삼진을 잡을수록 보상 흐름이 좋아집니다.", triggerCondition: "2스트 이후 삼진", effectText: "2스트 이후 삼진 시 희귀 카드 선택지가 추가됩니다.", stackType: "unique", synergyTags: ["삼진", "보상"], effects: { twoStrikeGuaranteedRare: 1 } }
-];
-
-MP.rewardCardCatalog.push(
+  { id: "K008", rarity: "core", name: "결승구 설계", type: ["구종 운영", "보상 강화"], description: "2스트라이크 이후 삼진을 잡을수록 보상 흐름이 좋아집니다.", triggerCondition: "2스트 이후 삼진", effectText: "2스트 이후 삼진 시 희귀 카드 선택지가 추가됩니다.", stackType: "unique", synergyTags: ["삼진", "보상"], effects: { twoStrikeGuaranteedRare: 1 } },
   { id: "R018", rarity: "rare", name: "불리한 카운트 수습", type: ["위기 관리"], description: "2볼 이상에서 다음 1타석의 제구 불안을 줄입니다.", triggerCondition: "2볼 이상", effectText: "2볼 이상 제구 불안 감소", stackType: "unique", synergyTags: ["카운트", "제구"], effects: { fullCountControlBonus: 4, fullCountWalkReduce: 1 } },
   { id: "R019", rarity: "rare", name: "약점 노출 유도", type: ["타자 분석"], description: "다음 스테이지 첫 3타자의 공략 보조태그 발견 확률이 올라갑니다.", triggerCondition: "다음 스테이지 첫 3타자", effectText: "초반 타자 약점 발견률 증가", stackType: "unique", synergyTags: ["분석", "공략"], effects: { candidateNextFirstWeakness: 3 } },
   { id: "R020", rarity: "rare", name: "반복 패턴 절단", type: ["심리전"], description: "직전 2구와 다른 계열이나 높이를 고르면 반복 간파 위험이 줄어듭니다.", triggerCondition: "직전 2구와 다른 선택", effectText: "반복 간파 위험 감소", stackType: "unique", synergyTags: ["반복", "배합"], effects: { patternBreaker: 1 } }
-);
+];
 
 MP.dugoutChoiceCatalog = [
   { id: "pitch_check", category: "안정형", title: "구종 점검", desc: "다음 이닝 동안 가장 피로도가 쌓인 구종의 부담 증가가 줄고, 같은 공 재요구도 조금 숨깁니다.", effects: { burdenControl: 0.8, repeatSuspicionMult: 0.92, samePitchCall: 1 } },
