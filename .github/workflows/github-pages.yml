@@ -24,7 +24,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: DEPLOY_ROOT=_site npm run build:deploy
+      - run: npm run build:pages
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

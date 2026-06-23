@@ -914,7 +914,7 @@ function clampStat(value) {
 }
 
 function currentStageInnings() {
-  return 3;
+  return stageConfig().innings;
 }
 
 function currentStageRunLimit() {
@@ -1395,20 +1395,11 @@ function rewardCardCanAppear(card) {
 }
 
 function cardRarityLabel(rarity) {
-  const labels = {
-    platinum: "플래티넘",
-    gold: "골드",
-    silver: "실버",
-    bronze: "브론즈",
-    core: "핵심",
-    rare: "희귀",
-    common: "일반"
-  };
-  return labels[rarity] || "일반";
+  return rarity === "core" ? "핵심" : rarity === "rare" ? "희귀" : "일반";
 }
 
 function raritySortValue(rarity) {
-  return { core: 7, platinum: 6, rare: 5, gold: 4, silver: 3, common: 2, bronze: 1 }[rarity] || 1;
+  return rarity === "core" ? 3 : rarity === "rare" ? 2 : 1;
 }
 
 function stageResultStarLabel(stars) {
@@ -1640,12 +1631,7 @@ function revealBatterWeakness(batter, options = {}) {
   const label = options.label || "공략 보조태그 공개";
   addLog(label, `${batter.name}: ${tag?.name || tagId}`);
   showTutorialStep("weakness");
-  const showWeaknessBanner = () => showEventBanner("다음타자\n약점공개", "reward", GAME_TIMING.weaknessBanner);
-  const bannerDelay = Number.isFinite(options.delayBanner)
-    ? Number(options.delayBanner)
-    : label.includes("다음") ? GAME_TIMING.eventBannerPitchResult + 250 : 0;
-  if (bannerDelay > 0) window.setTimeout(showWeaknessBanner, bannerDelay);
-  else showWeaknessBanner();
+  showEventBanner("다음타자\n약점공개", "reward", GAME_TIMING.weaknessBanner);
   return tag;
 }
 
@@ -2221,7 +2207,6 @@ function currentAtBatPitchCount() {
 }
 
 function swingTimingText(result) {
-  if (["single", "double", "homerun"].includes(result.result)) return "타구 허용";
   if (!result.swung) return result.inZone ? "지켜봄" : "참아냄";
   return `스윙 ${result.timingLabel}`;
 }
@@ -3234,24 +3219,21 @@ function recordPitchPattern(pitch, plannedCourse, result, pattern) {
 
 function recommendationForCategory(category, batter) {
   const pitchName = representativePitchName(category);
-  const family = categoryNames[category] || "구종";
   if (category === "fast") {
     return {
-      title: `${pitchName}(${family}) · 바깥쪽 승부`,
-      text: batter.stats.선구 > 72
-        ? "플레이어 기준 화면 오른쪽 바깥쪽 존 끝에 붙이면 선구안 좋은 타자도 쉽게 못 칩니다."
-        : "플레이어 기준 화면 오른쪽 낮은 바깥쪽으로 던져 정타 위험을 줄이세요."
+      title: `${pitchName}로 타이밍 압박`,
+      text: batter.stats.선구 > 72 ? "빠른 공은 존 끝으로 붙여야 효과가 큽니다." : "높은 존보다 낮은 존 빠른 공이 더 안전합니다."
     };
   }
   if (category === "breaking") {
     return {
-      title: `${pitchName}(${family}) · 낮은 바깥쪽 유도`,
-      text: "플레이어 기준 화면 오른쪽 낮은 바깥쪽으로 빼면 배트를 끌어내기 좋습니다."
+      title: `${pitchName}로 헛스윙 유도`,
+      text: "변화구를 던질 수 있는 상황입니다. 히터박스 오른쪽 낮은 코스(바깥쪽)가 가장 안정적입니다."
     };
   }
   return {
-    title: `${pitchName}(${family}) · 낮은 코스 완급`,
-    text: "낮은 존이나 낮은 볼로 속도 차이를 보여주세요. 가운데 실투는 피해야 합니다."
+    title: `${pitchName}로 타이밍 교란`,
+    text: "느린 공 계열로 앞 타이밍을 흔들 수 있습니다. 중앙 실투만 피하세요."
   };
 }
 
@@ -3650,6 +3632,7 @@ function startGame() {
   state.awaitingStageStart = false;
   state.stageThemeId = null;
   renderPitcherChoices();
+  syncGameOverlayUi();
 }
 
 function assignStartingBonusTag(pitcher) {
@@ -5120,7 +5103,6 @@ function swingFeedbackText(result) {
   if (result.result === "calledStrike") return "STRIKE";
   if (result.result === "swingingStrike") return "헛스윙";
   if (result.result === "foul") return "FOUL";
-  if (["single", "double", "homerun"].includes(result.result)) return "";
   if (!result.swung) return "";
   if (result.timingValue > 0.78) return "FULL SWING";
   if (result.timingValue > 0.62) return "GOOD SWING";
@@ -5619,7 +5601,7 @@ function addOut(count = 1) {
         state.pendingCoreEvolutionReward = true;
         if (state.stageIndex >= stageInnings.length - 1) {
           state.pendingRunComplete = true;
-          state.pendingRunCompleteMessage = "3이닝 최종 스테이지까지 버텨냈습니다. 마운드의 심리전에서 이겼습니다.";
+          state.pendingRunCompleteMessage = "7이닝 최종 스테이지까지 버텨냈습니다. 마운드의 심리전에서 이겼습니다.";
           state.inning = currentStageInnings();
           addLog("최종 스테이지 클리어", `${stageResultStarLabel(state.lastStageResult.stars)} · 마지막 카드 보상을 정산합니다.`);
         } else {
@@ -5977,7 +5959,7 @@ function openDugoutChoiceOverlay() {
   if (els.dugoutReason) {
     const mission = currentMission();
     const missionText = mission ? missionActionText(mission) : "이번 이닝에는 추가 과제가 없습니다";
-    els.dugoutReason.textContent = `이번 미션: ${missionText} · 다음 이닝을 어떤 예측으로 풀지 고르세요.`;
+    els.dugoutReason.textContent = `이번 과제: ${missionText} · 다음 이닝을 어떤 흐름으로 풀지 고르세요.`;
   }
   renderDugoutChoices();
   els.dugoutOverlay.hidden = false;
@@ -6065,7 +6047,7 @@ function rewardReasonText(reason) {
     return allSupportOwned ? "이미 가진 장점을 한 단계 더 강화합니다." : "투수에게 새 운영 장점을 붙입니다.";
   }
   if (reason.includes("핵심태그")) return "투수의 핵심 운영 방향을 강화합니다.";
-  return "삼진으로 보상 기회를 만들었습니다. 보상을 고르세요.";
+  return "삼진으로 흐름을 가져왔습니다. 작은 보상을 고르세요.";
 }
 
 function stageCardRewardReasonText() {
@@ -6169,66 +6151,9 @@ function generateSupportTagUpgradeChoices() {
   return selected;
 }
 
-const REWARD_TIER_META = {
-  bronze: { label: "브론즈", stat: 1, pitch: 3, tag: 1 },
-  silver: { label: "실버", stat: 2, pitch: 5, tag: 1 },
-  gold: { label: "골드", stat: 3, pitch: 7, tag: 2 },
-  platinum: { label: "플래티넘", stat: 4, pitch: 10, tag: 3 }
-};
-
-function rewardAmount(kind, tier = "bronze") {
-  const meta = REWARD_TIER_META[tier] || REWARD_TIER_META.bronze;
-  if (kind === "pitch") return meta.pitch;
-  return meta.stat;
-}
-
-function rollRewardTier(result, reward) {
-  if (reward?.type === "newPitch") return "platinum";
-  if (reward?.type === "pitchUpgrade") return "gold";
-  let bronze = 55;
-  let silver = 30;
-  let gold = 12;
-  let platinum = 3;
-  if (["calledStrike", "swingingStrike", "doublePlay", "inPlayOut"].includes(result?.result)) {
-    bronze -= 8;
-    silver += 3;
-    gold += 4;
-    platinum += 1;
-  }
-  if (result?.batter?.isBoss || result?.batter?.isRival) {
-    bronze -= 6;
-    silver += 2;
-    gold += 3;
-    platinum += 1;
-  }
-  const roll = Math.random() * (bronze + silver + gold + platinum);
-  if (roll < platinum) return "platinum";
-  if (roll < platinum + gold) return "gold";
-  if (roll < platinum + gold + silver) return "silver";
-  return "bronze";
-}
-
-function applyRewardTier(reward, tier) {
-  if (!reward || reward.type === "rewardCard" || reward.type === "coreEvolution") return reward;
-  const meta = REWARD_TIER_META[tier] || REWARD_TIER_META.bronze;
-  const next = { ...reward, rarity: tier, tier, tierLabel: meta.label };
-  if (next.type === "stat") {
-    next.amount = meta.stat;
-    next.effectText = `${next.stat} +${next.amount}`;
-  } else if (next.type === "pitch") {
-    next.amount = meta.pitch;
-    next.effectText = `${next.field === "control" ? "제구" : next.field} +${next.amount}`;
-  } else if (next.type === "tag" || next.type === "supportUpgrade") {
-    next.tierBoost = meta.tag;
-    next.effectText = "보조태그 효과 강화";
-  } else if (next.type === "newPitch") {
-    next.effectText = "새 구종 추가";
-  }
-  return next;
-}
-
-function finalizeRewardChoices(rewards, result) {
-  return sample(dedupeRewardChoices(rewards), 3).map((reward) => applyRewardTier(reward, rollRewardTier(result, reward)));
+function rewardAmount(kind) {
+  if (kind === "pitch") return rand(3, 5);
+  return rand(1, 2);
 }
 
 function rewardIdentity(reward) {
@@ -6315,10 +6240,10 @@ function generateRewardChoices(reason, result) {
   if (upgradePicks.length && chance(0.45)) {
     const pickedUpgradeKeys = new Set(upgradePicks.map(rewardIdentity));
     const filler = sample(uniqueRewards.filter((reward) => !pickedUpgradeKeys.has(rewardIdentity(reward))), Math.max(0, 3 - upgradePicks.length));
-    return finalizeRewardChoices([...upgradePicks, ...filler], result);
+    return sample(dedupeRewardChoices([...upgradePicks, ...filler]), 3);
   }
 
-  return finalizeRewardChoices(uniqueRewards, result);
+  return sample(uniqueRewards, 3);
 }
 
 function generateStageTagChoices() {
@@ -6680,25 +6605,23 @@ function applyReward(index) {
 }
 
 function rewardChoiceMetaParts(reward) {
-  const tierPart = reward.rarity ? [{ kind: `rarity-${reward.rarity}`, text: cardRarityLabel(reward.rarity) }] : [];
   if (reward.type === "rewardCard") {
-    const parts = [...tierPart, { kind: "kind", text: (reward.cardType || []).join(" / ") || "카드" }];
+    const parts = [{ kind: "kind", text: (reward.cardType || []).join(" / ") || "카드" }];
     if (reward.recommendReason) parts.push({ kind: "reason", text: reward.recommendReason });
     return parts;
   }
-  if (reward.type === "stat") return [...tierPart, { kind: "amount", text: `${reward.stat} +${reward.amount}` }];
-  if (reward.type === "pitch") return [...tierPart, { kind: "amount", text: `${reward.field === "control" ? "제구" : reward.field} +${reward.amount}` }];
-  if (reward.type === "newPitch") return [...tierPart, { kind: "kind", text: "새 구종" }];
+  if (reward.type === "stat") return [{ kind: "amount", text: `${reward.stat} +${reward.amount}` }];
+  if (reward.type === "pitch") return [{ kind: "amount", text: `${reward.field === "control" ? "제구" : reward.field} +${reward.amount}` }];
+  if (reward.type === "newPitch") return [{ kind: "kind", text: "새 구종" }];
   if (reward.type === "tag") {
     const family = String(reward.categoryLabel || "").replace(/^보조(?:태그| 장점)\s*·\s*/, "");
-    const parts = [...tierPart, { kind: "kind", text: "보조태그" }];
+    const parts = [{ kind: "kind", text: "보조태그" }];
     if (family) parts.push({ kind: "family", text: family });
     parts.push({ kind: "reason", text: reward.recommendReason || "추천" });
     return parts;
   }
   if (reward.type === "supportUpgrade") {
     return [
-      ...tierPart,
       { kind: "kind", text: "보조태그 강화" },
       { kind: "reason", text: reward.recommendReason || "마스터리" }
     ];
@@ -6708,19 +6631,17 @@ function rewardChoiceMetaParts(reward) {
   }
   if (reward.type === "pitchUpgrade") {
     return [
-      ...tierPart,
       { kind: "kind", text: "구종 강화" },
       { kind: "reason", text: reward.reason || "스테이지 활약" }
     ];
   }
   if (reward.type === "weaknessMitigation") {
     return [
-      ...tierPart,
       { kind: "kind", text: "약점 완화" },
       { kind: "reason", text: reward.recommendReason || "조건 카드" }
     ];
   }
-  return reward.amount ? [...tierPart, { kind: "amount", text: `+${reward.amount}` }] : tierPart;
+  return reward.amount ? [{ kind: "amount", text: `+${reward.amount}` }] : [];
 }
 
 function rewardChoiceMetaHtml(reward) {
@@ -6762,7 +6683,6 @@ function coreEvolutionIconHtml(icon) {
 
 function rewardUnifiedSubtitle(reward) {
   if (reward.subtitle) return reward.subtitle;
-  if (reward.tierLabel && !["rewardCard", "coreEvolution"].includes(reward.type)) return `${reward.tierLabel} 보상`;
   if (reward.type === "stat") return "능력치 보상";
   if (reward.type === "pitch") return "구종 숙련";
   if (reward.type === "newPitch") return "레퍼토리 확장";
@@ -6796,7 +6716,7 @@ function rewardUnifiedOperation(reward) {
   if (reward.type === "supportUpgrade") return "보유 태그 효과 상승";
   if (reward.type === "rewardCard") return rewardDisplayDescription(reward);
   if (reward.type === "newPitch") return "새 구종 선택지 확보";
-  if (reward.type === "pitchUpgrade") return reward.reason ? `${reward.reason} 결과를 이어서 구종 숙련도를 올립니다.` : "활약한 구종을 더 안정적으로 운용합니다.";
+  if (reward.type === "pitchUpgrade") return reward.reason ? `${reward.reason} 흐름을 이어서 구종 숙련도를 올립니다.` : "활약한 구종을 더 안정적으로 운용합니다.";
   return reward.desc || "투수 성장에 반영";
 }
 
@@ -7323,8 +7243,8 @@ function renderReleaseTimingPanel() {
     els.releaseTimingButton.disabled = false;
     els.releaseTimingButton.setAttribute("aria-disabled", "false");
     els.releaseTimingGrade.textContent = "타이밍";
-    els.releaseTimingMode.textContent = `제구 ${Math.round(active.control)} · 난도 ${Math.round(active.pressure)}`;
-    els.releaseTimingHint.textContent = `${pressureText} · 초록 구간에 맞춰 클릭/스페이스`;
+    els.releaseTimingMode.textContent = `제구 ${Math.round(active.control)} · 압박 ${Math.round(active.pressure)}`;
+    els.releaseTimingHint.textContent = `${pressureText} · 클릭/스페이스 확정 · ESC 취소`;
     els.releaseTimingTrack?.style.setProperty("--good-left", `${goodLeft}%`);
     els.releaseTimingTrack?.style.setProperty("--good-width", `${active.goodSize * 100}%`);
     els.releaseTimingTrack?.style.setProperty("--perfect-left", `${perfectLeft}%`);
@@ -7352,7 +7272,7 @@ function renderReleaseTimingPanel() {
 
   els.releaseTimingPanel.dataset.state = "idle";
   els.releaseTimingGrade.textContent = "대기";
-  els.releaseTimingMode.textContent = "정확 구간 대기";
+  els.releaseTimingMode.textContent = "안정 릴리즈";
   els.releaseTimingHint.textContent = "코스를 선택하면 릴리즈 타이밍이 열립니다.";
   els.releaseTimingTrack?.style.setProperty("--good-left", "36%");
   els.releaseTimingTrack?.style.setProperty("--good-width", "28%");
@@ -7535,7 +7455,7 @@ function renderMobilePitchButtons() {
     const burdenLabel = MP.burdenLabel ? MP.burdenLabel(burdenValue) : "안정";
     const burdenTone = burdenValue >= 70 ? "danger" : burdenValue >= 45 ? "warn" : "stable";
     return `<button class="mobile-pitch-button${state.selectedPitchId === pitch.id ? " is-selected" : ""}" type="button" data-mobile-pitch="${escapeHtml(pitch.id)}" data-burden="${burdenTone}" ${pitchInputLocked({ includeRelease: false }) ? "disabled" : ""}>
-      <img src="${pitchIconUrl(pitch)}" alt=""><strong>${escapeHtml(pitch.name)}</strong><small>${pitchVelocityKmh(pitch)}km/h · ${escapeHtml(pitch.label || categoryNames[pitch.category] || "")}</small><em>${escapeHtml(burdenLabel)}</em>
+      <img src="${pitchIconUrl(pitch)}" alt=""><strong>${escapeHtml(pitch.name)}</strong><small>${pitchVelocityKmh(pitch)}km/h</small><em>${escapeHtml(burdenLabel)}</em>
     </button>`;
   }).join("");
 }
@@ -7710,7 +7630,7 @@ function renderMobileRelease() {
     const goodLeft = (0.5 - active.goodSize / 2) * 100;
     const perfectLeft = (0.5 - active.perfectSize / 2) * 100;
     els.mobileReleaseGrade.textContent = "타이밍";
-    els.mobileReleaseMode.textContent = `제구 ${Math.round(active.control)} · 난도 ${Math.round(active.pressure)}`;
+    els.mobileReleaseMode.textContent = `제구 ${Math.round(active.control)} · 압박 ${Math.round(active.pressure)}`;
     els.mobileReleasePanel.style.setProperty("--good-left", `${goodLeft}%`);
     els.mobileReleasePanel.style.setProperty("--good-width", `${active.goodSize * 100}%`);
     els.mobileReleasePanel.style.setProperty("--perfect-left", `${perfectLeft}%`);
@@ -7722,7 +7642,7 @@ function renderMobileRelease() {
     els.mobileReleaseCursor?.style.setProperty("--cursor-x", `${(result.position || 0.5) * 100}%`);
   } else {
     els.mobileReleaseGrade.textContent = "대기";
-    els.mobileReleaseMode.textContent = "정확 구간 대기";
+    els.mobileReleaseMode.textContent = "코스를 선택하세요";
     els.mobileReleaseCursor?.style.setProperty("--cursor-x", "50%");
   }
   if (els.mobileThrowButton) {
@@ -7738,6 +7658,12 @@ function renderMobileDuelRead(recommendation) {
   els.mobileDuelReadFlow.textContent = mobileCatcherLine();
   els.mobileDuelReadPitch.textContent = recommendation?.title || "대기";
   els.mobileDuelReadRisk.textContent = `${Math.round(clamp(state.atBat?.suspicion || 0, 0, 100))}%`;
+  return;
+  const confidence = recommendation?.confidence || 0;
+  const suspicion = Math.round(clamp(state.atBat?.suspicion || 0, 0, 100));
+  els.mobileDuelReadFlow.textContent = confidence >= 76 ? "강함" : confidence >= 58 ? "보통" : "흐림";
+  els.mobileDuelReadPitch.textContent = recommendation?.title || "대기";
+  els.mobileDuelReadRisk.textContent = `${suspicion}%`;
 }
 
 function mobileCatcherLine() {
@@ -7747,6 +7673,11 @@ function mobileCatcherLine() {
   if (state.balls >= 2) return "존 근처로 수습";
   if (state.strikes >= 2) return "코스 보고 결정";
   return "반응 보고 다음 코스";
+  if (suspicion >= 70) return "같은 흐름은 읽힐 수 있습니다.";
+  if (state.bases.some(Boolean)) return "주자부터 묶고 낮게 버티세요.";
+  if (state.balls >= 2) return "무리한 유인보다 존 근처가 낫습니다.";
+  if (state.strikes >= 2) return "결정은 서두르지 말고 코스를 보세요.";
+  return "타자 반응을 보고 다음 코스를 정하세요.";
 }
 
 function mobilePitchOutcomeLabel(result) {
@@ -7770,14 +7701,11 @@ function recordMobilePitchResult(result) {
   recordMobileBatterStart(currentBatter());
   const records = state.mobilePitchRecords || [];
   const pitch = result.pitch || {};
-  const hitAllowed = ["single", "double", "homerun"].includes(result.result);
   records.unshift({
     no: state.atBat?.pitchHistory?.length || state.pitchCount || records.length + 1,
     pitch: pitch.name || "투구",
     speed: pitchVelocityKmh(pitch),
-    note: hitAllowed
-      ? `${result.location?.actualLabel || result.location?.label || "코스"} 타구 허용`
-      : result.clue || result.detail || result.specialEffect?.label || result.mindEffect?.label || result.timingLabel || result.location?.label || "",
+    note: result.clue || result.detail || result.specialEffect?.label || result.mindEffect?.label || result.timingLabel || result.location?.label || "",
     outcome: mobilePitchOutcomeLabel(result),
     result: result.result || ""
   });
@@ -8496,14 +8424,14 @@ function currentCatcherSign() {
   if ((mind?.confidence || 0) >= 70) {
     return {
       title: `${catcher.label} · 노림수 경계`,
-      text: "타자가 같은 패턴을 기다립니다. 같은 계열 반복보다 다른 계열과 반대 코스가 필요합니다."
+      text: "타자가 같은 흐름을 기다립니다. 같은 계열 반복보다 배합을 배신하는 선택이 필요합니다."
     };
   }
 
   if (catcher.id === "safe") {
     return {
       title: `${catcher.label} · ${catcher.tone}`,
-      text: suspicion >= 65 ? "타자가 패턴을 읽었습니다. 반대 코스나 다른 계열이 필요합니다." : `${pitchName}를 존 끝에 붙여 큰 타구를 줄이자는 사인입니다.`
+      text: suspicion >= 65 ? "타자가 흐름을 읽었습니다. 반대 코스나 다른 계열이 필요합니다." : `${pitchName}를 존 끝에 붙여 큰 타구를 줄이자는 사인입니다.`
     };
   }
   if (catcher.id === "attack") {
@@ -8515,12 +8443,12 @@ function currentCatcherSign() {
   if (catcher.id === "analysis") {
     return {
       title: `${catcher.label} · ${catcher.tone}`,
-      text: `타자가 기다릴 가능성이 있는 계열을 피해 ${pitchName}로 반대로 찌르자는 사인입니다.`
+      text: `타자가 기다릴 가능성이 있는 흐름을 피해 ${pitchName}로 반대로 찌르자는 사인입니다.`
     };
   }
   return {
     title: `${catcher.label} · ${catcher.tone}`,
-    text: state.bases.some(Boolean) ? "주자가 있어도 승부구를 요구합니다. 성공하면 타자의 예측을 끊을 수 있습니다." : `${pitchName}로 과감하게 존을 찌르자는 사인입니다.`
+    text: state.bases.some(Boolean) ? "주자가 있어도 승부구를 요구합니다. 성공하면 흐름을 끊을 수 있습니다." : `${pitchName}로 과감하게 존을 찌르자는 사인입니다.`
   };
 }
 
@@ -8535,9 +8463,9 @@ function renderSuspicionMeter() {
   if (els.suspicionHint) {
     const mindHint = batterMindSummary(state.atBat?.batterMind);
     if (mindHint && suspicion < 80) els.suspicionHint.textContent = mindHint;
-    else if (suspicion >= 80) els.suspicionHint.textContent = "타자가 같은 패턴을 기다립니다. 반복 선택은 장타로 이어질 수 있습니다.";
+    else if (suspicion >= 80) els.suspicionHint.textContent = "타자가 같은 흐름을 기다립니다. 반복 선택은 장타로 이어질 수 있습니다.";
     else if (suspicion >= 60) els.suspicionHint.textContent = "기다리는 공이 생겼습니다. 성공했던 패턴도 이제는 위험합니다.";
-    else if (suspicion >= 30) els.suspicionHint.textContent = "타자가 코스와 계열을 좁히기 시작합니다. 같은 패턴을 조심하세요.";
+    else if (suspicion >= 30) els.suspicionHint.textContent = "타자가 코스와 계열을 좁히기 시작합니다. 같은 흐름을 조심하세요.";
     else els.suspicionHint.textContent = "아직 타자가 방향을 잡지 못했습니다. 반복 패턴만 조심하세요.";
   }
 }

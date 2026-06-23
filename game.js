@@ -4900,6 +4900,7 @@ function startGame() {
   state.awaitingStageStart = false;
   state.stageThemeId = null;
   renderPitcherChoices();
+  syncGameOverlayUi();
 }
 
 function assignStartingBonusTag(pitcher) {

@@ -1,6 +1,9 @@
 node_modules/
 test-results/
+_site/
 _site-test/
+backup/
+balance-reports/
 *.log
 styles.consolidated.css
 
