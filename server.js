@@ -39,8 +39,7 @@ function resolveStaticPath(normalizedPath) {
   return isInside(root, filePath) ? filePath : null;
 }
 
-http
-  .createServer((req, res) => {
+const server = http.createServer((req, res) => {
     const requestPath = decodeURIComponent(new URL(req.url, `http://localhost:${port}`).pathname);
     const normalizedPath = requestPath === "/" ? "index.html" : requestPath.replace(/^\/+/, "");
     const filePath = resolveStaticPath(normalizedPath);
@@ -58,7 +57,19 @@ http
 
       send(res, 200, data, types[path.extname(filePath)] || "application/octet-stream");
     });
-  })
-  .listen(port, "127.0.0.1", () => {
-    console.log(`마운드 심리전 실행 중: http://127.0.0.1:${port}`);
   });
+
+server.listen(port, "127.0.0.1", () => {
+  console.log(`마운드 심리전 실행 중: http://127.0.0.1:${port}`);
+});
+
+let shuttingDown = false;
+function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 1000).unref();
+}
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);

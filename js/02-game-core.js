@@ -1365,8 +1365,12 @@ function rewardCardById(cardId) {
   return rewardCardCatalog.find((card) => card.id === cardId) || null;
 }
 
+function ownedRewardCardId(entry) {
+  return typeof entry === "string" ? entry : entry?.cardId || entry?.id || "";
+}
+
 function cardStackCount(cardId) {
-  return (state.ownedRewardCards || []).filter((id) => id === cardId).length;
+  return (state.ownedRewardCards || []).filter((entry) => ownedRewardCardId(entry) === cardId).length;
 }
 
 function hasRewardCard(cardId) {
@@ -1375,7 +1379,9 @@ function hasRewardCard(cardId) {
 
 function ownedCardStacks() {
   const stacks = {};
-  (state.ownedRewardCards || []).forEach((cardId) => {
+  (state.ownedRewardCards || []).forEach((entry) => {
+    const cardId = ownedRewardCardId(entry);
+    if (!cardId) return;
     stacks[cardId] = (stacks[cardId] || 0) + 1;
   });
   return stacks;
@@ -5226,9 +5232,12 @@ function recordPrePitchStageProgress(result, plannedCourse, pattern) {
   }
   if (plannedCourseMatchesRevealedWeakness(result, plannedCourse)) {
     stats.weaknessChoices += 1;
+    result.weaknessFeedback = result.weaknessFeedback || "공략 시도";
   }
   if (pitchMatchesRevealedWeakness(result) && isStrikeLikeResult(result)) {
     stats.weaknessPitchSuccesses += 1;
+    if (result.weaknessFeedback !== "공략 성공") showEventBanner("공략 성공\n보조태그 적중", "reward", 900);
+    result.weaknessFeedback = "공략 성공";
     if (state.atBat) state.atBat.suspicion = clamp((state.atBat.suspicion || 0) - 8, 0, 100);
     if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "공략 보조태그 활용", "공략 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
     if (hasRewardCard("K005")) state.nextPitchControlBonus += 7;
@@ -5349,6 +5358,8 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
     if (isOutResult(result)) stats.weaknessOuts += 1;
     if (["calledStrike", "swingingStrike", "inPlayOut", "doublePlay"].includes(result.result)) {
       stats.weaknessPitchSuccesses += 1;
+      if (result.weaknessFeedback !== "공략 성공") showEventBanner("공략 성공\n보조태그 적중", "reward", 900);
+      result.weaknessFeedback = "공략 성공";
       if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "공략 보조태그 활용", "공략 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
       if (hasRewardCard("K005")) state.nextPitchControlBonus += 7;
     }
@@ -7732,8 +7743,9 @@ function recordMobilePitchResult(result) {
   const records = state.mobilePitchRecords || [];
   const pitch = result.pitch || {};
   const dugoutCue = state.mobileDugoutCue || "";
-  const cause = result.specialEffect?.label || state.cardTriggerLog?.[0]?.cardName || dugoutCue;
-  if (dugoutCue && cause === dugoutCue) state.mobileDugoutCue = "";
+  const mainCause = result.specialEffect?.label || state.cardTriggerLog?.[0]?.cardName || dugoutCue;
+  const cause = [...new Set([result.weaknessFeedback, mainCause].filter(Boolean))].join(" · ");
+  if (dugoutCue && mainCause === dugoutCue) state.mobileDugoutCue = "";
   records.unshift({
     no: state.atBat?.pitchHistory?.length || state.pitchCount || records.length + 1,
     pitch: pitch.name || "투구",
@@ -8831,10 +8843,13 @@ function renderThemeChoiceCards() {
   if (!els.themeChoiceList) return;
   els.themeChoiceList.innerHTML = (state.pendingThemeChoices || [])
     .map((theme) => {
+      const fit = MP.themeFitLabel ? MP.themeFitLabel(theme, state.pitcher) : null;
+      const fitTone = fit?.tone || "neutral";
       return `
       <button class="theme-choice-card" type="button" data-theme-id="${escapeHtml(theme.id)}">
         <strong>${escapeHtml(theme.name)}</strong>
         <p>${escapeHtml(theme.shortDesc)}</p>
+        ${fit ? `<p class="theme-choice-fit theme-fit--${escapeHtml(fitTone)}">${escapeHtml(fit.text)}</p>` : ""}
         <p class="theme-choice-danger"><span>위험</span> ${escapeHtml(theme.dangerText)}</p>
         <p class="theme-choice-reward"><span>보상</span> ${escapeHtml(theme.rewardHint)}</p>
       </button>
