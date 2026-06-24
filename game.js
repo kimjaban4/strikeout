@@ -6441,6 +6441,13 @@ function isOutResult(result) {
   return ["calledStrike", "swingingStrike", "inPlayOut", "doublePlay"].includes(result?.result);
 }
 
+function rewardReasonForAtBat(title, result) {
+  if (title === "DOUBLE PLAY!") return "병살 보상";
+  if (result?.batter?.isBoss && isOutResult(result)) return "보스 제압 보상";
+  if (title === "STRIKE OUT!") return "삼진 보상";
+  return "";
+}
+
 function isOnBaseResult(result) {
   return ["walk", "error", "single", "double", "homerun"].includes(result?.result);
 }
@@ -6695,7 +6702,8 @@ function applyPitchResult(result) {
         state.runStats.strikeouts += 1;
         if (result.batter.isBoss) state.runStats.bossOuts += 1;
         finishAtBat("STRIKE OUT!", pitchLogText(result, { reveal: revealText }), {
-          result
+          result,
+          rewardReason: rewardReasonForAtBat("STRIKE OUT!", result)
         });
       } else {
         addLog(title, text);
@@ -6710,8 +6718,10 @@ function applyPitchResult(result) {
       recordStageOutcomeFromPitch(result, state.runs - runsBeforePitch);
       addOut();
       if (result.batter.isBoss) state.runStats.bossOuts += 1;
-      finishAtBat(result.outLabel || "FLY OUT!", pitchLogText(result, { reveal: revealText }), {
-        result
+      const outTitle = result.outLabel || "FLY OUT!";
+      finishAtBat(outTitle, pitchLogText(result, { reveal: revealText }), {
+        result,
+        rewardReason: rewardReasonForAtBat(outTitle, result)
       });
       break;
     case "error":
@@ -6727,7 +6737,8 @@ function applyPitchResult(result) {
       state.runStats.doublePlays += 1;
       if (result.batter.isBoss) state.runStats.bossOuts += 1;
       finishAtBat("DOUBLE PLAY!", pitchLogText(result, { reveal: revealText }), {
-        result
+        result,
+        rewardReason: rewardReasonForAtBat("DOUBLE PLAY!", result)
       });
       break;
     case "single":
