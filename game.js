@@ -7322,15 +7322,19 @@ function confirmDugoutChoice(index) {
 }
 
 function rewardReasonText(reason) {
-  if (reason.includes("카드")) return "스테이지 보상입니다. 앞으로의 투수 운영 방향을 하나 고르세요.";
-  if (reason.includes("병살")) return "병살로 위기를 지웠습니다. 운영 보상을 고르세요.";
-  if (reason.includes("보스")) return "위험 타자를 막았습니다. 강한 보상을 고르세요.";
-  if (reason.includes("스테이지")) {
-    const allSupportOwned = supportTags().every((tag) => (state.pitcher?.bonusTags || []).includes(tag.id));
-    return allSupportOwned ? "이미 가진 장점을 한 단계 더 강화합니다." : "투수에게 새 운영 장점을 붙입니다.";
-  }
-  if (reason.includes("핵심태그")) return "투수의 핵심 운영 방향을 강화합니다.";
-  return "삼진으로 흐름을 가져왔습니다. 작은 보상을 고르세요.";
+  if (/병살|DOUBLE PLAY/i.test(reason)) return "병살로 위기를 지웠습니다. 투수 성장 선택지 3개 중 하나를 고르세요.";
+  if (/보스|위험|하이라이트/.test(reason)) return "위험한 승부를 막아냈습니다. 강한 성장 선택지 3개 중 하나를 고르세요.";
+  if (/삼진|2스트|STRIKE OUT/i.test(reason)) return "삼진으로 흐름을 가져왔습니다. 투수 성장 선택지 3개 중 하나를 고르세요.";
+  return "승부를 끝낸 보상입니다. 투수 성장 선택지 3개 중 하나를 고르세요.";
+}
+
+function rewardDraftTitle(reason, kind) {
+  if (kind === "stageCard") return "스테이지 보상";
+  if (kind === "coreEvolution" || kind === "stageTag") return "성장 보상";
+  if (/병살|DOUBLE PLAY/i.test(reason)) return "승부 보상 · 병살";
+  if (/보스|위험|하이라이트/.test(reason)) return "승부 보상 · 위기 제압";
+  if (/삼진|2스트|STRIKE OUT/i.test(reason)) return "승부 보상 · 삼진";
+  return "승부 보상";
 }
 
 function stageCardRewardReasonText() {
@@ -7338,7 +7342,7 @@ function stageCardRewardReasonText() {
   const rival = result.rivalGoalMet ? "라이벌 과제 달성" : "라이벌 과제 미달성";
   const lines = [`${result.stageName} · ${result.starLabel}`, rival];
   if (result.highlightSuccesses) lines.push(`하이라이트 ${result.highlightSuccesses}회 성공`);
-  lines.push("운영 보상 3개 중 하나를 고르세요.");
+  lines.push("스테이지 카드 3개 중 하나를 고르세요.");
   return lines.join("\n");
 }
 
@@ -7708,21 +7712,14 @@ function openRewardDraft(reason, result, kind = "normal") {
     scheduleAutoAdvance(900);
     return;
   }
-  els.rewardTitle.textContent =
-    kind === "coreEvolution"
-      ? "핵심 진화 보상"
-      : kind === "stageCard"
-        ? "스테이지 보상"
-        : kind === "stageTag"
-          ? "태그 강화 보상"
-          : reason;
+  els.rewardTitle.textContent = rewardDraftTitle(reason, kind);
   els.rewardReason.textContent =
     kind === "coreEvolution"
-      ? "핵심 태그가 새 운영 방식으로 진화합니다."
+      ? "핵심태그를 새 운영 방식으로 진화시킵니다."
       : kind === "stageCard"
         ? stageCardRewardReasonText()
         : kind === "stageTag"
-          ? "스테이지 종료 후 투수 성향을 한 번 정리합니다. 새 태그는 최대 3개까지만 보유합니다."
+          ? "스테이지 종료 후 투수 성향을 정리합니다. 보조태그는 최대 3개까지만 보유합니다."
           : rewardReasonText(reason);
   renderRewardChoices();
   if (els.rewardConfirmButton) {
