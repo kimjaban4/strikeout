@@ -91,9 +91,9 @@ test("mobile throw records a log entry", async ({ page }) => {
 
   await page.locator("#mobileReleasePanel").dispatchEvent("pointerdown");
   await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).toBeVisible({ timeout: 8000 });
-  await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).not.toHaveClass(/is-batter-marker/);
-  await expect(page.locator("#mobileRecentLog")).toContainText("최근 3구");
-  await expect(page.locator("#mobileRecentLog")).toContainText("타석 해석");
+  await expect(page.locator("#mobileRecentLog .is-batter-marker").first()).toContainText("타자 변경");
+  await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first()).toContainText(/구/);
+  await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row small").first()).toBeVisible();
   await page.locator("#mobileRecentLogMore").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
   await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toBeVisible({ timeout: 8000 });

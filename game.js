@@ -9020,7 +9020,9 @@ function recordMobilePitchResult(result) {
     zone: mobilePitchZoneLabel(result.location),
     note,
     detail: mobilePitchDetailText(result, note),
+    reaction: mobilePitchReactionText(result),
     outcome: mobilePitchResultShortLabel(result),
+    outLabel: result.outLabel || "",
     result: result.result || ""
   });
   state.mobilePitchRecords = records.slice(0, 7);
@@ -9047,17 +9049,58 @@ function mobilePitchZoneLabel(location) {
 
 function mobilePitchResultShortLabel(result) {
   if (result.result === "ball") return state.balls >= 3 ? "볼넷" : "볼";
-  if (result.result === "calledStrike") return state.strikes >= 2 ? "삼진" : "스트";
+  if (result.result === "calledStrike") return state.strikes >= 2 ? "삼진" : "스트라이크";
   if (result.result === "swingingStrike") return state.strikes >= 2 ? "삼진" : "헛스윙";
+  if (result.result === "inPlayOut") return mobilePitchOutLabel(result);
   return {
     foul: "파울",
-    inPlayOut: "인플레이",
     doublePlay: "병살",
     single: "안타",
     double: "2루타",
     homerun: "홈런",
     error: "실책"
   }[result.result] || "결과";
+}
+
+function mobilePitchOutLabel(result) {
+  const outLabel = result?.outLabel || "";
+  if (/GROUND/i.test(outLabel)) return "땅볼 아웃";
+  if (/FLY/i.test(outLabel)) return "플라이 아웃";
+  return "범타";
+}
+
+function mobilePitchTimingSide(result) {
+  const timing = Number(result?.timingValue);
+  if (!Number.isFinite(timing)) return "default";
+  if (timing < 0.45) return "late";
+  if (timing > 0.7) return "early";
+  return "default";
+}
+
+function mobilePitchReactionText(result) {
+  if (result.result === "calledStrike") return "타자가 지켜봤습니다";
+  if (result.result === "ball") return "타자가 골라냈습니다";
+  if (result.result === "swingingStrike") {
+    const side = mobilePitchTimingSide(result);
+    if (side === "early") return "스윙이 빨랐습니다";
+    if (side === "late") return "스윙이 늦었습니다";
+    return "타이밍이 어긋났습니다";
+  }
+  if (result.result === "foul") {
+    const side = mobilePitchTimingSide(result);
+    if (side === "early") return "타이밍이 빨랐습니다";
+    if (side === "late") return "타이밍이 늦었습니다";
+    return "타이밍이 맞아갑니다";
+  }
+  if (result.result === "inPlayOut") {
+    return /GROUND/i.test(result.outLabel || "") ? "땅볼을 유도했습니다" : "약한 타구를 유도했습니다";
+  }
+  if (result.result === "doublePlay") return "땅볼을 유도했습니다";
+  if (result.result === "single") return "타이밍을 맞췄습니다";
+  if (result.result === "double") return "강한 타구를 허용했습니다";
+  if (result.result === "homerun") return "타자가 완벽하게 때려냈습니다";
+  if (result.result === "error") return "수비가 처리하지 못했습니다";
+  return "타자 반응을 확인했습니다";
 }
 
 function mobilePitchResultTone(result) {
@@ -9078,13 +9121,7 @@ function mobilePitchResultTone(result) {
 function mobilePitchDetailText(result, note = "") {
   if (result.weaknessFeedback === "공략 성공") return `${note || "공략 성공"} · 타자의 약한 반응을 찔렀습니다.`;
   if (result.weaknessFeedback === "공략 시도") return `${note || "공략 시도"} · 의도한 공략 코스로 승부했습니다.`;
-  if (result.result === "ball") return "존을 벗어난 공을 타자가 기다렸습니다.";
-  if (result.result === "swingingStrike") return "타이밍을 흔들어 배트를 끌어냈습니다.";
-  if (result.result === "calledStrike") return "존 안으로 들어오며 타자가 지켜봤습니다.";
-  if (result.result === "foul") return "맞히긴 했지만 타이밍이 완전히 맞지 않았습니다.";
-  if (result.result === "inPlayOut") return "약한 타구로 승부를 끝냈습니다.";
-  if (result.result === "doublePlay") return "땅볼 흐름으로 주자를 함께 지웠습니다.";
-  if (["single", "double", "homerun", "error"].includes(result.result)) return "타자가 승부 흐름을 읽고 강하게 대응했습니다.";
+  if (result.result) return mobilePitchReactionText(result);
   return note || "타자 반응을 확인했습니다.";
 }
 
@@ -9100,47 +9137,6 @@ function recordMobileGrowthMark(growthResult) {
   const label = growthMarkLabel(growthResult);
   if (!label) return;
   showEventBanner(`성장+\n${label}`, "growth", 1400);
-}
-
-function mobilePitchReadPitchName(record) {
-  const name = record?.pitch || "";
-  if (/포심/.test(name)) return "포심";
-  if (/투심/.test(name)) return "투심";
-  if (/슬라이더|슬라/.test(name)) return "슬라이더";
-  if (/커브/.test(name)) return "커브";
-  if (/체인지/.test(name)) return "체인지업";
-  if (/스플리터|포크/.test(name)) return "변화구";
-  if (/커터/.test(name)) return "커터";
-  return name || "구종";
-}
-
-function mobilePlateReadLines(records) {
-  const pitchRecords = (records || []).filter((item) => item.type !== "batter");
-  if (!pitchRecords.length) return [{ text: "타석 시작", tone: "normal" }, { text: "초구 성향 관찰 필요", tone: "normal" }];
-  const lines = [];
-  const latest = pitchRecords[0];
-  const latestPitch = mobilePitchReadPitchName(latest);
-  if (latest.result === "foul") lines.push({ text: `${latestPitch} 타이밍 맞기 시작`, tone: "normal" });
-  else if (latest.result === "swingingStrike") lines.push({ text: `${latestPitch} 반응 늦음`, tone: "normal" });
-  else if (latest.result === "ball") lines.push({ text: "유인구 참는 중", tone: "normal" });
-  else if (latest.result === "calledStrike") lines.push({ text: "존 안 공 지켜봄", tone: "normal" });
-  else if (["single", "double", "homerun", "error"].includes(latest.result)) lines.push({ text: "강한 대응 주의", tone: "warn" });
-  else lines.push({ text: latest.detail || "타자 반응 확인", tone: "normal" });
-
-  const lowBreakingWhiff = pitchRecords.some((item) => item.result === "swingingStrike" && item.zone?.includes("낮게") && ["breaking", "offspeed"].includes(item.category));
-  if (lowBreakingWhiff) lines.push({ text: "낮은 변화구 반응 늦음", tone: "normal" });
-
-  const recentPitchNames = pitchRecords.slice(0, 3).map((item) => item.pitch);
-  const repeatedPitch = recentPitchNames.length >= 2 && recentPitchNames[0] && recentPitchNames[0] === recentPitchNames[1];
-  if (repeatedPitch) lines.push({ text: `${mobilePitchReadPitchName(pitchRecords[0])} 반복 주의`, tone: "warn" });
-  else if (pitchRecords.length >= 2 && pitchRecords[0].zone === pitchRecords[1].zone) lines.push({ text: "같은 코스 주의", tone: "warn" });
-
-  const unique = [];
-  lines.forEach((line) => {
-    if (unique.some((item) => item.text === line.text)) return;
-    unique.push(line);
-  });
-  return unique.slice(0, 3);
 }
 
 function renderMobileRecentLog() {
@@ -9167,31 +9163,23 @@ function renderMobileRecentLog() {
     els.mobileRecentLog.innerHTML = '<p class="mobile-recent-log-empty">아직 투구 기록 없음</p>';
     return;
   }
-  const pitchItems = items.filter((item) => item.type !== "batter").slice(0, 3);
-  const reads = mobilePlateReadLines(pitchItems);
+  const visibleItems = items.filter((item) => item.type === "batter" || item.type !== "growth").slice(0, 4);
+  const pitchItems = visibleItems.filter((item) => item.type !== "batter").slice(0, 3);
+  const batterMarker = visibleItems.find((item) => item.type === "batter");
   els.mobileRecentLog.innerHTML = `
-    <div class="mobile-match-log-grid">
-      <section class="mobile-match-log-section">
-        <strong>최근 3구</strong>
-        <div class="mobile-pitch-compact-list">
-          ${pitchItems
-            .map(
-              (item) => `<div class="mobile-recent-log-row mobile-pitch-compact-row" data-result="${escapeHtml(item.result)}">
-                <span class="mobile-pitch-order">${item.no}구</span>
-                <b>${escapeHtml(item.pitch)}</b>
-                <span>${escapeHtml(item.zone || "-")}</span>
-                <em class="mobile-result-badge mobile-result-badge--${escapeHtml(mobilePitchResultTone(item))}">${escapeHtml(item.outcome)}</em>
-              </div>`
-            )
-            .join("")}
-        </div>
-      </section>
-      <section class="mobile-match-log-section">
-        <strong>타석 해석</strong>
-        <div class="mobile-plate-read-list">
-          ${reads.map((line) => `<span class="mobile-plate-read mobile-plate-read--${escapeHtml(line.tone)}">${escapeHtml(line.text)}</span>`).join("")}
-        </div>
-      </section>
+    <div class="mobile-pitch-compact-list">
+      ${batterMarker ? `<div class="mobile-recent-log-row is-batter-marker"><span>타자 변경 · ${escapeHtml(batterMarker.batter)}</span></div>` : ""}
+      ${pitchItems
+        .map(
+          (item) => `<div class="mobile-recent-log-row mobile-pitch-compact-row" data-result="${escapeHtml(item.result)}">
+            <span class="mobile-pitch-order">${item.no}구</span>
+            <b>${escapeHtml(item.pitch)}</b>
+            <span class="mobile-pitch-zone">${escapeHtml(item.zone || "-")}</span>
+            <em class="mobile-result-badge mobile-result-badge--${escapeHtml(mobilePitchResultTone(item))}">${escapeHtml(item.outcome)}</em>
+            <small>${escapeHtml(item.reaction || item.detail || "타자 반응을 확인했습니다")}</small>
+          </div>`
+        )
+        .join("")}
     </div>`;
 }
 

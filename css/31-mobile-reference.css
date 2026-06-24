@@ -967,6 +967,98 @@
     font-weight: 900;
   }
 
+  .mobile-pitch-compact-list {
+    display: grid;
+    align-content: start;
+    gap: 4px;
+    grid-auto-rows: max-content;
+    min-width: 0;
+  }
+
+  .mobile-pitch-compact-row {
+    align-self: start;
+    grid-template-columns: 28px minmax(58px, 1fr) auto auto minmax(92px, 1.1fr);
+    gap: 5px;
+    min-height: 32px;
+    padding: 3px 5px;
+  }
+
+  .mobile-pitch-compact-row > * {
+    min-width: 0;
+  }
+
+  .mobile-pitch-compact-row b {
+    overflow: hidden;
+    color: #eef7ff;
+    font-size: 10px;
+    line-height: 1.1;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-pitch-order,
+  .mobile-pitch-zone,
+  .mobile-result-badge {
+    white-space: nowrap;
+  }
+
+  .mobile-pitch-order {
+    color: #8fc4ea;
+    font-size: 10px;
+    font-weight: 900;
+  }
+
+  .mobile-pitch-zone {
+    color: #d7e8f6;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .mobile-result-badge {
+    justify-self: end;
+    min-width: 38px;
+    padding: 2px 5px;
+    border-radius: 999px;
+    color: #0d2941;
+    background: #dcebf7;
+    font-size: 9px;
+    font-style: normal;
+    font-weight: 900;
+    line-height: 1.1;
+    text-align: center;
+  }
+
+  .mobile-result-badge--ball { background: #7be191; }
+  .mobile-result-badge--strike,
+  .mobile-result-badge--whiff { background: #ffd86a; }
+  .mobile-result-badge--foul { background: #8ddaff; }
+  .mobile-result-badge--out { background: #c8d5e4; }
+  .mobile-result-badge--hit { background: #ff8a8a; color: #3b0f0f; }
+
+  .mobile-pitch-compact-row small {
+    overflow: hidden;
+    color: #bfe0f6;
+    font-size: 9px;
+    font-weight: 800;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-recent-log-row.is-batter-marker {
+    min-height: 24px;
+    padding: 2px 6px;
+  }
+
+  .mobile-recent-log-row.is-batter-marker span {
+    overflow: hidden;
+    color: #c6edff;
+    font-size: 10px;
+    font-weight: 900;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .mobile-strike-zone {
     position: absolute;
     z-index: 4;
