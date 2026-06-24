@@ -2167,12 +2167,17 @@ h2 {
 
 .reward-rarity-badge {
   align-self: flex-start;
+  min-width: 42px;
   padding: 4px 8px;
   border-radius: 999px;
   background: #e6f0f7;
   color: #27506d;
   font-size: 0.7rem;
   font-weight: 1000;
+  line-height: 1;
+  white-space: nowrap;
+  word-break: keep-all;
+  text-align: center;
 }
 
 .reward-rarity-badge--rare {
@@ -2266,8 +2271,8 @@ h2 {
 
 .reward-choice-card.core-evolution-card {
   position: relative;
-  min-height: 220px;
-  padding: 14px 12px 12px;
+  min-height: 188px;
+  padding: 12px;
   text-align: center;
   background: linear-gradient(180deg, #ffffff, #f4faf6);
   border-color: #c8dce8;
@@ -2301,11 +2306,12 @@ h2 {
 
 .core-evo-head {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin-bottom: 10px;
-  text-align: center;
+  text-align: left;
 }
 
 .core-evo-icon {
@@ -2328,7 +2334,7 @@ h2 {
 
 .core-evo-titles {
   min-width: 0;
-  width: 100%;
+  flex: 1 1 auto;
 }
 
 .core-evo-name {
@@ -2352,7 +2358,7 @@ h2 {
 
 .core-evo-body {
   display: grid;
-  gap: 6px;
+  gap: 5px;
 }
 
 .core-evo-row {
@@ -2360,7 +2366,7 @@ h2 {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 8px 10px;
+  padding: 7px 9px;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.72);
   border: 1px solid #dbe8f1;
@@ -2399,6 +2405,21 @@ h2 {
   padding: 0 18px !important;
   font-size: clamp(1.04rem, 2.05vw, 1.34rem) !important;
   line-height: 1 !important;
+}
+
+.inning-banner.growth {
+  color: #17220d !important;
+  background: linear-gradient(180deg, rgba(255, 213, 93, 0.98), rgba(226, 148, 35, 0.98)) !important;
+  border-color: rgba(255, 246, 196, 0.96) !important;
+  top: 18% !important;
+  min-width: min(220px, 58%) !important;
+  max-width: min(360px, 68%) !important;
+  min-height: 54px !important;
+  padding: 8px 18px !important;
+  font-size: clamp(1.08rem, 2.1vw, 1.38rem) !important;
+  line-height: 1.18 !important;
+  white-space: pre-line !important;
+  box-shadow: 0 14px 30px rgba(173, 103, 12, 0.34) !important;
 }
 
 .batter-card.boss-batter {
@@ -3168,6 +3189,40 @@ h2 {
 .growth-log-mark span {
   color: #2b7a4b !important;
   font-weight: 800 !important;
+}
+
+.mobile-pitch-detail-list {
+  display: grid;
+  gap: 8px;
+}
+
+.mobile-pitch-detail-row {
+  display: grid;
+  gap: 5px;
+  padding: 10px 11px;
+  border: 1px solid #d4e4f0;
+  border-radius: 7px;
+  background: #f8fbfe;
+}
+
+.mobile-pitch-detail-row strong {
+  color: #08223b;
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
+.mobile-pitch-detail-row strong span {
+  color: #526b82;
+  font-weight: 900;
+}
+
+.mobile-pitch-detail-row p {
+  margin: 0;
+  color: #34506a;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.42;
+  word-break: keep-all;
 }
 
 .log-lines {

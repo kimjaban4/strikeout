@@ -8042,7 +8042,6 @@ function renderCoreEvolutionRewardCard(reward, index) {
   return `
     <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(rarity)}${selected ? " is-selected" : ""}" type="button" data-reward-index="${index}">
       <header class="core-evo-head">
-        ${coreEvolutionIconHtml(reward.icon)}
         <div class="core-evo-titles">
           <strong class="core-evo-name">${escapeHtml(reward.title)}</strong>
           <span class="core-evo-sub">${escapeHtml(rewardUnifiedSubtitle(reward))}</span>
@@ -8960,7 +8959,7 @@ function renderMobileRelease() {
 function renderMobileDuelRead(recommendation) {
   if (!els.mobileDuelReadFlow) return;
   const flowLabel = els.mobileDuelReadFlow.closest("span");
-  if (flowLabel?.firstChild) flowLabel.firstChild.textContent = "포수 ";
+  if (flowLabel?.firstChild) flowLabel.firstChild.textContent = "흐름 ";
   els.mobileDuelReadFlow.textContent = mobileCatcherLine();
   els.mobileDuelReadPitch.textContent = recommendation?.title || "대기";
   els.mobileDuelReadRisk.textContent = `${Math.round(clamp(state.atBat?.suspicion || 0, 0, 100))}%`;
@@ -9011,15 +9010,30 @@ function recordMobilePitchResult(result) {
   const mainCause = result.specialEffect?.label || state.cardTriggerLog?.[0]?.cardName || dugoutCue;
   const cause = [...new Set([result.weaknessFeedback, mainCause].filter(Boolean))].join(" · ");
   if (dugoutCue && mainCause === dugoutCue) state.mobileDugoutCue = "";
+  const note = cause || result.clue || result.detail || result.mindEffect?.label || result.timingLabel || result.location?.label || "";
   records.unshift({
     no: state.atBat?.pitchHistory?.length || state.pitchCount || records.length + 1,
     pitch: pitch.name || "투구",
     speed: pitchVelocityKmh(pitch),
-    note: cause || result.clue || result.detail || result.mindEffect?.label || result.timingLabel || result.location?.label || "",
+    note,
+    detail: mobilePitchDetailText(result, note),
     outcome: mobilePitchOutcomeLabel(result),
     result: result.result || ""
   });
   state.mobilePitchRecords = records.slice(0, 7);
+}
+
+function mobilePitchDetailText(result, note = "") {
+  if (result.weaknessFeedback === "공략 성공") return `${note || "공략 성공"} · 타자의 약한 반응을 찔렀습니다.`;
+  if (result.weaknessFeedback === "공략 시도") return `${note || "공략 시도"} · 의도한 공략 코스로 승부했습니다.`;
+  if (result.result === "ball") return "존을 벗어난 공을 타자가 기다렸습니다.";
+  if (result.result === "swingingStrike") return "타이밍을 흔들어 배트를 끌어냈습니다.";
+  if (result.result === "calledStrike") return "존 안으로 들어오며 타자가 지켜봤습니다.";
+  if (result.result === "foul") return "맞히긴 했지만 타이밍이 완전히 맞지 않았습니다.";
+  if (result.result === "inPlayOut") return "약한 타구로 승부를 끝냈습니다.";
+  if (result.result === "doublePlay") return "땅볼 흐름으로 주자를 함께 지웠습니다.";
+  if (["single", "double", "homerun", "error"].includes(result.result)) return "타자가 승부 흐름을 읽고 강하게 대응했습니다.";
+  return note || "타자 반응을 확인했습니다.";
 }
 
 function recordMobileBatterStart(batter) {
@@ -9033,7 +9047,7 @@ function recordMobileBatterStart(batter) {
 function recordMobileGrowthMark(growthResult) {
   const label = growthMarkLabel(growthResult);
   if (!label) return;
-  showEventBanner(`성장+\n${label}`, "reward", 1200);
+  showEventBanner(`성장+\n${label}`, "growth", 1400);
 }
 
 function renderMobileRecentLog() {
@@ -9050,7 +9064,7 @@ function renderMobileRecentLog() {
     els.mobileRecentLog.innerHTML = '<p class="mobile-recent-log-empty">아직 투구 기록 없음</p>';
     return;
   }
-  els.mobileRecentLog.innerHTML = items.map((item) => {
+  els.mobileRecentLog.innerHTML = items.slice(0, 4).map((item) => {
     if (item.type === "batter") {
       return `<div class="mobile-recent-log-row is-batter-marker" data-result="batter"><span class="mobile-recent-log-text"><span class="mobile-recent-log-line"><b>타자 변경: ${escapeHtml(item.batter)}</b></span></span></div>`;
     }
@@ -9063,7 +9077,17 @@ function renderMobileInfoPanel() {
   if (mobilePanelMode === "tag") return;
   if (mobilePanelMode === "log") {
     els.mobileInfoPanelTitle.textContent = "승부기록";
-    els.mobileInfoPanelBody.innerHTML = els.logList?.innerHTML || '<p class="mobile-empty-info">아직 승부기록이 없습니다.</p>';
+    const pitchItems = (state.mobilePitchRecords || []).filter((item) => item.type !== "batter").slice(0, 7);
+    els.mobileInfoPanelBody.innerHTML = pitchItems.length
+      ? `<div class="mobile-pitch-detail-list">${pitchItems
+          .map(
+            (item) => `<article class="log-item mobile-pitch-detail-row" data-result="${escapeHtml(item.result)}">
+              <strong>${item.no}구 ${escapeHtml(item.pitch)} ${item.speed}km/h <span>/ ${escapeHtml(item.outcome)}</span></strong>
+              <p>${escapeHtml(item.detail || item.note || "타자 반응을 확인했습니다.")}</p>
+            </article>`
+          )
+          .join("")}</div>`
+      : '<p class="mobile-empty-info">아직 승부기록이 없습니다.</p>';
     return;
   }
   const batter = currentBatter();
@@ -9133,8 +9157,8 @@ function renderMobileGameUi() {
   renderMobileDuelRead(recommendation);
   renderMobileRecentLog();
   renderMobilePlayerDetail();
-  els.mobileRecommendConfidence.textContent = "포수";
-  els.mobileRecommendTitle.textContent = "포수 한마디";
+  els.mobileRecommendConfidence.textContent = "판단";
+  els.mobileRecommendTitle.textContent = "마운드 판단";
   els.mobileRecommendText.textContent = mobileCatcherLine();
   if (mobilePanelMode) renderMobileInfoPanel();
 }
