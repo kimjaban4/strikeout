@@ -6037,7 +6037,9 @@ function applyDugoutChoice(choice) {
     }
   ];
   const rarityNote = choice.rarity === "rare" ? " · 희귀 강화 적용" : "";
+  state.mobileDugoutCue = choice.title;
   addLog("덕아웃 선택", `${choice.title}${rarityNote} · ${choice.desc}`);
+  showEventBanner(`이닝 작전\n${choice.title}`, "reward", 1200);
 }
 
 function confirmDugoutChoice(index) {
@@ -7729,7 +7731,9 @@ function recordMobilePitchResult(result) {
   recordMobileBatterStart(currentBatter());
   const records = state.mobilePitchRecords || [];
   const pitch = result.pitch || {};
-  const cause = result.specialEffect?.label || state.cardTriggerLog?.[0]?.cardName || "";
+  const dugoutCue = state.mobileDugoutCue || "";
+  const cause = result.specialEffect?.label || state.cardTriggerLog?.[0]?.cardName || dugoutCue;
+  if (dugoutCue && cause === dugoutCue) state.mobileDugoutCue = "";
   records.unshift({
     no: state.atBat?.pitchHistory?.length || state.pitchCount || records.length + 1,
     pitch: pitch.name || "투구",
