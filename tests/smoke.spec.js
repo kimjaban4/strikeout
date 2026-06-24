@@ -92,11 +92,11 @@ test("mobile throw records a log entry", async ({ page }) => {
   await page.locator("#mobileReleasePanel").dispatchEvent("pointerdown");
   await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).toBeVisible({ timeout: 8000 });
   await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).not.toHaveClass(/is-batter-marker/);
-  await expect(page.locator("#mobileRecentLog")).toContainText(/타자\s*변경/);
-  await expect(page.locator("#mobileRecentLog")).toContainText(/km\/h/);
+  await expect(page.locator("#mobileRecentLog")).toContainText("최근 3구");
+  await expect(page.locator("#mobileRecentLog")).toContainText("타석 해석");
   await page.locator("#mobileRecentLogMore").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
-  await expect(page.locator("#mobileInfoPanelBody .log-item").first()).toBeVisible({ timeout: 8000 });
+  await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toBeVisible({ timeout: 8000 });
 });
 
 test("mobile player tags open detail modal with tag text", async ({ page }) => {

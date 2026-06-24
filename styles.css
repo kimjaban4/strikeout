@@ -3191,6 +3191,121 @@ h2 {
   font-weight: 800 !important;
 }
 
+.mobile-count-badge {
+  margin-left: auto;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #ffd35d;
+  color: #17220d;
+  font-size: 0.78rem;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.mobile-match-log-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.92fr);
+  gap: 8px;
+}
+
+.mobile-match-log-section {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.mobile-match-log-section > strong {
+  color: #08223b;
+  font-size: 0.74rem;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.mobile-pitch-compact-list,
+.mobile-plate-read-list {
+  display: grid;
+  gap: 4px;
+}
+
+.mobile-pitch-compact-row {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) 42px 48px;
+  align-items: center;
+  gap: 4px;
+  min-height: 23px;
+  padding: 3px 4px;
+  border-radius: 5px;
+  background: rgba(248, 251, 254, 0.92);
+  border: 1px solid rgba(119, 148, 180, 0.18);
+  color: #17324d;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.mobile-pitch-compact-row b {
+  min-width: 0;
+  color: #071a2c;
+  font-weight: 1000;
+  white-space: nowrap;
+}
+
+.mobile-pitch-order {
+  color: #5a738a;
+  font-weight: 1000;
+}
+
+.mobile-result-badge {
+  justify-self: end;
+  min-width: 38px;
+  padding: 3px 5px;
+  border-radius: 999px;
+  text-align: center;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.mobile-result-badge--strike {
+  background: #2f74c0;
+}
+
+.mobile-result-badge--ball {
+  background: #2f9a58;
+}
+
+.mobile-result-badge--whiff,
+.mobile-result-badge--foul,
+.mobile-result-badge--neutral {
+  background: #425d74;
+}
+
+.mobile-result-badge--out {
+  background: #2c566f;
+}
+
+.mobile-result-badge--hit {
+  background: #c44a42;
+}
+
+.mobile-plate-read {
+  display: block;
+  min-height: 23px;
+  padding: 4px 6px;
+  border-radius: 5px;
+  background: #eef6ff;
+  color: #245f9c;
+  font-size: 0.72rem;
+  font-weight: 1000;
+  line-height: 1.25;
+  word-break: keep-all;
+}
+
+.mobile-plate-read--warn {
+  background: #fff0ee;
+  color: #b7352d;
+}
+
 .mobile-pitch-detail-list {
   display: grid;
   gap: 8px;
