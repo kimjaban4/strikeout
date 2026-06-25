@@ -88,7 +88,7 @@ test("mobile pitch controls render and unlock throw after choosing a zone", asyn
 test("mobile throw records a log entry", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
-  await expect(page.locator("#mobileRecentLog .is-batter-marker").first()).toContainText("타자 변경");
+  await expect(page.locator("#mobileRecentLog .is-batter-marker").first()).toContainText(/번 타자/);
   await page.locator(".mobile-suspicion-chip").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
   await expect(page.locator("#mobileInfoPanelTitle")).toHaveText("타자 의심도");
@@ -97,7 +97,7 @@ test("mobile throw records a log entry", async ({ page }) => {
 
   await page.locator("#mobileReleasePanel").dispatchEvent("pointerdown");
   await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).toBeVisible({ timeout: 8000 });
-  await expect(page.locator("#mobileRecentLog .is-batter-marker").first()).toContainText("타자 변경");
+  await expect(page.locator("#mobileRecentLog .is-batter-marker").first()).toContainText(/번 타자/);
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first()).toContainText(/구/);
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first().locator(".mobile-pitch-zone")).toHaveText(/바깥|몸쪽|중앙|높게|낮게/);
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row small").first()).toBeVisible();

@@ -1930,8 +1930,8 @@ h2 {
   width: auto !important;
   max-width: min(520px, 76%) !important;
   text-align: center !important;
-  white-space: nowrap !important;
-  line-height: 1 !important;
+  white-space: pre-line !important;
+  line-height: 1.12 !important;
 }
 
 .inning-banner.show {

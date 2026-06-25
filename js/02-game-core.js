@@ -6750,7 +6750,7 @@ function rewardUnifiedEffect(reward) {
   if (reward.effectText) return reward.effectText;
   if (reward.type === "stat") return `${reward.stat} +${reward.amount}`;
   if (reward.type === "pitch") return `${reward.field === "control" ? "제구" : reward.field} +${reward.amount}`;
-  if (reward.type === "pitchUpgrade") return `${reward.title} 효과 개방`;
+  if (reward.type === "pitchUpgrade") return reward.desc || `${rewardDisplayTitle(reward)} 효과 개방`;
   if (reward.type === "weaknessMitigation") return "약점 태그 1개 완화";
   return rewardDisplayDescription(reward) || "-";
 }
@@ -6774,15 +6774,28 @@ function rewardRowHtml(label, value) {
   return `<div class="core-evo-row"><span class="core-evo-label">${escapeHtml(label)}</span><span class="core-evo-value">${escapeHtml(value)}</span></div>`;
 }
 
+function rewardDisplayTitle(reward) {
+  if (reward.type === "pitchUpgrade") {
+    const pitch = pitchById(reward.pitchId);
+    return `${pitch?.name || String(reward.title || "").split(" ")[0] || "구종"} 구종 레벨업`;
+  }
+  if (reward.type === "pitch") {
+    const pitch = pitchById(reward.pitchId);
+    return `${pitch?.name || String(reward.title || "").split(" ")[0] || "구종"} 구종 레벨업`;
+  }
+  return reward.title;
+}
+
 function renderCoreEvolutionRewardCard(reward, index) {
   const selected = state.rewardKind === "coreEvolution" && state.selectedRewardIndex === index;
   const rarity = reward.rarity || (reward.type === "coreEvolution" ? "core" : "common");
   const subtitle = rewardUnifiedSubtitle(reward);
+  const title = rewardDisplayTitle(reward);
   return `
     <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(rarity)}${selected ? " is-selected" : ""}" type="button" data-reward-index="${index}">
       <header class="core-evo-head">
         <div class="core-evo-titles">
-          <strong class="core-evo-name">${escapeHtml(reward.title)}</strong>
+          <strong class="core-evo-name">${escapeHtml(title)}</strong>
           ${subtitle ? `<span class="core-evo-sub">${escapeHtml(subtitle)}</span>` : ""}
         </div>
         <span class="reward-rarity-badge reward-rarity-badge--${escapeHtml(rarity)}">${escapeHtml(cardRarityLabel(rarity))}</span>
@@ -7833,9 +7846,9 @@ function mobilePitchReactionText(result) {
   if (result.result === "ball") return "타자가 골라냈습니다";
   if (result.result === "swingingStrike") {
     const side = mobilePitchTimingSide(result);
-    if (side === "early") return "스윙이 빨랐습니다";
-    if (side === "late") return "스윙이 늦었습니다";
-    return "타이밍이 어긋났습니다";
+    if (side === "early") return "타자가 먼저 배트를 냈습니다";
+    if (side === "late") return "타자가 공을 늦게 따라갔습니다";
+    return "노린 공과 달라 배트가 헛나갔습니다";
   }
   if (result.result === "foul") {
     const side = mobilePitchTimingSide(result);
@@ -7876,7 +7889,16 @@ function mobilePitchDetailText(result, note = "") {
   const zone = mobilePitchZoneLabel(result.location);
   if (result.result === "ball") return `${zone} ${pitchName}을 타자가 기다렸습니다. 존 밖 공을 골라내며 승부를 길게 가져갑니다.`;
   if (result.result === "calledStrike") return `${zone} ${pitchName}이 존에 들어왔고 타자가 지켜봤습니다. 같은 코스 반복은 다음 공에 읽힐 수 있습니다.`;
-  if (result.result === "swingingStrike") return `${zone} ${pitchName}에 배트가 나왔습니다. ${mobilePitchReactionText(result)} 다음 공은 다른 높이나 계열로 흔들 수 있습니다.`;
+  if (result.result === "swingingStrike") {
+    const side = mobilePitchTimingSide(result);
+    const next =
+      side === "early"
+        ? "느린 공이나 낮은 코스로 타이밍을 더 뺏을 수 있습니다."
+        : side === "late"
+          ? "빠른 공으로 밀어붙이거나 높은 코스를 활용할 수 있습니다."
+          : "직전 배합이 먹혔지만 같은 패턴 반복은 바로 읽힐 수 있습니다.";
+    return `${zone} ${pitchName}에 배트가 나왔습니다. ${mobilePitchReactionText(result)} ${next}`;
+  }
   if (result.result === "foul") return `${zone} ${pitchName}을 파울로 걷어냈습니다. ${mobilePitchReactionText(result)} 타이밍이 맞아가면 같은 공 반복은 위험합니다.`;
   if (result.result === "inPlayOut") return `${zone} ${pitchName}을 맞혔지만 정타는 아니었습니다. ${mobilePitchReactionText(result)} 흐름을 바꾸기 좋은 결과입니다.`;
   if (result.result === "doublePlay") return `${zone} ${pitchName}으로 땅볼 흐름을 만들었습니다. 주자까지 함께 지우며 승부를 크게 정리했습니다.`;
@@ -7891,7 +7913,7 @@ function recordMobileBatterStart(batter) {
   const records = state.mobilePitchRecords || [];
   const key = `${state.inning}:${state.batterIndex}:${batter?.name || ""}`;
   if (records.some((item) => item.type === "batter" && item.key === key)) return;
-  records.unshift({ type: "batter", key, batter: batter?.name || "타자" });
+  records.unshift({ type: "batter", key, slot: batter?.slot || state.batterIndex + 1, batter: batter?.name || "타자" });
   state.mobilePitchRecords = records;
 }
 
@@ -7904,7 +7926,12 @@ function recordMobileGrowthMark(growthResult) {
 function renderMobileRecentLog() {
   if (!els.mobileRecentLog) return;
   const card = els.mobileRecentLog.closest(".mobile-recent-log-card");
-  const items = state.mobilePitchRecords || [];
+  const current = currentBatter();
+  const items = (state.mobilePitchRecords || []).length
+    ? state.mobilePitchRecords
+    : current
+      ? [{ type: "batter", slot: current.slot || state.batterIndex + 1, batter: current.name || "타자" }]
+      : [];
   const shouldShow = items.length > 0;
   if (card) {
     card.hidden = false;
@@ -7934,15 +7961,14 @@ function renderMobileRecentLog() {
     els.mobileRecentLog.innerHTML = '<p class="mobile-recent-log-empty">아직 투구 기록 없음</p>';
     return;
   }
-  const visibleItems = items.filter((item) => item.type === "batter" || item.type !== "growth").slice(0, 4);
-  const pitchItems = visibleItems.filter((item) => item.type !== "batter").slice(0, 3);
-  const batterMarker = visibleItems.find((item) => item.type === "batter");
+  const visibleItems = items.filter((item) => item.type !== "growth").slice(0, 4);
   els.mobileRecentLog.innerHTML = `
     <div class="mobile-pitch-compact-list">
-      ${batterMarker ? `<div class="mobile-recent-log-row is-batter-marker"><span>타자 변경 · ${escapeHtml(batterMarker.batter)}</span></div>` : ""}
-      ${pitchItems
+      ${visibleItems
         .map(
-          (item) => `<div class="mobile-recent-log-row mobile-pitch-compact-row" data-result="${escapeHtml(item.result)}">
+          (item) => item.type === "batter"
+            ? `<div class="mobile-recent-log-row is-batter-marker"><span>${escapeHtml(item.slot || "-")}번 타자 ${escapeHtml(item.batter)}</span></div>`
+            : `<div class="mobile-recent-log-row mobile-pitch-compact-row" data-result="${escapeHtml(item.result)}">
             <span class="mobile-pitch-order">${item.no}구</span>
             <span class="mobile-pitch-zone">${escapeHtml(item.zone || "-")}</span>
             <b>${escapeHtml(item.pitch)}</b>
@@ -8902,6 +8928,10 @@ function showEventBanner(text, tone = "inning", duration = GAME_TIMING.eventBann
     window.clearTimeout(MP.inningBannerTimer);
     MP.inningBannerTimer = null;
   }
+  if (MP.inningBannerDismissHandler) {
+    window.removeEventListener("pointerdown", MP.inningBannerDismissHandler);
+    MP.inningBannerDismissHandler = null;
+  }
   banners.forEach((banner) => {
     const baseClass = banner === els.mobileInningBanner ? "mobile-inning-banner" : "inning-banner";
     banner.textContent = text;
@@ -8909,13 +8939,18 @@ function showEventBanner(text, tone = "inning", duration = GAME_TIMING.eventBann
     banner.hidden = false;
     banner.classList.add("show");
   });
-  MP.inningBannerTimer = window.setTimeout(() => {
+  MP.inningBannerDismissHandler = () => {
     banners.forEach((banner) => {
       banner.classList.remove("show");
       banner.hidden = true;
     });
+    window.removeEventListener("pointerdown", MP.inningBannerDismissHandler);
+    MP.inningBannerDismissHandler = null;
+  };
+  MP.inningBannerTimer = window.setTimeout(() => {
+    window.addEventListener("pointerdown", MP.inningBannerDismissHandler, { once: true });
     MP.inningBannerTimer = null;
-  }, duration);
+  }, 0);
 }
 
 function showStageOverlay(title, subtitle, duration = GAME_TIMING.stageOverlayDefault) {
