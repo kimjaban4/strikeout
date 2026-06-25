@@ -89,6 +89,7 @@ MP.pitchFlightFrame = null;
 MP.releaseTimingFrame = null;
 MP.rewardTimer = null;
 MP.inningBannerDismissHandler = null;
+MP.timingDismissHandler = null;
 MP.rewardRevealTimer = null;
 MP.dugoutRevealTimer = null;
 MP.pitcherRevealTimer = null;

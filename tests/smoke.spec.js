@@ -89,7 +89,8 @@ test("mobile throw records a log entry", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
   await expect(page.locator("#mobileRecentLog .is-batter-marker").first()).toContainText(/번 타자/);
-  await page.locator(".mobile-suspicion-chip").click();
+  await expect(page.locator(".mobile-suspicion-card")).toBeVisible();
+  await page.locator(".mobile-suspicion-card").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
   await expect(page.locator("#mobileInfoPanelTitle")).toHaveText("타자 의심도");
   await page.locator("#mobileInfoPanelClose").click();
