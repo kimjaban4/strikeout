@@ -977,7 +977,7 @@
 
   .mobile-pitch-compact-row {
     align-self: start;
-    grid-template-columns: 28px minmax(58px, 1fr) auto auto minmax(92px, 1.1fr);
+    grid-template-columns: 28px auto minmax(58px, 1fr) auto minmax(92px, 1.1fr);
     gap: 5px;
     min-height: 32px;
     padding: 3px 5px;
@@ -1118,6 +1118,13 @@
   .mobile-timing-badge.good {
     background: linear-gradient(180deg, #eeb12f, #be6f12);
     color: #17220d;
+  }
+
+  .mobile-inning-banner.growth {
+    border-color: rgba(165, 255, 190, 0.96);
+    background: linear-gradient(180deg, #28c46a, #0d7a3d);
+    color: #f2fff6;
+    box-shadow: 0 0 0 4px rgba(24, 160, 82, 0.24), 0 12px 25px rgba(0, 0, 0, 0.32);
   }
 
   .mobile-timing-badge {
@@ -1307,6 +1314,10 @@
     transform: translate(-50%, 0) scale(1);
   }
 
+  .mobile-release-panel.is-shaking .mobile-release-track {
+    animation: mobileReleaseShake 0.16s linear infinite;
+  }
+
   .mobile-release-panel > div:first-child,
   .mobile-release-labels {
     display: flex;
@@ -1354,6 +1365,12 @@
     transform: translateX(-50%);
     background: #071b2b;
     box-shadow: 0 0 0 1px #d7e9f7;
+  }
+
+  @keyframes mobileReleaseShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-2px); }
+    75% { transform: translateX(2px); }
   }
 
   .mobile-action-row {
@@ -1661,6 +1678,10 @@
     line-height: 1.05;
   }
 
+  .reward-box h2 {
+    text-align: center;
+  }
+
   .reward-box > p:last-of-type,
   .dugout-box > p:last-of-type {
     font-size: clamp(14px, 3.9vw, 18px);
@@ -1866,7 +1887,7 @@
   }
 
   .core-evo-titles {
-    text-align: left;
+    text-align: center;
   }
 
   .core-evo-sub {

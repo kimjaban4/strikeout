@@ -79,6 +79,7 @@ test("mobile pitch controls render and unlock throw after choosing a zone", asyn
   await expect(page.locator("#mobilePitchButtons .mobile-pitch-button").first()).toHaveAttribute("data-burden", /stable|warn|danger/);
   await expect(page.locator("#mobileDuelReadRisk")).toHaveText(/\d+%/);
   await expect(page.locator("#mobileReleasePanel")).toBeHidden();
+  await expect(page.locator('#mobileStrikeZone [data-target-col="0"][data-target-row="1"]')).toHaveAttribute("aria-label", "바깥쪽");
 
   await chooseMobilePitchAndZone(page);
   await expect(page.locator("#mobileReleasePanel")).toBeVisible();
@@ -93,6 +94,7 @@ test("mobile throw records a log entry", async ({ page }) => {
   await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).toBeVisible({ timeout: 8000 });
   await expect(page.locator("#mobileRecentLog .is-batter-marker").first()).toContainText("타자 변경");
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first()).toContainText(/구/);
+  await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first().locator(".mobile-pitch-zone")).toContainText("바깥");
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row small").first()).toBeVisible();
   await page.locator("#mobileRecentLogMore").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
@@ -126,6 +128,12 @@ test("mobile player cards open centered detail modal", async ({ page }) => {
   await expect(page.locator("#mobilePanelBackdrop")).toBeVisible();
   await expect(page.locator("#mobilePlayerDetailPanel")).toContainText("주요 능력");
   await expect(page.locator("#mobilePlayerDetailPanel")).toContainText("핵심태그");
+  await expect(page.locator('#mobilePlayerDetailPanel [data-mobile-modal-tag-section="core"]').first()).toHaveAttribute("data-tier", "bronze");
+  if (await page.locator('#mobilePlayerDetailPanel [data-mobile-modal-tag-section="support"]').count()) {
+    await page.locator('#mobilePlayerDetailPanel [data-mobile-modal-tag-section="support"]').first().click();
+    await expect(page.locator('#mobilePlayerDetailPanel [data-mobile-detail-tag-text="support"]')).toBeVisible();
+    await expect(page.locator('#mobilePlayerDetailPanel [data-mobile-detail-tag-text="core"]')).toBeHidden();
+  }
   await expect(page.locator("#mobilePlayerDetailPanel")).not.toContainText("구종 정보");
 
   await page.locator("[data-mobile-detail-close]").click();

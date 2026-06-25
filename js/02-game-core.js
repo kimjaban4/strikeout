@@ -550,8 +550,8 @@ function evolutionPitchContext(pitch, location, atBat, intent) {
     afterSecondary: prevCategory && prevCategory !== "fast",
     fast: pitch.category === "fast",
     secondary: pitch.category !== "fast",
-    inside: location.col <= 0,
-    outside: location.col >= 2,
+    inside: location.col >= 2,
+    outside: location.col <= 0,
     edge,
     strike: intent === "strike",
     chaseZone: !location.inZone,
@@ -711,8 +711,8 @@ function pitcherTagControlBonus(pitch, aimed, intent) {
   const tags = pitcherAllTagIds().map(tagById).filter(Boolean);
   const context = {
     low: aimed.row >= 2,
-    outside: aimed.col >= 2,
-    inside: aimed.col <= 0,
+    outside: aimed.col <= 0,
+    inside: aimed.col >= 2,
     high: aimed.row <= 0,
     firstPitch: (state.atBat?.pitchHistory?.length || 0) <= 1,
     strike: intent === "strike",
@@ -2162,8 +2162,8 @@ function runnersKey() {
 
 function zoneSide(zone) {
   const col = courseZones[zone]?.col ?? 1;
-  if (col <= 0) return "inside";
-  if (col >= 2) return "outside";
+  if (col <= 0) return "outside";
+  if (col >= 2) return "inside";
   return "middle";
 }
 
@@ -2782,12 +2782,12 @@ function createEmptyBatterMemory(batter) {
 
 function locationSideFromRowCol(row, col) {
   if (row >= 0 && row <= 2 && col >= 0 && col <= 2) {
-    if (col <= 0) return "inside";
-    if (col >= 2) return "outside";
+    if (col <= 0) return "outside";
+    if (col >= 2) return "inside";
     return "center";
   }
-  if (col < 0) return "inside";
-  if (col > 2) return "outside";
+  if (col < 0) return "outside";
+  if (col > 2) return "inside";
   return "center";
 }
 
@@ -3863,14 +3863,14 @@ function intendedCourse(zone, intent, targetRow = null, targetCol = null) {
 
 function actualCourseLabel(row, col) {
   if (row >= 0 && row <= 2 && col >= 0 && col <= 2) {
-    if (col <= 0) return "몸쪽";
-    if (col >= 2) return "바깥쪽";
+    if (col <= 0) return "바깥쪽";
+    if (col >= 2) return "몸쪽";
     return "중앙";
   }
   if (row < 0) return "높은 볼";
   if (row > 2) return "낮은 볼";
-  if (col < 0) return "몸쪽 볼";
-  return "바깥쪽 볼";
+  if (col < 0) return "바깥쪽 볼";
+  return "몸쪽 볼";
 }
 
 function ballTakeDetail(location) {
@@ -4012,9 +4012,9 @@ function buildReleaseTimingChallenge(pitch, plannedCourse) {
   if (mentalPressure >= 4) pressureReasons.push("멘탈 흔들림");
   if (burdenPressure >= 8) pressureReasons.push("구종 부담");
   const pressure = clamp(runnerPressure.pressure + mentalPressure + burdenPressure, 0, 78);
-  const perfectSize = clamp(0.076 + (control - 55) * 0.0012 - pressure * 0.0007, 0.042, 0.13);
-  const goodSize = clamp(0.27 + (control - 55) * 0.0024 - pressure * 0.0016, 0.15, 0.42);
-  const baseDuration = clamp(1250 + (control - 55) * 6 + (mental - 55) * 2 - pressure * 7, 760, 1580);
+  const perfectSize = clamp(0.07 + (control - 55) * 0.0018 - pressure * 0.001, 0.032, 0.14);
+  const goodSize = clamp(0.24 + (control - 55) * 0.0034 - pressure * 0.0024, 0.11, 0.44);
+  const baseDuration = clamp(1220 + (control - 55) * 8 + (mental - 55) * 2 - pressure * 9, 660, 1640);
   const duration = Math.round(baseDuration / RELEASE_TIMING_SPEED);
   return {
     active: true,
@@ -4032,7 +4032,7 @@ function buildReleaseTimingChallenge(pitch, plannedCourse) {
     pressureReasons,
     control,
     mental,
-    shake: pressure >= 38 && mental < 58,
+    shake: pressure >= 32 || control < 55 || mental < 58,
     plannedCourse
   };
 }
@@ -6725,7 +6725,7 @@ function coreEvolutionIconHtml(icon) {
 
 function rewardUnifiedSubtitle(reward) {
   if (reward.subtitle) return reward.subtitle;
-  if (reward.type === "stat") return "능력치 보상";
+  if (reward.type === "stat") return "";
   if (reward.type === "pitch") return "구종 숙련";
   if (reward.type === "newPitch") return "레퍼토리 확장";
   if (reward.type === "tag") return reward.categoryLabel || "보조태그 획득";
@@ -6774,12 +6774,13 @@ function rewardRowHtml(label, value) {
 function renderCoreEvolutionRewardCard(reward, index) {
   const selected = state.rewardKind === "coreEvolution" && state.selectedRewardIndex === index;
   const rarity = reward.rarity || (reward.type === "coreEvolution" ? "core" : "common");
+  const subtitle = rewardUnifiedSubtitle(reward);
   return `
     <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(rarity)}${selected ? " is-selected" : ""}" type="button" data-reward-index="${index}">
       <header class="core-evo-head">
         <div class="core-evo-titles">
           <strong class="core-evo-name">${escapeHtml(reward.title)}</strong>
-          <span class="core-evo-sub">${escapeHtml(rewardUnifiedSubtitle(reward))}</span>
+          ${subtitle ? `<span class="core-evo-sub">${escapeHtml(subtitle)}</span>` : ""}
         </div>
         <span class="reward-rarity-badge reward-rarity-badge--${escapeHtml(rarity)}">${escapeHtml(cardRarityLabel(rarity))}</span>
       </header>
@@ -7542,7 +7543,7 @@ function mobilePitcherTagItems() {
   ensurePitcherTagFields(state.pitcher);
   const items = [];
   const core = state.pitcher.coreTagId ? tagById(state.pitcher.coreTagId) : null;
-  if (core?.name) items.push({ label: core.name, tier: "platinum", section: "core", text: tagDescriptionForPitcher(core) });
+  if (core?.name) items.push({ label: core.name, tier: state.pitcher.coreTier || "bronze", section: "core", text: tagDescriptionForPitcher(core) });
   (state.pitcher.bonusTags || []).forEach((id) => {
     const tag = tagById(id);
     const label = supportTagDisplayName(id);
@@ -7581,7 +7582,7 @@ function mobileBatterMetaText(batter) {
 }
 
 function mobileModalTagButtonsHtml(items) {
-  return (items || []).map((tag) => `<button type="button" data-tier="${escapeHtml(tag.tier || "bronze")}" data-mobile-modal-tag="${escapeHtml(tag.label)}" data-mobile-modal-tag-text="${escapeHtml(tag.text || tag.label)}">${escapeHtml(tag.label)}</button>`).join("");
+  return (items || []).map((tag) => `<button type="button" data-tier="${escapeHtml(tag.tier || "bronze")}" data-mobile-modal-tag="${escapeHtml(tag.label)}" data-mobile-modal-tag-text="${escapeHtml(tag.text || tag.label)}" data-mobile-modal-tag-section="${escapeHtml(tag.section || "tag")}">${escapeHtml(tag.label)}</button>`).join("");
 }
 
 function mobilePitcherStatusHtml() {
@@ -7598,9 +7599,16 @@ function pitcherTagDetailText(label) {
   return tag?.description || `${label} 태그입니다. 투수 운영과 타자 반응에 영향을 줍니다.`;
 }
 
-function showMobileModalTagDetail(title, text) {
-  const box = els.mobilePlayerDetailPanel?.querySelector("[data-mobile-detail-tag-text]");
+function showMobileModalTagDetail(title, text, section = "") {
+  const selector = section ? `[data-mobile-detail-tag-text="${section}"]` : "[data-mobile-detail-tag-text]";
+  const box = els.mobilePlayerDetailPanel?.querySelector(selector);
   if (!box) return;
+  els.mobilePlayerDetailPanel?.querySelectorAll("[data-mobile-detail-tag-text]").forEach((item) => {
+    if (item !== box) {
+      item.hidden = true;
+      item.dataset.activeTag = "";
+    }
+  });
   if (!box.hidden && box.dataset.activeTag === title) {
     box.hidden = true;
     box.dataset.activeTag = "";
@@ -7635,8 +7643,8 @@ function renderMobilePlayerDetail() {
     els.mobilePlayerDetailPanel.innerHTML = `
       <header><div><strong>${escapeHtml(state.pitcher.name || "-")}</strong></div><button class="mobile-detail-close" type="button" data-mobile-detail-close>×</button></header>
       <section class="mobile-detail-section"><strong>주요 능력</strong><div class="mobile-detail-grid">${mobileStatsGridHtml(state.pitcher.stats, 5)}</div></section>
-      <section class="mobile-detail-section"><strong>핵심태그</strong><div class="mobile-detail-tags">${coreTags || "<span>태그 없음</span>"}</div><div class="mobile-detail-tag-text" data-mobile-detail-tag-text hidden></div></section>
-      <section class="mobile-detail-section"><strong>보조태그</strong><div class="mobile-detail-tags">${supportTagsHtml || "<span>태그 없음</span>"}</div></section>
+      <section class="mobile-detail-section"><strong>핵심태그</strong><div class="mobile-detail-tags">${coreTags || "<span>태그 없음</span>"}</div><div class="mobile-detail-tag-text" data-mobile-detail-tag-text="core" hidden></div></section>
+      <section class="mobile-detail-section"><strong>보조태그</strong><div class="mobile-detail-tags">${supportTagsHtml || "<span>태그 없음</span>"}</div><div class="mobile-detail-tag-text" data-mobile-detail-tag-text="support" hidden></div></section>
       <section class="mobile-detail-section"><strong>현재 상태</strong>${mobilePitcherStatusHtml()}</section>
     `;
   } else {
@@ -7651,7 +7659,7 @@ function renderMobilePlayerDetail() {
     els.mobilePlayerDetailPanel.innerHTML = `
       <header><div><strong>${escapeHtml(batter?.name || "-")}</strong></div><button class="mobile-detail-close" type="button" data-mobile-detail-close>×</button></header>
       <section class="mobile-detail-section"><strong>주요 능력</strong><div class="mobile-detail-grid">${mobileStatsGridHtml(batter?.stats, 5)}</div></section>
-      <section class="mobile-detail-section"><strong>태그</strong><div class="mobile-detail-tags">${tags}</div><div class="mobile-detail-tag-text" data-mobile-detail-tag-text hidden></div></section>
+      <section class="mobile-detail-section"><strong>태그</strong><div class="mobile-detail-tags">${tags}</div><div class="mobile-detail-tag-text" data-mobile-detail-tag-text="tag" hidden></div></section>
       <section class="mobile-detail-section"><strong>최근 승부 기록</strong><div class="mobile-detail-pitches">${recent || "<span>기록 없음</span>"}</div></section>
     `;
   }
@@ -7665,6 +7673,7 @@ function renderMobileRelease() {
   const active = state.releaseTiming?.active ? state.releaseTiming : null;
   const result = state.lastReleaseResult && !state.lastReleaseResult.auto ? state.lastReleaseResult : null;
   els.mobileReleasePanel.classList.toggle("is-active", !!active);
+  els.mobileReleasePanel.classList.toggle("is-shaking", !!active?.shake);
   els.mobileReleasePanel.dataset.state = active ? "active" : result ? "result" : "idle";
   if (active) {
     const goodLeft = (0.5 - active.goodSize / 2) * 100;
@@ -7769,8 +7778,8 @@ function mobilePitchZoneLabel(location) {
   const col = Number(location.col);
   const high = row <= 0;
   const low = row >= 2;
-  const inside = col <= 0;
-  const outside = col >= 2;
+  const inside = col >= 2;
+  const outside = col <= 0;
   if (inside && high) return "몸쪽높게";
   if (inside && low) return "몸쪽낮게";
   if (outside && high) return "바깥높게";
@@ -7908,8 +7917,8 @@ function renderMobileRecentLog() {
         .map(
           (item) => `<div class="mobile-recent-log-row mobile-pitch-compact-row" data-result="${escapeHtml(item.result)}">
             <span class="mobile-pitch-order">${item.no}구</span>
-            <b>${escapeHtml(item.pitch)}</b>
             <span class="mobile-pitch-zone">${escapeHtml(item.zone || "-")}</span>
+            <b>${escapeHtml(item.pitch)}</b>
             <em class="mobile-result-badge mobile-result-badge--${escapeHtml(mobilePitchResultTone(item))}">${escapeHtml(item.outcome)}</em>
             <small>${escapeHtml(item.reaction || item.detail || "타자 반응을 확인했습니다")}</small>
           </div>`
@@ -9202,7 +9211,7 @@ function bindUiEvents() {
     }
     const modalTag = event.target.closest?.("[data-mobile-modal-tag]");
     if (modalTag) {
-      showMobileModalTagDetail(modalTag.dataset.mobileModalTag, modalTag.dataset.mobileModalTagText || "");
+      showMobileModalTagDetail(modalTag.dataset.mobileModalTag, modalTag.dataset.mobileModalTagText || "", modalTag.dataset.mobileModalTagSection || "");
       return;
     }
     const batterTag = event.target.closest?.("[data-mobile-batter-tag]");
@@ -9210,7 +9219,7 @@ function bindUiEvents() {
       const tag = batterTag.dataset.mobileBatterTag;
       mobileSelectedCard = "batter";
       renderMobilePlayerDetail();
-      showMobileModalTagDetail(tag, tagDetailText(tag, currentBatter()));
+      showMobileModalTagDetail(tag, tagDetailText(tag, currentBatter()), "tag");
       return;
     }
     const pitcherTag = event.target.closest?.("[data-mobile-pitcher-tag]");
@@ -9218,7 +9227,8 @@ function bindUiEvents() {
       const tag = pitcherTag.dataset.mobilePitcherTag;
       mobileSelectedCard = "pitcher";
       renderMobilePlayerDetail();
-      showMobileModalTagDetail(tag, pitcherTagDetailText(tag));
+      const section = mobilePitcherTagItems().find((item) => item.label === tag)?.section || "support";
+      showMobileModalTagDetail(tag, pitcherTagDetailText(tag), section);
       return;
     }
     const playerCard = event.target.closest?.(".mobile-player-card");
