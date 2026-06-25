@@ -5085,6 +5085,7 @@ function startAtBat() {
   if (!state.selectedPitchId) state.selectedPitchId = state.pitcher.repertoire[0]?.id || null;
   state.waitingNextBatter = false;
   els.nextBatterButton.hidden = true;
+  recordMobileBatterStart(currentBatter());
   hideTiming();
 }
 
@@ -6856,6 +6857,7 @@ function advanceStage(themeId = state.stageThemeId) {
   state.runs = 0;
   state.releaseTiming = null;
   state.lastReleaseResult = null;
+  state.mobilePitchRecords = [];
   if (els.runsText) els.runsText.textContent = "0";
   state.batterIndex = 0;
   state.lineup = generateLineup(state.stageIndex);
@@ -6919,6 +6921,7 @@ function addOut(count = 1) {
         }
       } else {
         if (MP.recoverPitchBurdenInning) MP.recoverPitchBurdenInning();
+        state.mobilePitchRecords = [];
         beginInningTracking(state.inning);
         state.dugoutPending = true;
         state.dugoutBeforeAtBat = true;
@@ -8267,7 +8270,11 @@ function batterVisibleInfoLines(batter) {
 function batterDisplayTagTier(batter, label, index) {
   if (batterTagToneClass(label).includes("weakness")) return "danger";
   if (batter?.isBoss && index === 0) return "platinum";
-  if (index === 0) return (state.stageIndex || 0) <= 0 ? "silver" : "gold";
+  if (batter?.isRival && index === 0) return (state.stageIndex || 0) >= 2 ? "gold" : "silver";
+  const stage = state.stageIndex || 0;
+  if (stage <= 0) return "bronze";
+  if (stage === 1) return index === 0 ? "silver" : "bronze";
+  if (index === 0) return "gold";
   if (index === 1) return "silver";
   return "bronze";
 }
@@ -9034,7 +9041,7 @@ function recordMobilePitchResult(result) {
     outLabel: result.outLabel || "",
     result: result.result || ""
   });
-  state.mobilePitchRecords = records.slice(0, 7);
+  state.mobilePitchRecords = records;
 }
 
 function mobilePitchZoneLabel(location) {
@@ -9130,7 +9137,18 @@ function mobilePitchResultTone(result) {
 function mobilePitchDetailText(result, note = "") {
   if (result.weaknessFeedback === "공략 성공") return `${note || "공략 성공"} · 타자의 약한 반응을 찔렀습니다.`;
   if (result.weaknessFeedback === "공략 시도") return `${note || "공략 시도"} · 의도한 공략 코스로 승부했습니다.`;
-  if (result.result) return mobilePitchReactionText(result);
+  const pitchName = result.pitch?.name || "공";
+  const zone = mobilePitchZoneLabel(result.location);
+  if (result.result === "ball") return `${zone} ${pitchName}을 타자가 기다렸습니다. 존 밖 공을 골라내며 승부를 길게 가져갑니다.`;
+  if (result.result === "calledStrike") return `${zone} ${pitchName}이 존에 들어왔고 타자가 지켜봤습니다. 같은 코스 반복은 다음 공에 읽힐 수 있습니다.`;
+  if (result.result === "swingingStrike") return `${zone} ${pitchName}에 배트가 나왔습니다. ${mobilePitchReactionText(result)} 다음 공은 다른 높이나 계열로 흔들 수 있습니다.`;
+  if (result.result === "foul") return `${zone} ${pitchName}을 파울로 걷어냈습니다. ${mobilePitchReactionText(result)} 타이밍이 맞아가면 같은 공 반복은 위험합니다.`;
+  if (result.result === "inPlayOut") return `${zone} ${pitchName}을 맞혔지만 정타는 아니었습니다. ${mobilePitchReactionText(result)} 흐름을 바꾸기 좋은 결과입니다.`;
+  if (result.result === "doublePlay") return `${zone} ${pitchName}으로 땅볼 흐름을 만들었습니다. 주자까지 함께 지우며 승부를 크게 정리했습니다.`;
+  if (result.result === "single") return `${zone} ${pitchName}에 타자가 타이밍을 맞췄습니다. 다음 승부는 같은 계열을 피하는 편이 좋습니다.`;
+  if (result.result === "double") return `${zone} ${pitchName}이 강한 타구로 이어졌습니다. 장타 흐름을 끊기 위해 낮은 코스나 완급 전환이 필요합니다.`;
+  if (result.result === "homerun") return `${zone} ${pitchName}을 완벽하게 맞았습니다. 같은 패턴과 몰린 공은 바로 줄여야 합니다.`;
+  if (result.result === "error") return `${zone} ${pitchName}이 인플레이가 됐고 수비가 처리하지 못했습니다. 타자 반응은 다음 승부 판단에 계속 참고하세요.`;
   return note || "타자 반응을 확인했습니다.";
 }
 
@@ -9139,7 +9157,7 @@ function recordMobileBatterStart(batter) {
   const key = `${state.inning}:${state.batterIndex}:${batter?.name || ""}`;
   if (records.some((item) => item.type === "batter" && item.key === key)) return;
   records.unshift({ type: "batter", key, batter: batter?.name || "타자" });
-  state.mobilePitchRecords = records.slice(0, 7);
+  state.mobilePitchRecords = records;
 }
 
 function recordMobileGrowthMark(growthResult) {
@@ -9152,7 +9170,7 @@ function renderMobileRecentLog() {
   if (!els.mobileRecentLog) return;
   const card = els.mobileRecentLog.closest(".mobile-recent-log-card");
   const items = state.mobilePitchRecords || [];
-  const shouldShow = items.some((item) => item.type !== "batter");
+  const shouldShow = items.length > 0;
   if (card) {
     card.hidden = false;
     card.classList.toggle("is-empty", !shouldShow);
@@ -9166,6 +9184,15 @@ function renderMobileRecentLog() {
         header.insertBefore(count, els.mobileRecentLogMore || null);
       }
       count.textContent = `${state.balls}-${state.strikes}`;
+      let suspicion = header.querySelector(".mobile-suspicion-chip");
+      if (!suspicion) {
+        suspicion = document.createElement("button");
+        suspicion.type = "button";
+        suspicion.className = "mobile-suspicion-chip";
+        suspicion.dataset.mobileSuspicion = "true";
+        header.insertBefore(suspicion, els.mobileRecentLogMore || null);
+      }
+      suspicion.textContent = `의심 ${Math.round(clamp(state.atBat?.suspicion || 0, 0, 100))}%`;
     }
   }
   if (!shouldShow) {
@@ -9197,17 +9224,29 @@ function renderMobileInfoPanel() {
   if (mobilePanelMode === "tag") return;
   if (mobilePanelMode === "log") {
     els.mobileInfoPanelTitle.textContent = "승부기록";
-    const pitchItems = (state.mobilePitchRecords || []).filter((item) => item.type !== "batter").slice(0, 7);
+    const pitchItems = (state.mobilePitchRecords || []).filter((item) => item.type !== "batter");
     els.mobileInfoPanelBody.innerHTML = pitchItems.length
       ? `<div class="mobile-pitch-detail-list">${pitchItems
           .map(
             (item) => `<article class="log-item mobile-pitch-detail-row" data-result="${escapeHtml(item.result)}">
-              <strong>${item.no}구 ${escapeHtml(item.pitch)} <span>${escapeHtml(item.zone || "-")} / ${escapeHtml(item.outcome)}</span></strong>
+              <strong>${item.no}구 ${escapeHtml(item.zone || "-")} ${escapeHtml(item.pitch)} <span>${escapeHtml(item.outcome)}</span></strong>
               <p>${escapeHtml(item.detail || item.note || "타자 반응을 확인했습니다.")}</p>
             </article>`
           )
           .join("")}</div>`
       : '<p class="mobile-empty-info">아직 승부기록이 없습니다.</p>';
+    return;
+  }
+  if (mobilePanelMode === "suspicion") {
+    const suspicion = Math.round(clamp(state.atBat?.suspicion || 0, 0, 100));
+    const tone = suspicion >= 70 ? "높음" : suspicion >= 45 ? "주의" : "낮음";
+    els.mobileInfoPanelTitle.textContent = "타자 의심도";
+    els.mobileInfoPanelBody.innerHTML = `<div class="mobile-suspicion-detail">
+      <strong>${suspicion}% · ${tone}</strong>
+      <p>타자가 투구 패턴을 어느 정도 좁혀가고 있는지 보여줍니다.</p>
+      <p>같은 구종, 같은 코스, 같은 높이를 반복하면 더 빨리 올라갑니다.</p>
+      <p>다른 계열이나 다른 높이로 흐름을 바꾸면 의심도를 낮추거나 상승을 늦출 수 있습니다.</p>
+    </div>`;
     return;
   }
   const batter = currentBatter();
@@ -10494,6 +10533,10 @@ function bindUiEvents() {
       renderMobilePlayerDetail();
       const section = mobilePitcherTagItems().find((item) => item.label === tag)?.section || "support";
       showMobileModalTagDetail(tag, pitcherTagDetailText(tag), section);
+      return;
+    }
+    if (event.target.closest?.("[data-mobile-suspicion]")) {
+      openMobilePanel("suspicion");
       return;
     }
     const playerCard = event.target.closest?.(".mobile-player-card");
