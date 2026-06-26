@@ -2281,28 +2281,6 @@ h2 {
 }
 
 /* —— 핵심진화 보상 카드 (v2) —— */
-.reward-box .reward-confirm-button {
-  display: block;
-  width: min(280px, 100%);
-  margin: 16px auto 0;
-  padding: 12px 18px;
-  border: 0;
-  border-radius: 10px;
-  background: linear-gradient(180deg, #2fbe6c, #1f9a55);
-  color: #fff;
-  font-size: 1rem;
-  font-weight: 900;
-  cursor: pointer;
-  box-shadow: 0 8px 18px rgba(31, 154, 85, 0.28);
-}
-
-.reward-box .reward-confirm-button:disabled {
-  background: #b8c9d6;
-  color: #eef3f7;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
 .reward-choice-list.core-evolution-list {
   align-items: stretch;
 }
@@ -2314,32 +2292,6 @@ h2 {
   text-align: center;
   background: linear-gradient(180deg, #ffffff, #f4faf6);
   border-color: #c8dce8;
-}
-
-.reward-choice-card.core-evolution-card.is-selected {
-  border-color: #2fbe6c;
-  background: linear-gradient(180deg, #f3fff7, #e7f9ee);
-  box-shadow: 0 0 0 2px rgba(47, 190, 108, 0.18), 0 12px 24px rgba(49, 101, 139, 0.14);
-}
-
-.core-evo-check {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 22px;
-  height: 22px;
-  border-radius: 999px;
-  background: #2fbe6c;
-  color: #fff;
-  font-size: 0.82rem;
-  font-weight: 900;
-  line-height: 22px;
-  text-align: center;
-  opacity: 0;
-}
-
-.core-evolution-card.is-selected .core-evo-check {
-  opacity: 1;
 }
 
 .core-evo-head {
@@ -2366,10 +2318,6 @@ h2 {
   font-weight: 900;
 }
 
-.core-evolution-card.is-selected .core-evo-icon {
-  background: #2fbe6c;
-}
-
 .core-evo-titles {
   min-width: 0;
   flex: 1 1 auto;
@@ -2388,10 +2336,6 @@ h2 {
   color: #2f7fbe;
   font-size: 0.78rem;
   font-weight: 900;
-}
-
-.core-evolution-card.is-selected .core-evo-sub {
-  color: #1f9a55;
 }
 
 .core-evo-body {
@@ -6243,11 +6187,6 @@ button.card-toggle {
     line-height: 1.38;
   }
 
-  .reward-box .reward-confirm-button {
-    margin-top: 12px;
-    padding: 10px 14px;
-  }
-
   .dugout-overlay {
     place-items: start center;
     height: 100dvh;
@@ -6772,13 +6711,8 @@ button.card-toggle {
   line-height: 0.95 !important;
 }
 
-.core-evo-check {
-  display: none !important;
-}
-
 /* Reward reveal motion */
-.reward-overlay.is-revealing .reward-choice-list,
-.reward-overlay.is-revealing .reward-confirm-button {
+.reward-overlay.is-revealing .reward-choice-list {
   pointer-events: none;
 }
 

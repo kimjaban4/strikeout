@@ -1100,7 +1100,6 @@ const state = {
   pendingStageOverlay: null,
   coreEvolutionOffered: false,
   pendingCoreEvolutionReward: false,
-  selectedRewardIndex: null,
   lastAtBatMemory: null,
   ownedRewardCards: [],
   cardTriggerLog: [],
@@ -1228,7 +1227,6 @@ const els = {
   rewardTitle: document.querySelector("#rewardTitle"),
   rewardReason: document.querySelector("#rewardReason"),
   rewardChoiceList: document.querySelector("#rewardChoiceList"),
-  rewardConfirmButton: document.querySelector("#rewardConfirmButton"),
   stageOverlay: document.querySelector("#stageOverlay"),
   stageTitle: document.querySelector("#stageTitle"),
   stageSubtitle: document.querySelector("#stageSubtitle"),
@@ -4881,7 +4879,6 @@ function startGame() {
   state.pendingStageOverlay = null;
   state.coreEvolutionOffered = false;
   state.pendingCoreEvolutionReward = false;
-  state.selectedRewardIndex = null;
   state.ownedRewardCards = [];
   state.cardTriggerLog = [];
   state.stageRun = null;
@@ -4980,7 +4977,6 @@ function beginGameWithPitcher(pitcher) {
   state.pendingStageOverlay = null;
   state.coreEvolutionOffered = false;
   state.pendingCoreEvolutionReward = false;
-  state.selectedRewardIndex = null;
   state.ownedRewardCards = [];
   state.cardTriggerLog = [];
   state.currentInningStats = null;
@@ -7722,7 +7718,6 @@ function openRewardDraft(reason, result, kind = "normal") {
   if (!els.rewardOverlay || state.gameOver) return;
   clearAutoAdvance();
   if (kind === "stageCard") showTutorialStep("stageCards");
-  state.selectedRewardIndex = null;
   state.rewardKind = kind;
   state.rewardPending = true;
   if (kind === "stageCard") state.rewardChoices = generateStageCardChoices();
@@ -7749,10 +7744,6 @@ function openRewardDraft(reason, result, kind = "normal") {
           ? "스테이지 종료 후 투수 성향을 정리합니다. 보조태그는 최대 3개까지만 보유합니다."
           : rewardReasonText(reason);
   renderRewardChoices();
-  if (els.rewardConfirmButton) {
-    els.rewardConfirmButton.hidden = true;
-    els.rewardConfirmButton.disabled = true;
-  }
   els.rewardOverlay.hidden = false;
   startRewardRevealAnimation();
   disablePitchButtons(true);
@@ -7837,7 +7828,6 @@ function applyReward(index) {
   );
   state.rewardPending = false;
   state.rewardKind = "normal";
-  state.selectedRewardIndex = null;
   state.afterRewardStageOverlay = null;
   state.rewardChoices = [];
   if (MP.rewardRevealTimer) {
@@ -7847,10 +7837,6 @@ function applyReward(index) {
   resetChoiceRevealAnimation(els.rewardOverlay, ".reward-choice-card");
   els.rewardOverlay.hidden = true;
   els.rewardOverlay.classList.remove("is-revealing", "is-revealed");
-  if (els.rewardConfirmButton) {
-    els.rewardConfirmButton.hidden = true;
-    els.rewardConfirmButton.disabled = true;
-  }
   render();
   if ((rewardKind === "coreEvolution" || rewardKind === "stageTag") && state.pendingRewardKindAfterCurrent) {
     const nextKind = state.pendingRewardKindAfterCurrent;
@@ -8051,12 +8037,11 @@ function rewardDisplayTitle(reward) {
 }
 
 function renderCoreEvolutionRewardCard(reward, index) {
-  const selected = state.rewardKind === "coreEvolution" && state.selectedRewardIndex === index;
   const rarity = reward.rarity || (reward.type === "coreEvolution" ? "core" : "common");
   const subtitle = rewardUnifiedSubtitle(reward);
   const title = rewardDisplayTitle(reward);
   return `
-    <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(rarity)}${selected ? " is-selected" : ""}" type="button" data-reward-index="${index}">
+    <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(rarity)}" type="button" data-reward-index="${index}">
       <header class="core-evo-head">
         <div class="core-evo-titles">
           <strong class="core-evo-name">${escapeHtml(title)}</strong>
@@ -8079,20 +8064,11 @@ function renderRewardChoices() {
   els.rewardChoiceList.innerHTML = state.rewardChoices
     .map((reward, index) => renderCoreEvolutionRewardCard(reward, index))
     .join("");
-  if (els.rewardConfirmButton) {
-    els.rewardConfirmButton.hidden = true;
-    els.rewardConfirmButton.disabled = true;
-  }
 }
 
 function selectRewardChoice(index) {
   if (els.rewardOverlay?.classList.contains("is-revealing")) return;
   applyReward(index);
-}
-
-function confirmRewardChoice() {
-  if (state.selectedRewardIndex == null) return;
-  applyReward(state.selectedRewardIndex);
 }
 
 function nextBatter() {
@@ -10700,7 +10676,6 @@ function bindUiEvents() {
     const button = event.target.closest?.("[data-reward-index]");
     if (button) selectRewardChoice(Number(button.dataset.rewardIndex));
   });
-  els.rewardConfirmButton?.addEventListener("click", () => confirmRewardChoice());
   els.dugoutChoiceList?.addEventListener("click", (event) => {
     const button = event.target.closest?.("[data-dugout-index]");
     if (button) confirmDugoutChoice(Number(button.dataset.dugoutIndex));
@@ -10779,7 +10754,6 @@ MP.debug = {
   revealRivalWeakness,
   openDugoutChoiceOverlay,
   selectRewardChoice,
-  confirmRewardChoice,
   confirmDugoutChoice,
   confirmStageTheme,
   openStageTagReward,
