@@ -1198,7 +1198,7 @@
   }
 
   .mobile-timing-badge {
-    top: calc(52% - 86px);
+    top: calc(52% - 54px);
     min-width: 128px;
     min-height: 30px;
     font-size: 13px;
