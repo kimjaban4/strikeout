@@ -5695,9 +5695,10 @@ function applyBatterIntentReaction(effect, batter, pattern, location) {
   }
 
   if (batter.mind?.id === "adaptive" && previousIntent === intent) {
-    effect.chase -= 0.06;
-    effect.contact += 0.05;
-    effect.contactQuality += 5;
+    effect.chase -= 0.1;
+    effect.contact += 0.07;
+    effect.contactQuality += 8;
+    if (state.atBat) state.atBat.suspicion = clamp((state.atBat.suspicion || 0) + scaleMindDelta(6), 0, 100);
     effect.label = appendEffectLabel(effect.label, "반복 의도 적응");
   }
 }
