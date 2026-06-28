@@ -3210,32 +3210,9 @@ h2 {
   line-height: 1;
 }
 
-.mobile-pitch-compact-list,
 .mobile-plate-read-list {
   display: grid;
   gap: 4px;
-}
-
-.mobile-pitch-compact-row {
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr) 42px 48px;
-  align-items: center;
-  gap: 4px;
-  min-height: 23px;
-  padding: 3px 4px;
-  border-radius: 5px;
-  background: rgba(248, 251, 254, 0.92);
-  border: 1px solid rgba(119, 148, 180, 0.18);
-  color: #17324d;
-  font-size: 0.72rem;
-  font-weight: 900;
-}
-
-.mobile-pitch-compact-row b {
-  min-width: 0;
-  color: #071a2c;
-  font-weight: 1000;
-  white-space: nowrap;
 }
 
 .mobile-pitch-order {
@@ -4413,20 +4390,6 @@ button.card-toggle {
   line-height: 28px !important;
   letter-spacing: 0 !important;
   transform: none !important;
-}
-
-.inning-banner,
-.inning-banner.hit,
-.inning-banner.out,
-.inning-banner.walk,
-.inning-banner.next,
-.inning-banner.boss {
-  position: absolute !important;
-  left: 50% !important;
-  right: auto !important;
-  transform: translate(-50%, 0) !important;
-  z-index: 260 !important;
-  margin: 0 !important;
 }
 
 .stadium,
