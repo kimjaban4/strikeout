@@ -101,6 +101,7 @@ MP.categoryNames = {
 
 MP.stageInnings = [3, 3, 3];
 MP.RELEASE_TIMING_SPEED = 0.8;
+MP.RELEASE_TIMING_ZONE_SCALE = 0.8;
 
 MP.stageConfigs = [
   {
