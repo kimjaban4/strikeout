@@ -5057,14 +5057,6 @@ button.card-toggle {
     font-size: 0.8rem;
   }
 
-  .pitch-buttons {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .pitch-button {
-    min-height: 108px;
-  }
-
   .count-board {
     width: 100%;
   }
@@ -5091,10 +5083,6 @@ button.card-toggle {
 }
 
 @media (max-width: 520px) {
-  .pitch-buttons {
-    grid-template-columns: 1fr;
-  }
-
   .score-row {
     grid-template-columns: 1fr;
   }
