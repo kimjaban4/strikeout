@@ -2370,12 +2370,6 @@ h2 {
   width: 100%;
 }
 
-@media (max-width: 900px) {
-  .reward-choice-list.core-evolution-list {
-    grid-template-columns: 1fr;
-  }
-}
-
 .inning-banner.reward {
   color: #ffffff !important;
   background: linear-gradient(180deg, rgba(31, 172, 95, 0.96), rgba(12, 117, 62, 0.96)) !important;

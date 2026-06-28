@@ -72,7 +72,6 @@ MP.state = {
     bossOuts: 0,
     bossDamage: 0
   },
-  useCardUiV2: true,
   gameOver: false,
   waitingNextBatter: false,
   batterCardExpanded: false,

@@ -236,11 +236,6 @@
   border-top: 1px solid rgba(149, 195, 233, 0.24) !important;
 }
 
-/* 투수 카드: 좁은 폭에서 세로 압축으로 칩이 상세 버튼을 덮는 것 방지 */
-.pitch-area .pitcher-card:not(.card-v2) {
-  min-height: 280px !important;
-}
-
 .pitch-area .pitcher-card.card-v2 {
   min-height: 0 !important;
 }

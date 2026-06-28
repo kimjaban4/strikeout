@@ -1130,7 +1130,6 @@ const state = {
     bossOuts: 0,
     bossDamage: 0
   },
-  useCardUiV2: true,
   gameOver: false,
   waitingNextBatter: false,
   batterCardExpanded: false,
@@ -8579,7 +8578,6 @@ function renderReleaseTimingPanel() {
 }
 
 function render() {
-  const useCardUiV2 = state.useCardUiV2 !== false;
   if (document.body.classList.contains("mobile-batter-open") && isMobilePortraitLayout()) {
     state.batterCardExpanded = true;
   } else {
@@ -8602,7 +8600,7 @@ function render() {
   parkPitcherTagDetail();
   renderPitcherName();
   setPortrait(els.pitcherPortrait, state.pitcher.portrait);
-  els.pitcherCard?.classList.toggle("card-v2", useCardUiV2);
+  els.pitcherCard?.classList.add("card-v2");
   renderPitcherTags();
   const pitcherLayout = assertPitcherCardLayout();
   if (pitcherLayout && !pitcherLayout.ok && !pitcherLayout.skipped) {
@@ -8614,22 +8612,9 @@ function render() {
 
   els.batterName.textContent = batter.name;
   setPortrait(els.batterPortrait, batter.portrait);
-  els.batterCard?.classList.toggle("card-v2", useCardUiV2);
+  els.batterCard?.classList.add("card-v2");
   renderSlotBadge(batter);
-  if (useCardUiV2) renderBatterTypeV2(batter);
-  else {
-    const visibleBatterTags = batterVisibleInfoLines(batter);
-    els.batterType.innerHTML = visibleBatterTags
-      .map((line, index) => {
-        const tier = batterDisplayTagTier(batter, line, index);
-        const breakAfter = index === 3 && visibleBatterTags.length > 4 ? '<span class="tag-break" aria-hidden="true"></span>' : "";
-        const role = batterDisplayTagRole(line, index);
-        return `<button class="${index === 0 ? "type-main" : "type-tag"}" type="button" data-batter-tag="${escapeHtml(
-          line
-        )}" data-tier="${escapeHtml(tier)}" data-role="${escapeHtml(role)}">${escapeHtml(line)}</button>${breakAfter}`;
-      })
-      .join("");
-  }
+  renderBatterTypeV2(batter);
   resetTagDetail();
   els.batterCard?.classList.toggle("boss-batter", Boolean(batter.isBoss));
   els.batterCard?.classList.toggle("rival-batter", Boolean(batter.isRival));
@@ -9458,7 +9443,6 @@ function evolutionDescription(evolution) {
 function renderPitcherTags() {
   if (!els.pitcherTags || !state.pitcher) return;
   ensurePitcherTagFields(state.pitcher);
-  const useCardUiV2 = state.useCardUiV2 !== false;
   const coreTag = state.pitcher.coreTagId ? tagById(state.pitcher.coreTagId) : null;
   const evolution = state.pitcher.coreEvolutionId ? coreEvolutionById(state.pitcher.coreEvolutionId) : null;
   const chipList = (tags, cssType, labelForTag = (tag) => tag.name) =>
@@ -9470,22 +9454,6 @@ function renderPitcherTags() {
           )}">${escapeHtml(labelForTag(tag))}</button>`
       )
       .join("");
-
-  if (!useCardUiV2) {
-    const tagIds = pitcherAllTagIds();
-    const tags = tagIds.map(tagById).filter(Boolean);
-    const legacyExtra = evolution
-      ? `<button class="pitcher-tag evolution" type="button" data-pitcher-evolution="${escapeHtml(evolution.id)}" title="${escapeHtml(evolutionDescription(evolution))}">${escapeHtml(evolution.name)}</button>`
-      : "";
-    els.pitcherTags.innerHTML =
-      tags
-        .map((tag) => {
-          const label = tag.type === "bonus" ? supportTagDisplayName(tag.id) : tag.name;
-          return `<button class="pitcher-tag ${tag.type || "base"}" type="button" data-pitcher-tag="${escapeHtml(tag.id)}">${escapeHtml(label)}</button>`;
-        })
-        .join("") + legacyExtra;
-    return;
-  }
 
   const support = (state.pitcher.bonusTags || []).map((tagId) => tagById(tagId)).filter(Boolean);
   const weakness = (state.pitcher.revealedWeaknessTags || []).map(tagById).filter(Boolean);
@@ -9523,39 +9491,6 @@ function renderPitcherTags() {
     </section>
   `;
   repositionOpenPitcherTagDetail();
-}
-
-function renderBatterTypeV2(batter) {
-  if (!els.batterType) return;
-  const tags = batterInfoLines(batter);
-  const visible = tags.slice(0, 4);
-  const tagButtons = visible
-    .map((line, index) => {
-      const cls = index === 0 ? "type-main" : "type-tag";
-      return `<button class="${cls}" type="button" data-batter-tag="${escapeHtml(line)}">${escapeHtml(line)}</button>`;
-    })
-    .join("");
-  const revealed = new Set(batter.revealedWeaknessTagIds || []);
-  const candidates = new Set(batter.candidateWeaknessTagIds || []);
-  const weaknessChips = (batter.weaknessTags || [])
-    .map((tagId) => {
-      const tag = batterWeaknessById(tagId);
-      if (!tag) return "";
-      if (revealed.has(tagId)) {
-        return `<button class="type-tag weakness-chip is-revealed" type="button" data-batter-weakness="${escapeHtml(tagId)}">${escapeHtml(tag.name)}</button>`;
-      }
-      if (candidates.has(tagId)) {
-        return `<button class="type-tag weakness-chip is-candidate" type="button" data-batter-weakness="${escapeHtml(tagId)}">${escapeHtml(tag.name)}</button>`;
-      }
-      return `<span class="type-tag weakness-chip is-hidden">미공개</span>`;
-    })
-    .join("");
-  els.batterType.innerHTML = `
-    <span class="card-v2-inline-kicker">보조태그</span>
-    <span class="card-v2-inline-row">${tagButtons}</span>
-    <span class="card-v2-inline-kicker">보조태그</span>
-    <span class="card-v2-inline-row">${weaknessChips || '<span class="type-tag weakness-chip is-hidden">미공개</span>'}</span>
-  `;
 }
 
 function renderBatterTypeV2(batter) {
@@ -9602,7 +9537,6 @@ function parkPitcherTagDetail() {
 
 function assertPitcherCardLayout() {
   if (!els.pitcherCard || !state.pitcher) return { ok: true, skipped: true, reason: "no-pitcher" };
-  if (state.useCardUiV2 === false) return { ok: true, skipped: true, reason: "legacy-ui" };
 
   const stack = els.pitcherTagsStack || els.pitcherTags?.closest(".pitcher-tags-stack");
   const stats = els.pitcherCardLower;
