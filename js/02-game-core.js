@@ -4381,6 +4381,63 @@ function pitchSpecialEffect(pitch, location, atBat) {
   return effect;
 }
 
+function appendEffectLabel(base, note) {
+  return [base, note].filter(Boolean).join(" · ");
+}
+
+function applyBatterIntentReaction(effect, batter, pattern, location) {
+  const intent = pattern?.ballIntent;
+  if (!intent || !batter || location.inZone) return;
+
+  const tendency = batter.tendency?.id;
+  const isFirstPitch = currentAtBatPitchCount() <= 1;
+  const previousIntent = state.atBat?.choiceHistory?.[state.atBat.choiceHistory.length - 1]?.ballIntent || "";
+
+  if (tendency === "firstPitchAggro" && isFirstPitch) {
+    if (intent === "fishing") {
+      effect.swing += 0.07;
+      effect.chase += 0.05;
+      effect.contact -= 0.03;
+      effect.label = appendEffectLabel(effect.label, "초구 적극 반응");
+    } else if (intent === "show") {
+      effect.swing += 0.04;
+      effect.contactQuality -= 2;
+      effect.label = appendEffectLabel(effect.label, "초구 시선 유도");
+    }
+  }
+
+  if (tendency === "walkHunter") {
+    if (intent === "fishing") {
+      effect.swing -= 0.04;
+      effect.chase -= 0.12;
+      effect.label = appendEffectLabel(effect.label, "선구안 저항");
+    } else if (intent === "waste") {
+      effect.chase -= 0.06;
+      effect.contact += 0.03;
+      effect.contactQuality += 3;
+      effect.label = appendEffectLabel(effect.label, "반응 숨김");
+    }
+  }
+
+  if (tendency === "slugger") {
+    if (intent === "brush") {
+      effect.contact -= 0.02;
+      effect.contactQuality -= 6;
+      effect.label = appendEffectLabel(effect.label, "장타 억제");
+    } else if (intent === "show") {
+      effect.contactQuality += 4;
+      effect.label = appendEffectLabel(effect.label, "장타자 각인 위험");
+    }
+  }
+
+  if (batter.mind?.id === "adaptive" && previousIntent === intent) {
+    effect.chase -= 0.06;
+    effect.contact += 0.05;
+    effect.contactQuality += 5;
+    effect.label = appendEffectLabel(effect.label, "반복 의도 적응");
+  }
+}
+
 function mindGameEffect(pitch, batter, plannedCourse, pattern, location) {
   const effect = {
     quality: 0,
@@ -4427,6 +4484,7 @@ function mindGameEffect(pitch, batter, plannedCourse, pattern, location) {
       effect.contactQuality -= 4;
       effect.label = ballPlan.label;
     }
+    applyBatterIntentReaction(effect, batter, pattern, location);
   }
 
   if (batter.tendency?.id === "firstPitchAggro" && state.balls === 0 && state.strikes === 0) effect.swing += 0.12;
