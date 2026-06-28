@@ -97,6 +97,7 @@ const categoryNames = {
 
 const stageInnings = [3, 3, 3];
 const RELEASE_TIMING_SPEED = 0.8;
+const RELEASE_TIMING_ZONE_SCALE = 0.8;
 
 const stageConfigs = [
   {
@@ -5275,8 +5276,8 @@ function buildReleaseTimingChallenge(pitch, plannedCourse) {
   if (mentalPressure >= 4) pressureReasons.push("멘탈 흔들림");
   if (burdenPressure >= 8) pressureReasons.push("구종 부담");
   const pressure = clamp(runnerPressure.pressure + mentalPressure + burdenPressure, 0, 78);
-  const perfectSize = clamp(0.068 + (control - 60) * 0.0028 - pressure * 0.001, 0.024, 0.14);
-  const goodSize = clamp(0.24 + (control - 55) * 0.0034 - pressure * 0.0024, 0.1, 0.44);
+  const perfectSize = clamp((0.068 + (control - 60) * 0.0028 - pressure * 0.001) * RELEASE_TIMING_ZONE_SCALE, 0.024, 0.14);
+  const goodSize = clamp((0.24 + (control - 55) * 0.0034 - pressure * 0.0024) * RELEASE_TIMING_ZONE_SCALE, 0.1, 0.44);
   const baseDuration = clamp(1220 + (control - 55) * 8 + (mental - 55) * 2 - pressure * 9, 660, 1640);
   const duration = Math.round(baseDuration / RELEASE_TIMING_SPEED);
   return {
