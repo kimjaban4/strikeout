@@ -6009,7 +6009,7 @@ function dugoutChoiceCanAppear(choice) {
   return !!(batter?.isBoss || batter?.isRival);
 }
 
-const DUGOUT_EVENT_CHANCE = 0.7;
+const DUGOUT_EVENT_CHANCE = 0.6;
 
 const DUGOUT_READ_EVENTS = [
   {
@@ -6098,6 +6098,13 @@ function reactionCount(tag) {
   return ensureStageRunState().reactionCounts?.[tag] || 0;
 }
 
+function dugoutEventHint(event) {
+  const recent = ensureStageRunState().recentReactions || [];
+  const match = recent.find((item) => item.tag === event.signal) || recent[0];
+  if (!match) return "";
+  return `관찰: ${match.count} ${match.result} · ${match.reaction}`;
+}
+
 function generateDugoutReadEventChoices() {
   const signalTotal = Object.values(ensureStageRunState().reactionCounts || {}).reduce((sum, value) => sum + value, 0);
   if (signalTotal < 3 || Math.random() > DUGOUT_EVENT_CHANCE) return [];
@@ -6107,12 +6114,14 @@ function generateDugoutReadEventChoices() {
   })).filter((entry) => entry.weight > 0);
   const selected = weightedPick(weighted)?.event || pick(DUGOUT_READ_EVENTS);
   if (!selected) return [];
+  const hint = dugoutEventHint(selected);
   return selected.choices.map((choice, index) => ({
     id: `${selected.id}_${index}`,
     dugoutEventId: selected.id,
     category: "판단",
     title: choice.label,
-    desc: selected.desc,
+    desc: hint ? `${selected.desc}\n${hint}` : selected.desc,
+    hint,
     resultText: choice.resultText,
     correct: !!choice.correct,
     effects: choice.effects || {},
@@ -6170,7 +6179,7 @@ function renderDugoutChoices() {
           <span class="dugout-choice-category">${escapeHtml(choice.category)}</span>
           ${choice.rarity === "rare" ? '<span class="dugout-choice-rarity">희귀 · 효과 +35%</span>' : ""}
           <strong>${escapeHtml(choice.title)}</strong>
-          <p>${escapeHtml(choice.dugoutEventId ? "선택 후 판단 결과가 공개됩니다." : choice.desc)}${choice.dugoutEventId ? "" : choice.rarity === "rare" ? " 희귀 등급은 수치·단서가 한 단계 강화됩니다." : ""}</p>
+          <p>${escapeHtml(choice.dugoutEventId ? choice.hint || "선택 후 판단 결과가 공개됩니다." : choice.desc)}${choice.dugoutEventId ? "" : choice.rarity === "rare" ? " 희귀 등급은 수치·단서가 한 단계 강화됩니다." : ""}</p>
         </button>
       `
     )
@@ -6396,7 +6405,9 @@ function applyDugoutChoice(choice) {
   state.mobileDugoutCue = choice.title;
   if (choice.dugoutEventId) {
     const resultHtml = escapeHtml(choice.resultText || choice.title).replaceAll("\n", "<br>");
-    addLog("덕아웃 판단", `<p>${resultHtml}</p><p class="log-muted">선택: ${escapeHtml(choice.title)}</p>`);
+    if (choice.correct) absorbCardPerformance(0.04, 0.01);
+    const hintHtml = choice.hint ? `<p class="log-muted">${escapeHtml(choice.hint)}</p>` : "";
+    addLog("덕아웃 판단", `<p>${resultHtml}</p>${hintHtml}<p class="log-muted">선택: ${escapeHtml(choice.title)}</p>`);
     showEventBanner(`${choice.correct ? "판단 적중" : "판단 빗나감"}\n${choice.title}`, choice.correct ? "reward" : "walk", 1300);
   } else {
     addLog("덕아웃 선택", `${choice.title}${rarityNote} · ${choice.desc}`);
