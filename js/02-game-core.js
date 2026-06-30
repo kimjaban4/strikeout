@@ -2169,15 +2169,15 @@ const COUNT_PRESSURE = {
   "0-0": { label: "기본 상태", swingInZone: 0, swingOutZone: 0, contact: 0, foul: 0, contactQuality: 0 },
   "1-0": { label: "존 안 공 예상", swingInZone: 0.04, swingOutZone: -0.03, contact: 0.02, foul: 0.01, contactQuality: 2 },
   "2-0": { label: "스트라이크 대기", swingInZone: 0.08, swingOutZone: -0.06, contact: 0.05, foul: 0.02, contactQuality: 6 },
-  "3-0": { label: "볼넷 대기", swingInZone: -0.18, swingOutZone: -0.14, contact: 0.03, foul: 0, contactQuality: 4 },
+  "3-0": { label: "볼넷 대기", swingInZone: -0.2, swingOutZone: -0.18, contact: 0.04, foul: 0, contactQuality: 5 },
   "0-1": { label: "의도 탐색", swingInZone: -0.02, swingOutZone: 0.02, contact: -0.01, foul: 0.01, contactQuality: -1 },
   "0-2": { label: "유인 경계", swingInZone: 0.03, swingOutZone: -0.05, contact: 0.03, foul: 0.1, contactQuality: -3 },
   "1-1": { label: "균형 카운트", swingInZone: 0.02, swingOutZone: 0, contact: 0.01, foul: 0.02, contactQuality: 1 },
   "1-2": { label: "보호 스윙", swingInZone: 0.05, swingOutZone: -0.02, contact: 0.04, foul: 0.11, contactQuality: -2 },
   "2-1": { label: "존 승부 의식", swingInZone: 0.05, swingOutZone: -0.02, contact: 0.03, foul: 0.02, contactQuality: 3 },
   "2-2": { label: "유인과 존 승부", swingInZone: 0.04, swingOutZone: 0.01, contact: 0.03, foul: 0.07, contactQuality: 1 },
-  "3-1": { label: "존 안 공 대기", swingInZone: 0.1, swingOutZone: -0.09, contact: 0.07, foul: 0.03, contactQuality: 8 },
-  "3-2": { label: "풀카운트 압박", swingInZone: 0.09, swingOutZone: -0.02, contact: 0.08, foul: 0.12, contactQuality: 5 }
+  "3-1": { label: "존 안 공 대기", swingInZone: 0.11, swingOutZone: -0.11, contact: 0.08, foul: 0.03, contactQuality: 9 },
+  "3-2": { label: "풀카운트 압박", swingInZone: 0.1, swingOutZone: -0.04, contact: 0.09, foul: 0.13, contactQuality: 6 }
 };
 
 function countPressureProfile(balls = state.balls, strikes = state.strikes) {
@@ -3573,7 +3573,7 @@ function boostBossStats(stats) {
 
 function boostStageStats(stats, stageIndex) {
   if (stageIndex <= 0) return stats;
-  const baseBoost = stageIndex === 1 ? 8 : 24;
+  const baseBoost = stageIndex === 1 ? 9 : 26;
   const variance = stageIndex === 1 ? 5 : 8;
   return Object.fromEntries(
     Object.entries(stats).map(([label, value]) => [label, clampStat(value + baseBoost + rand(0, variance))])
@@ -4068,7 +4068,7 @@ function releasePressureBreakdown() {
     reasons.push("득점권");
   }
   if (state.balls === 3) {
-    pressure += 8;
+    pressure += 12;
     reasons.push("볼카운트 몰림");
   }
   if (state.strikes === 2 && runners > 0) {
@@ -5541,7 +5541,7 @@ function recordHighlightResult(result, runsScored) {
     stats.highlightSuccesses += 1;
     run.rewardBoost.rareBonus += 0.1;
     run.rewardBoost.coreBonus += 0.05;
-    absorbCardPerformance(0.04, 0.02);
+    absorbCardPerformance(0.025, 0.01);
     if (result.batter?.isRival) revealBatterWeakness(result.batter);
     addLog("하이라이트 승부 성공", "위기 승부를 이겨냈습니다. 보상 흐름이 좋아집니다.");
   } else {
@@ -5564,7 +5564,7 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
   if ((result.result === "calledStrike" || result.result === "swingingStrike") && state.strikes >= 3) {
     run.strikeouts += 1;
     stats.strikeouts += 1;
-    absorbCardPerformance(0.03);
+    absorbCardPerformance(0.02);
   }
   if (["single", "double", "homerun"].includes(result.result)) {
     run.hits += 1;
@@ -5595,12 +5595,12 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
       stats.weaknessPitchSuccesses += 1;
       if (result.weaknessFeedback !== "공략 성공") showEventBanner("약점 공략 성공", "reward", 900);
       result.weaknessFeedback = "공략 성공";
-      absorbCardPerformance(0.03);
+      absorbCardPerformance(0.02);
       if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "공략 보조태그 활용", "공략 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
       if (hasRewardCard("K005")) state.nextPitchControlBonus += 7;
     }
   }
-  if (result.result === "doublePlay") absorbCardPerformance(0.05, 0.01);
+  if (result.result === "doublePlay") absorbCardPerformance(0.03, 0.005);
   if ((result.result === "calledStrike" || result.result === "swingingStrike") && state.strikes >= 3 && hasRewardCard("K008")) {
     run.rewardBoost.guaranteedRare += 1;
     addCardTriggerLog("결승구 설계", "2스트 이후 삼진으로 희귀 보상 흐름이 열렸습니다.");
@@ -6405,7 +6405,7 @@ function applyDugoutChoice(choice) {
   state.mobileDugoutCue = choice.title;
   if (choice.dugoutEventId) {
     const resultHtml = escapeHtml(choice.resultText || choice.title).replaceAll("\n", "<br>");
-    if (choice.correct) absorbCardPerformance(0.04, 0.01);
+    if (choice.correct) absorbCardPerformance(0.025, 0.005);
     const hintHtml = choice.hint ? `<p class="log-muted">${escapeHtml(choice.hint)}</p>` : "";
     addLog("덕아웃 판단", `<p>${resultHtml}</p>${hintHtml}<p class="log-muted">선택: ${escapeHtml(choice.title)}</p>`);
     showEventBanner(`${choice.correct ? "판단 적중" : "판단 빗나감"}\n${choice.title}`, choice.correct ? "reward" : "walk", 1300);
