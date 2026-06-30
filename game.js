@@ -2468,7 +2468,7 @@ function createStageRunState(stageIndex = 0) {
     missionResults: {},
     missionOverrides: {},
     inningStats: {},
-    rewardBoost: { choiceBonus: 0, rareBonus: 0, coreBonus: 0, guaranteedRare: 0, coreChoiceBonus: 0 },
+    rewardBoost: { choiceBonus: 0, rareBonus: 0, coreBonus: 0, guaranteedRare: 0, coreChoiceBonus: 0, absorbed: 0 },
     reactionCounts: {},
     recentReactions: [],
     rival: {
@@ -3420,6 +3420,13 @@ function batterTagEffect(pitch, batter, location, targetMatch) {
 
 function countKey() {
   return `${state.balls}-${state.strikes}`;
+}
+
+function absorbCardPerformance(rareBonus = 0.03, coreBonus = 0) {
+  const boost = ensureStageRunState().rewardBoost;
+  boost.absorbed = (boost.absorbed || 0) + 1;
+  boost.rareBonus += rareBonus;
+  boost.coreBonus += coreBonus;
 }
 
 const COUNT_PRESSURE = {
@@ -6798,6 +6805,7 @@ function recordHighlightResult(result, runsScored) {
     stats.highlightSuccesses += 1;
     run.rewardBoost.rareBonus += 0.1;
     run.rewardBoost.coreBonus += 0.05;
+    absorbCardPerformance(0.04, 0.02);
     if (result.batter?.isRival) revealBatterWeakness(result.batter);
     addLog("하이라이트 승부 성공", "위기 승부를 이겨냈습니다. 보상 흐름이 좋아집니다.");
   } else {
@@ -6820,6 +6828,7 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
   if ((result.result === "calledStrike" || result.result === "swingingStrike") && state.strikes >= 3) {
     run.strikeouts += 1;
     stats.strikeouts += 1;
+    absorbCardPerformance(0.03);
   }
   if (["single", "double", "homerun"].includes(result.result)) {
     run.hits += 1;
@@ -6850,10 +6859,12 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
       stats.weaknessPitchSuccesses += 1;
       if (result.weaknessFeedback !== "공략 성공") showEventBanner("약점 공략 성공", "reward", 900);
       result.weaknessFeedback = "공략 성공";
+      absorbCardPerformance(0.03);
       if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "공략 보조태그 활용", "공략 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
       if (hasRewardCard("K005")) state.nextPitchControlBonus += 7;
     }
   }
+  if (result.result === "doublePlay") absorbCardPerformance(0.05, 0.01);
   if ((result.result === "calledStrike" || result.result === "swingingStrike") && state.strikes >= 3 && hasRewardCard("K008")) {
     run.rewardBoost.guaranteedRare += 1;
     addCardTriggerLog("결승구 설계", "2스트 이후 삼진으로 희귀 보상 흐름이 열렸습니다.");
@@ -7705,6 +7716,7 @@ function stageCardRewardReasonText() {
   const rival = result.rivalGoalMet ? "라이벌 과제 달성" : "라이벌 과제 미달성";
   const lines = [`${result.stageName} · ${result.starLabel}`, rival];
   if (result.highlightSuccesses) lines.push(`하이라이트 ${result.highlightSuccesses}회 성공`);
+  if (result.rewardBoost?.absorbed) lines.push(`승부 성과 ${result.rewardBoost.absorbed}회 카드 보상 흡수`);
   lines.push("스테이지 카드 3개 중 하나를 고르세요.");
   return lines.join("\n");
 }
@@ -9471,7 +9483,7 @@ function mobilePitchDetailText(result, note = "") {
     const side = mobilePitchTimingSide(result);
     const next =
       side === "early"
-        ? "느린 공이나 낮은 코스로 타이밍을 더 뺏을 수 있습니다."
+        ? "다음 공은 느린 공이나 낮은 코스로 타이밍을 더 뺏을 수 있습니다."
         : side === "late"
           ? "빠른 공으로 밀어붙이거나 높은 코스를 활용할 수 있습니다."
           : "직전 배합이 먹혔지만 같은 패턴 반복은 바로 읽힐 수 있습니다.";
