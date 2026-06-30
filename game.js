@@ -7591,6 +7591,7 @@ function openDugoutChoiceOverlay() {
   if (!els.dugoutOverlay || state.gameOver) return;
   clearAutoAdvance();
   showTutorialStep("dugout");
+  render();
   const eventChoice = state.pendingDugoutChoices?.find((choice) => choice.dugoutEventId);
   if (els.dugoutTitle) els.dugoutTitle.textContent = eventChoice ? "덕아웃 판단" : `${state.inning}이닝 덕아웃 선택`;
   if (els.dugoutReason) {
