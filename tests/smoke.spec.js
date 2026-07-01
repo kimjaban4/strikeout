@@ -177,6 +177,8 @@ test("stage clear reward cards appear after inning transition overlay", async ({
   });
   await expect(page.locator("#stageOverlay")).toBeVisible();
   await expect(page.locator("#stageOverlay")).toBeHidden({ timeout: 3000 });
+  await expect(page.locator("body")).not.toHaveClass(/game-overlay-open/);
+  await expect(page.locator("#mobileGameShell")).toBeVisible();
   await expect(page.locator("#rewardOverlay")).toBeVisible({ timeout: 3000 });
   await expect(page.locator("#rewardChoiceList .reward-choice-card")).toHaveCount(3);
 });

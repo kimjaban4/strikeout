@@ -7585,12 +7585,12 @@ function startDugoutRevealAnimation() {
   els.dugoutOverlay.classList.remove("is-revealing", "is-revealed");
   void els.dugoutOverlay.offsetWidth;
   els.dugoutOverlay.classList.add("is-revealing");
-  const revealMs = playChoiceRevealAnimation(els.dugoutOverlay, ".dugout-choice-card");
+  const revealMs = playChoiceRevealAnimation(els.dugoutOverlay, ".dugout-choice-card, .dugout-result-card");
   MP.dugoutRevealTimer = window.setTimeout(() => {
     MP.dugoutRevealTimer = null;
     els.dugoutOverlay?.classList.remove("is-revealing");
     els.dugoutOverlay?.classList.add("is-revealed");
-    resetChoiceRevealAnimation(els.dugoutOverlay, ".dugout-choice-card");
+    resetChoiceRevealAnimation(els.dugoutOverlay, ".dugout-choice-card, .dugout-result-card");
   }, revealMs || 1100);
 }
 
@@ -7625,6 +7625,7 @@ function startPitcherRevealAnimation() {
 function openDugoutChoiceOverlay() {
   if (!els.dugoutOverlay || state.gameOver) return;
   clearAutoAdvance();
+  hideEventBanner();
   showTutorialStep("dugout");
   render();
   const eventChoice = state.pendingDugoutChoices?.find((choice) => choice.dugoutEventId);
@@ -7700,22 +7701,26 @@ function applyDugoutChoice(choice) {
 
 function showDugoutChoiceResult(result) {
   if (!els.dugoutOverlay || !result) return false;
+  hideEventBanner();
   if (els.dugoutTitle) els.dugoutTitle.textContent = result.title;
-  if (els.dugoutReason) els.dugoutReason.textContent = result.resultText;
+  if (els.dugoutReason) els.dugoutReason.textContent = "덕아웃 판단 결과가 이번 이닝 보상 흐름에 반영됩니다.";
   if (els.dugoutChoiceList) {
+    const lines = result.effectLines?.length ? result.effectLines : ["추가 효과 없음"];
     els.dugoutChoiceList.innerHTML = `
       <div class="dugout-result-card">
-        <strong>적용 효과</strong>
-        ${
-          result.effectLines?.length
-            ? `<ul>${result.effectLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`
-            : "<p>추가 효과 없음</p>"
-        }
+        <span class="dugout-result-kicker">CHOICE RESULT</span>
+        <strong>${escapeHtml(result.resultText)}</strong>
+        <div class="dugout-result-effects">
+          ${lines.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}
+        </div>
+        <p>선택 성과가 최종 카드 보상 등급에 흡수됩니다.</p>
         <button class="dugout-continue-button" type="button" data-dugout-continue>다음 타자</button>
       </div>
     `;
   }
   els.dugoutOverlay.hidden = false;
+  startDugoutRevealAnimation();
+  syncGameOverlayUi();
   return true;
 }
 
@@ -7725,7 +7730,7 @@ function finishDugoutChoice(startsInning, advanceBatter) {
       window.clearTimeout(MP.dugoutRevealTimer);
       MP.dugoutRevealTimer = null;
     }
-    resetChoiceRevealAnimation(els.dugoutOverlay, ".dugout-choice-card");
+    resetChoiceRevealAnimation(els.dugoutOverlay, ".dugout-choice-card, .dugout-result-card");
     els.dugoutOverlay.hidden = true;
     els.dugoutOverlay.classList.remove("is-revealing", "is-revealed");
   }
@@ -8178,6 +8183,7 @@ function startRewardRevealAnimation() {
 function openRewardDraft(reason, result, kind = "normal") {
   if (!els.rewardOverlay || state.gameOver) return;
   clearAutoAdvance();
+  hideEventBanner();
   if (kind === "stageCard") showTutorialStep("stageCards");
   state.rewardKind = kind;
   state.rewardPending = true;
@@ -8209,6 +8215,7 @@ function openRewardDraft(reason, result, kind = "normal") {
   els.rewardOverlay.hidden = false;
   startRewardRevealAnimation();
   disablePitchButtons(true);
+  syncGameOverlayUi();
 }
 
 function openStageTagReward() {
@@ -10642,6 +10649,22 @@ function showEventBanner(text, tone = "inning", duration = GAME_TIMING.eventBann
   }, 0);
 }
 
+function hideEventBanner() {
+  const banners = [els.inningBanner, els.mobileInningBanner].filter(Boolean);
+  if (inningBannerTimer) {
+    window.clearTimeout(inningBannerTimer);
+    inningBannerTimer = null;
+  }
+  if (MP.inningBannerDismissHandler) {
+    window.removeEventListener("pointerdown", MP.inningBannerDismissHandler);
+    MP.inningBannerDismissHandler = null;
+  }
+  banners.forEach((banner) => {
+    banner.classList.remove("show");
+    banner.hidden = true;
+  });
+}
+
 function showStageOverlay(title, subtitle, duration = GAME_TIMING.stageOverlayDefault) {
   if (!els.stageOverlay) return;
   els.stageTitle.textContent = title;
@@ -10654,6 +10677,7 @@ function showStageOverlay(title, subtitle, duration = GAME_TIMING.stageOverlayDe
   window.setTimeout(() => {
     els.stageOverlay.classList.remove("show");
     els.stageOverlay.hidden = true;
+    syncGameOverlayUi();
   }, duration);
 }
 

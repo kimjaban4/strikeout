@@ -6139,16 +6139,45 @@ button.card-toggle {
   color: #182536;
 }
 
-.dugout-result-card strong {
-  font-size: 18px;
+.dugout-result-kicker {
+  width: fit-content;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: rgba(20, 120, 105, 0.12);
+  color: #17655a;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
 }
 
-.dugout-result-card ul {
+.dugout-result-card strong {
+  font-size: 22px;
+  line-height: 1.2;
+}
+
+.dugout-result-card p {
   margin: 0;
-  padding-left: 18px;
-  color: #334b5e;
+  color: #486070;
+  font-size: 13px;
   font-weight: 800;
-  line-height: 1.55;
+  line-height: 1.45;
+}
+
+.dugout-result-effects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dugout-result-effects span {
+  padding: 8px 10px;
+  border: 1px solid rgba(23, 101, 90, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #244356;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
 .dugout-continue-button {
@@ -6856,8 +6885,30 @@ button.card-toggle {
   animation: rewardCardDealIn 680ms cubic-bezier(0.16, 0.88, 0.2, 1.04) both;
 }
 
+.dugout-overlay.is-revealing .dugout-result-card {
+  opacity: 0;
+  animation: rewardCardDealIn 680ms cubic-bezier(0.16, 0.88, 0.2, 1.04) both;
+}
+
 .dugout-overlay.is-revealing .dugout-choice-card::after {
   animation: rewardCardShine 520ms ease-out both;
+}
+
+.dugout-overlay.is-revealing .dugout-result-effects span {
+  opacity: 0;
+  animation: dugoutEffectPop 420ms cubic-bezier(0.18, 0.9, 0.22, 1) both;
+}
+
+.dugout-overlay.is-revealing .dugout-result-effects span:nth-child(1) {
+  animation-delay: 360ms;
+}
+
+.dugout-overlay.is-revealing .dugout-result-effects span:nth-child(2) {
+  animation-delay: 460ms;
+}
+
+.dugout-overlay.is-revealing .dugout-result-effects span:nth-child(3) {
+  animation-delay: 560ms;
 }
 
 .dugout-overlay.is-revealing .dugout-choice-card:nth-child(2) {
@@ -7033,6 +7084,21 @@ button.card-toggle {
   }
 }
 
+@keyframes dugoutEffectPop {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  70% {
+    opacity: 1;
+    transform: translateY(-1px) scale(1.02);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .reward-overlay.is-revealing .reward-box,
   .reward-overlay.is-revealing .reward-choice-card,
@@ -7040,6 +7106,8 @@ button.card-toggle {
   .reward-overlay.is-revealing .reward-performance-pill,
   .dugout-overlay.is-revealing .dugout-box,
   .dugout-overlay.is-revealing .dugout-choice-card,
+  .dugout-overlay.is-revealing .dugout-result-card,
+  .dugout-overlay.is-revealing .dugout-result-effects span,
   .dugout-overlay.is-revealing .dugout-choice-card::after,
   .pitcher-select-overlay.is-revealing .pitcher-select-box,
   .pitcher-select-overlay.is-revealing .pitcher-choice-card,
