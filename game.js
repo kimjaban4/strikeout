@@ -792,7 +792,7 @@ const coreEvolutionCatalog = [
   { id: "evo_fc_decide_imprint", coreTagId: "core_finisher_collector", name: "결정구 집중", icon: "bolt", role: "canonical", condition: "2스트 결정구", effectText: "최고 레벨 구종 위력↑", operation: "2스트에서 최고 구종으로", when: { twoStrike: true }, effects: { twoStrikeQualityBonus: 4, twoStrikeContactPenalty: 0.04 } },
   { id: "evo_fc_final_gamble", coreTagId: "core_finisher_collector", name: "끝장승부", icon: "bolt", role: "risk", condition: "2스트", effectText: "헛스윙↑, 실패 시 위험↑", operation: "한 방에 끝내기", when: { twoStrike: true }, effects: { whiffBonus: 0.04, twoStrikeContactPenalty: 0.02, mistakeHomerunRisk: 2 } },
   { id: "evo_fc_burden_care", coreTagId: "core_finisher_collector", name: "부담관리", icon: "shield", role: "burden", condition: "2스트 결정구", effectText: "부담도 증가량↓", operation: "결정구를 아껴 쓰기", when: { twoStrike: true }, effects: { twoStrikeQualityBonus: 1 } },
-  { id: "evo_fc_closer_sense", coreTagId: "core_finisher_collector", name: "마무리감", icon: "scales", role: "operation", condition: "2스트", effectText: "제구 안정, 삼진 보상↑", operation: "차분히 삼진 잡기", when: { twoStrike: true }, effects: { twoStrikeQualityBonus: 2, strikeControlBonus: 2 } },
+  { id: "evo_fc_closer_sense", coreTagId: "core_finisher_collector", name: "마무리감", icon: "scales", role: "operation", condition: "2스트", effectText: "제구 안정, 마무리 성과↑", operation: "차분히 삼진 잡기", when: { twoStrike: true }, effects: { twoStrikeQualityBonus: 2, strikeControlBonus: 2 } },
   { id: "evo_fc_boss_killer", coreTagId: "core_finisher_collector", name: "보스킬러", icon: "bolt", role: "stage", condition: "보스 상대 2스트", effectText: "결정구 효과↑", operation: "보스에게 결정구 집중", when: { twoStrike: true, boss: true }, effects: { twoStrikeQualityBonus: 3, twoStrikeContactPenalty: 0.05 } },
   { id: "evo_ga_low_drive", coreTagId: "core_groundball_architect", name: "낮게깔기", icon: "target", role: "canonical", condition: "낮은 코스", effectText: "제구↑, 땅볼↑", operation: "낮게 깔아 약타 유도", when: { lowCourse: true }, effects: { lowZoneControlBonus: 3, groundballBonus: 0.06 } },
   { id: "evo_ga_dp_route", coreTagId: "core_groundball_architect", name: "병살루트", icon: "shield", role: "operation", condition: "1루 주자 + 낮은 공", effectText: "병살 확률↑", operation: "주자 있을 때 병살 노리기", when: { lowCourse: true, runnerFirst: true }, effects: { groundballBonus: 0.08, doublePlayBonus: 0.06 } },
@@ -1815,8 +1815,8 @@ function evolutionPitchContext(pitch, location, atBat, intent) {
     afterSecondary: prevCategory && prevCategory !== "fast",
     fast: pitch.category === "fast",
     secondary: pitch.category !== "fast",
-    inside: location.col >= 2,
-    outside: location.col <= 0,
+    inside: location.col <= 0,
+    outside: location.col >= 2,
     edge,
     strike: intent === "strike",
     chaseZone: !location.inZone,
@@ -1976,8 +1976,8 @@ function pitcherTagControlBonus(pitch, aimed, intent) {
   const tags = pitcherAllTagIds().map(tagById).filter(Boolean);
   const context = {
     low: aimed.row >= 2,
-    outside: aimed.col <= 0,
-    inside: aimed.col >= 2,
+    outside: aimed.col >= 2,
+    inside: aimed.col <= 0,
     high: aimed.row <= 0,
     firstPitch: (state.atBat?.pitchHistory?.length || 0) <= 1,
     strike: intent === "strike",
@@ -3455,8 +3455,8 @@ function runnersKey() {
 
 function zoneSide(zone) {
   const col = courseZones[zone]?.col ?? 1;
-  if (col <= 0) return "outside";
-  if (col >= 2) return "inside";
+  if (col <= 0) return "inside";
+  if (col >= 2) return "outside";
   return "middle";
 }
 
@@ -3570,8 +3570,8 @@ function pitchDisplayResult(result) {
 
 function locationSideTag(location) {
   const col = Number(location?.col);
-  if (col <= 0) return "outside";
-  if (col >= 2) return "inside";
+  if (col <= 0) return "inside";
+  if (col >= 2) return "outside";
   return "middle";
 }
 
@@ -4216,12 +4216,12 @@ function createEmptyBatterMemory(batter) {
 
 function locationSideFromRowCol(row, col) {
   if (row >= 0 && row <= 2 && col >= 0 && col <= 2) {
-    if (col <= 0) return "outside";
-    if (col >= 2) return "inside";
+    if (col <= 0) return "inside";
+    if (col >= 2) return "outside";
     return "center";
   }
-  if (col < 0) return "outside";
-  if (col > 2) return "inside";
+  if (col < 0) return "inside";
+  if (col > 2) return "outside";
   return "center";
 }
 
@@ -5296,14 +5296,14 @@ function intendedCourse(zone, intent, targetRow = null, targetCol = null) {
 
 function actualCourseLabel(row, col) {
   if (row >= 0 && row <= 2 && col >= 0 && col <= 2) {
-    if (col <= 0) return "바깥쪽";
-    if (col >= 2) return "몸쪽";
+    if (col <= 0) return "몸쪽";
+    if (col >= 2) return "바깥쪽";
     return "중앙";
   }
   if (row < 0) return "높은 볼";
   if (row > 2) return "낮은 볼";
-  if (col < 0) return "바깥쪽 볼";
-  return "몸쪽 볼";
+  if (col < 0) return "몸쪽 볼";
+  return "바깥쪽 볼";
 }
 
 function ballTakeDetail(location) {
@@ -6679,10 +6679,7 @@ function isOutResult(result) {
   return ["calledStrike", "swingingStrike", "inPlayOut", "doublePlay"].includes(result?.result);
 }
 
-function rewardReasonForAtBat(title, result) {
-  if (title === "DOUBLE PLAY!") return "병살 보상";
-  if (result?.batter?.isBoss && isOutResult(result)) return "보스 제압 보상";
-  if (title === "STRIKE OUT!") return "삼진 보상";
+function rewardReasonForAtBat() {
   return "";
 }
 
@@ -6871,7 +6868,7 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
   }
   if ((result.result === "calledStrike" || result.result === "swingingStrike") && state.strikes >= 3 && result.batter?.isBoss) {
     run.rewardBoost.guaranteedRare += 1;
-    addLog("보스 삼진 보상", "보스 타자를 삼진으로 잡아 희귀 보상 흐름이 열렸습니다.");
+    addLog("보스 제압 성과 흡수", "보스 타자를 삼진으로 잡은 성과가 카드 보상 흐름에 흡수되었습니다.");
   }
   if (result.outLabel === "GROUND OUT!" && hasRewardCard("K001")) {
     state.nextBatterSuspicionBonus -= 10;
@@ -9393,8 +9390,8 @@ function mobilePitchZoneLabel(location) {
   const col = Number(location.col);
   const high = row <= 0;
   const low = row >= 2;
-  const inside = col >= 2;
-  const outside = col <= 0;
+  const inside = col <= 0;
+  const outside = col >= 2;
   if (inside && high) return "몸쪽높게";
   if (inside && low) return "몸쪽낮게";
   if (outside && high) return "바깥높게";

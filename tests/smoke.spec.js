@@ -79,7 +79,8 @@ test("mobile pitch controls render and unlock throw after choosing a zone", asyn
   await expect(page.locator("#mobilePitchButtons .mobile-pitch-button").first()).toHaveAttribute("data-burden", /stable|warn|danger/);
   await expect(page.locator("#mobileDuelReadRisk")).toHaveText(/\d+%/);
   await expect(page.locator("#mobileReleasePanel")).toBeHidden();
-  await expect(page.locator('#mobileStrikeZone [data-target-col="0"][data-target-row="1"]')).toHaveAttribute("aria-label", "바깥쪽");
+  await expect(page.locator('#mobileStrikeZone [data-target-col="0"][data-target-row="1"]')).toHaveAttribute("aria-label", "몸쪽");
+  await expect(page.locator('#mobileStrikeZone [data-target-col="2"][data-target-row="1"]')).toHaveAttribute("aria-label", "바깥쪽");
 
   await chooseMobilePitchAndZone(page);
   await expect(page.locator("#mobileReleasePanel")).toBeVisible();

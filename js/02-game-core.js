@@ -551,8 +551,8 @@ function evolutionPitchContext(pitch, location, atBat, intent) {
     afterSecondary: prevCategory && prevCategory !== "fast",
     fast: pitch.category === "fast",
     secondary: pitch.category !== "fast",
-    inside: location.col >= 2,
-    outside: location.col <= 0,
+    inside: location.col <= 0,
+    outside: location.col >= 2,
     edge,
     strike: intent === "strike",
     chaseZone: !location.inZone,
@@ -712,8 +712,8 @@ function pitcherTagControlBonus(pitch, aimed, intent) {
   const tags = pitcherAllTagIds().map(tagById).filter(Boolean);
   const context = {
     low: aimed.row >= 2,
-    outside: aimed.col <= 0,
-    inside: aimed.col >= 2,
+    outside: aimed.col >= 2,
+    inside: aimed.col <= 0,
     high: aimed.row <= 0,
     firstPitch: (state.atBat?.pitchHistory?.length || 0) <= 1,
     strike: intent === "strike",
@@ -2191,8 +2191,8 @@ function runnersKey() {
 
 function zoneSide(zone) {
   const col = courseZones[zone]?.col ?? 1;
-  if (col <= 0) return "outside";
-  if (col >= 2) return "inside";
+  if (col <= 0) return "inside";
+  if (col >= 2) return "outside";
   return "middle";
 }
 
@@ -2306,8 +2306,8 @@ function pitchDisplayResult(result) {
 
 function locationSideTag(location) {
   const col = Number(location?.col);
-  if (col <= 0) return "outside";
-  if (col >= 2) return "inside";
+  if (col <= 0) return "inside";
+  if (col >= 2) return "outside";
   return "middle";
 }
 
@@ -2952,12 +2952,12 @@ function createEmptyBatterMemory(batter) {
 
 function locationSideFromRowCol(row, col) {
   if (row >= 0 && row <= 2 && col >= 0 && col <= 2) {
-    if (col <= 0) return "outside";
-    if (col >= 2) return "inside";
+    if (col <= 0) return "inside";
+    if (col >= 2) return "outside";
     return "center";
   }
-  if (col < 0) return "outside";
-  if (col > 2) return "inside";
+  if (col < 0) return "inside";
+  if (col > 2) return "outside";
   return "center";
 }
 
@@ -4032,14 +4032,14 @@ function intendedCourse(zone, intent, targetRow = null, targetCol = null) {
 
 function actualCourseLabel(row, col) {
   if (row >= 0 && row <= 2 && col >= 0 && col <= 2) {
-    if (col <= 0) return "바깥쪽";
-    if (col >= 2) return "몸쪽";
+    if (col <= 0) return "몸쪽";
+    if (col >= 2) return "바깥쪽";
     return "중앙";
   }
   if (row < 0) return "높은 볼";
   if (row > 2) return "낮은 볼";
-  if (col < 0) return "바깥쪽 볼";
-  return "몸쪽 볼";
+  if (col < 0) return "몸쪽 볼";
+  return "바깥쪽 볼";
 }
 
 function ballTakeDetail(location) {
@@ -5415,10 +5415,7 @@ function isOutResult(result) {
   return ["calledStrike", "swingingStrike", "inPlayOut", "doublePlay"].includes(result?.result);
 }
 
-function rewardReasonForAtBat(title, result) {
-  if (title === "DOUBLE PLAY!") return "병살 보상";
-  if (result?.batter?.isBoss && isOutResult(result)) return "보스 제압 보상";
-  if (title === "STRIKE OUT!") return "삼진 보상";
+function rewardReasonForAtBat() {
   return "";
 }
 
@@ -5607,7 +5604,7 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
   }
   if ((result.result === "calledStrike" || result.result === "swingingStrike") && state.strikes >= 3 && result.batter?.isBoss) {
     run.rewardBoost.guaranteedRare += 1;
-    addLog("보스 삼진 보상", "보스 타자를 삼진으로 잡아 희귀 보상 흐름이 열렸습니다.");
+    addLog("보스 제압 성과 흡수", "보스 타자를 삼진으로 잡은 성과가 카드 보상 흐름에 흡수되었습니다.");
   }
   if (result.outLabel === "GROUND OUT!" && hasRewardCard("K001")) {
     state.nextBatterSuspicionBonus -= 10;
@@ -8129,8 +8126,8 @@ function mobilePitchZoneLabel(location) {
   const col = Number(location.col);
   const high = row <= 0;
   const low = row >= 2;
-  const inside = col >= 2;
-  const outside = col <= 0;
+  const inside = col <= 0;
+  const outside = col >= 2;
   if (inside && high) return "몸쪽높게";
   if (inside && low) return "몸쪽낮게";
   if (outside && high) return "바깥높게";
