@@ -6128,6 +6128,40 @@ button.card-toggle {
   background: linear-gradient(180deg, #ffffff 0%, #f3f4ff 100%);
 }
 
+.dugout-result-card {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid rgba(16, 119, 110, 0.28);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff, #edf8f5);
+  color: #182536;
+}
+
+.dugout-result-card strong {
+  font-size: 18px;
+}
+
+.dugout-result-card ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #334b5e;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.dugout-continue-button {
+  justify-self: end;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 8px;
+  background: #17655a;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
 @media (max-width: 760px) {
   .reward-overlay,
   .theme-select-overlay {

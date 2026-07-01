@@ -52,6 +52,7 @@ MP.state = {
   dugoutPending: false,
   dugoutBeforeAtBat: false,
   dugoutAdvanceBatterOnConfirm: false,
+  pendingDugoutAdvance: null,
   activeDugoutEffects: [],
   pendingRunComplete: false,
   pendingRunCompleteMessage: "",

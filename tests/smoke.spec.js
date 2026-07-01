@@ -17,6 +17,9 @@ async function chooseFirstPitcher(page) {
   await expect(page.locator("#stageOverlay")).toBeHidden();
   if (await page.locator("#dugoutOverlay").isVisible()) {
     await page.locator(".dugout-choice-card").first().click();
+    if (await page.locator("[data-dugout-continue]").isVisible()) {
+      await page.locator("[data-dugout-continue]").click();
+    }
     await expect(page.locator("#dugoutOverlay")).toBeHidden();
   }
 }
@@ -127,6 +130,39 @@ test("stage card reward shows absorbed performance score", async ({ page }) => {
   await expect(page.locator("#rewardAbsorbList")).toBeVisible();
   await expect(page.locator("#rewardAbsorbList")).toContainText(/19/);
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
+});
+
+test("dugout choice reveals applied effect before advancing", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.pendingDugoutChoices = [
+      {
+        id: "test_dugout",
+        dugoutEventId: "test",
+        category: "판단",
+        title: "강속구로 먼저 압박한다",
+        desc: "테스트 덕아웃 판단",
+        hint: "관찰 0-0 스트라이크",
+        resultText: "판단 적중\n강속구 구위 상승",
+        correct: true,
+        effects: { fastControl: 6, firstStrikePressure: 1 },
+        rarity: "common"
+      }
+    ];
+    MP.state.dugoutPending = true;
+    MP.state.dugoutBeforeAtBat = true;
+    MP.state.dugoutAdvanceBatterOnConfirm = false;
+    MP.debug.openDugoutChoiceOverlay();
+  });
+  await page.waitForTimeout(1300);
+  await page.locator("[data-dugout-index='0']").click();
+  await expect(page.locator("#dugoutTitle")).toContainText(/판단/);
+  await expect(page.locator(".dugout-result-card")).toContainText(/강속구 제구/);
+  await expect(page.locator(".dugout-result-card")).toContainText(/최종 카드 보상 성과/);
+  await page.locator("[data-dugout-continue]").click();
+  await expect(page.locator("#dugoutOverlay")).toBeHidden();
 });
 
 test("mobile player tags open detail modal with tag text", async ({ page }) => {

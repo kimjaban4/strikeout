@@ -1111,6 +1111,7 @@ const state = {
   dugoutPending: false,
   dugoutBeforeAtBat: false,
   dugoutAdvanceBatterOnConfirm: false,
+  pendingDugoutAdvance: null,
   activeDugoutEffects: [],
   pendingRunComplete: false,
   pendingRunCompleteMessage: "",
@@ -5045,6 +5046,7 @@ function startGame() {
   state.dugoutPending = false;
   state.dugoutBeforeAtBat = false;
   state.dugoutAdvanceBatterOnConfirm = false;
+  state.pendingDugoutAdvance = null;
   state.activeDugoutEffects = [];
   state.pendingRunComplete = false;
   state.pendingRunCompleteMessage = "";
@@ -5142,6 +5144,7 @@ function beginGameWithPitcher(pitcher) {
   state.dugoutPending = false;
   state.dugoutBeforeAtBat = false;
   state.dugoutAdvanceBatterOnConfirm = false;
+  state.pendingDugoutAdvance = null;
   state.activeDugoutEffects = [];
   state.pendingRunComplete = false;
   state.pendingRunCompleteMessage = "";
@@ -5185,6 +5188,7 @@ function beginGameWithPitcher(pitcher) {
   state.dugoutPending = false;
   state.dugoutBeforeAtBat = false;
   state.dugoutAdvanceBatterOnConfirm = false;
+  state.pendingDugoutAdvance = null;
   state.pendingDugoutChoices = [];
   render();
   showStageThemeOverlay(currentStageNumber(), currentStageInnings());
@@ -7096,6 +7100,7 @@ function advanceStage(themeId = state.stageThemeId) {
   state.dugoutPending = false;
   state.dugoutBeforeAtBat = false;
   state.dugoutAdvanceBatterOnConfirm = false;
+  state.pendingDugoutAdvance = null;
   state.pendingDugoutChoices = [];
   const themeName = MP.getStageTheme?.(state.stageThemeId)?.name || "";
   addLog(
@@ -7416,6 +7421,23 @@ function applyDugoutRarityToEffects(effects = {}, rarity = "common") {
   return boosted;
 }
 
+function dugoutEffectSummary(effects = {}, correct = false) {
+  const lines = [];
+  if (effects.fastControl) lines.push(`강속구 제구 +${effects.fastControl}`);
+  if (effects.breakingQuality) lines.push(`변화구 제구 +${effects.breakingQuality}`);
+  if (effects.firstStrikePressure) lines.push(`초구 스트라이크 압박 +${effects.firstStrikePressure}`);
+  if (effects.slowAfterFastBoost) lines.push(`느린 공 연계 보너스 +${Math.round(effects.slowAfterFastBoost * 100)}%`);
+  if (effects.impressionBonus) lines.push(`직전 인상 활용 +${Math.round(effects.impressionBonus * 100)}%`);
+  if (effects.courseReadBoost) lines.push(`코스 읽기 보너스 +${Math.round(effects.courseReadBoost * 100)}%`);
+  if (effects.repeatSuspicionMult && effects.repeatSuspicionMult < 1) lines.push(`반복 의심 ${Math.round((1 - effects.repeatSuspicionMult) * 100)}% 감소`);
+  if (effects.suspicionMult && effects.suspicionMult < 1) lines.push(`전체 의심 ${Math.round((1 - effects.suspicionMult) * 100)}% 감소`);
+  if (effects.repeatSuspicionMult && effects.repeatSuspicionMult > 1) lines.push(`반복 의심 ${Math.round((effects.repeatSuspicionMult - 1) * 100)}% 증가`);
+  if (effects.firstBatterSuspicion) lines.push(`다음 타자 의심 +${effects.firstBatterSuspicion}`);
+  if (effects.singleRisk) lines.push(`정타 위험 +${Math.round(effects.singleRisk * 100)}%`);
+  if (correct) lines.push("최종 카드 보상 성과 +2점");
+  return lines;
+}
+
 function generateDugoutChoices() {
   return generateDugoutReadEventChoices();
 }
@@ -7656,26 +7678,41 @@ function applyDugoutChoice(choice) {
   if (choice.dugoutEventId) {
     const resultHtml = escapeHtml(choice.resultText || choice.title).replaceAll("\n", "<br>");
     if (choice.correct) absorbCardPerformance(0.025, 0.005, { key: "dugoutRead", label: "덕아웃 판단 적중", score: 2, source: "덕아웃", limit: 3 });
+    const effectLines = dugoutEffectSummary(effects, choice.correct);
     const hintHtml = choice.hint ? `<p class="log-muted">${escapeHtml(choice.hint)}</p>` : "";
-    addLog("덕아웃 판단", `<p>${resultHtml}</p>${hintHtml}<p class="log-muted">선택: ${escapeHtml(choice.title)}</p>`);
+    const effectHtml = effectLines.length ? `<p class="log-muted">효과: ${effectLines.map(escapeHtml).join(" · ")}</p>` : "";
+    addLog("덕아웃 판단", `<p>${resultHtml}</p>${hintHtml}${effectHtml}<p class="log-muted">선택: ${escapeHtml(choice.title)}</p>`);
     showEventBanner(`${choice.correct ? "판단 적중" : "판단 빗나감"}\n${choice.title}`, choice.correct ? "reward" : "walk", 1300);
+    return { title: choice.correct ? "덕아웃 판단 적중" : "덕아웃 판단 빗나감", resultText: choice.resultText || choice.title, effectLines };
   } else {
     addLog("덕아웃 선택", `${choice.title}${rarityNote} · ${choice.desc}`);
     showEventBanner(`이닝 작전\n${choice.title}`, "reward", 1200);
+    return { title: "덕아웃 작전 적용", resultText: choice.title, effectLines: dugoutEffectSummary(effects, true) };
   }
 }
 
-function confirmDugoutChoice(index) {
-  if (els.dugoutOverlay?.classList.contains("is-revealing")) return;
-  const choice = state.pendingDugoutChoices?.[index];
-  if (!choice || state.gameOver) return;
-  applyDugoutChoice(choice);
-  const startsInning = !!state.dugoutBeforeAtBat;
-  const advanceBatter = !!state.dugoutAdvanceBatterOnConfirm;
-  state.dugoutPending = false;
-  state.dugoutBeforeAtBat = false;
-  state.dugoutAdvanceBatterOnConfirm = false;
-  state.pendingDugoutChoices = [];
+function showDugoutChoiceResult(result) {
+  if (!els.dugoutOverlay || !result) return false;
+  if (els.dugoutTitle) els.dugoutTitle.textContent = result.title;
+  if (els.dugoutReason) els.dugoutReason.textContent = result.resultText;
+  if (els.dugoutChoiceList) {
+    els.dugoutChoiceList.innerHTML = `
+      <div class="dugout-result-card">
+        <strong>적용 효과</strong>
+        ${
+          result.effectLines?.length
+            ? `<ul>${result.effectLines.map((line) => `<li>${escapeHtml(line)}</li>`).join("")}</ul>`
+            : "<p>추가 효과 없음</p>"
+        }
+        <button class="dugout-continue-button" type="button" data-dugout-continue>다음 타자</button>
+      </div>
+    `;
+  }
+  els.dugoutOverlay.hidden = false;
+  return true;
+}
+
+function finishDugoutChoice(startsInning, advanceBatter) {
   if (els.dugoutOverlay) {
     if (MP.dugoutRevealTimer) {
       window.clearTimeout(MP.dugoutRevealTimer);
@@ -7690,6 +7727,31 @@ function confirmDugoutChoice(index) {
   startAtBat();
   render();
   showBatterEntryBanner();
+}
+
+function confirmDugoutChoice(index) {
+  if (els.dugoutOverlay?.classList.contains("is-revealing")) return;
+  const choice = state.pendingDugoutChoices?.[index];
+  if (!choice || state.gameOver) return;
+  const startsInning = !!state.dugoutBeforeAtBat;
+  const advanceBatter = !!state.dugoutAdvanceBatterOnConfirm;
+  const result = applyDugoutChoice(choice);
+  state.dugoutPending = false;
+  state.dugoutBeforeAtBat = false;
+  state.dugoutAdvanceBatterOnConfirm = false;
+  state.pendingDugoutChoices = [];
+  state.pendingDugoutAdvance = { startsInning, advanceBatter };
+  if (showDugoutChoiceResult(result)) {
+    syncScreenPhase();
+    return;
+  }
+  finishDugoutChoice(startsInning, advanceBatter);
+}
+
+function continueDugoutChoiceResult() {
+  const advance = state.pendingDugoutAdvance;
+  state.pendingDugoutAdvance = null;
+  finishDugoutChoice(!!advance?.startsInning, !!advance?.advanceBatter);
 }
 
 function rewardReasonText(reason) {
@@ -11007,6 +11069,11 @@ function bindUiEvents() {
     if (button) selectRewardChoice(Number(button.dataset.rewardIndex));
   });
   els.dugoutChoiceList?.addEventListener("click", (event) => {
+    const continueButton = event.target.closest?.("[data-dugout-continue]");
+    if (continueButton) {
+      continueDugoutChoiceResult();
+      return;
+    }
     const button = event.target.closest?.("[data-dugout-index]");
     if (button) confirmDugoutChoice(Number(button.dataset.dugoutIndex));
   });
