@@ -5936,7 +5936,7 @@ function finishAtBat(title, text, options = {}) {
     MP.rewardTimer = window.setTimeout(() => {
       MP.rewardTimer = null;
       openRewardDraft(options.rewardReason, options.result);
-    }, transition ? GAME_TIMING.rewardAfterOutWithTransition : GAME_TIMING.rewardAfterOut);
+    }, delayAfterInningTransition(transition, GAME_TIMING.rewardAfterOut));
     return;
   }
   if (state.pendingRunComplete) {
@@ -5944,7 +5944,7 @@ function finishAtBat(title, text, options = {}) {
     MP.rewardTimer = window.setTimeout(() => {
       MP.rewardTimer = null;
       openStageTagReward();
-    }, transition ? GAME_TIMING.rewardAfterOutWithTransition : 600);
+    }, delayAfterInningTransition(transition, 600));
     return;
   }
   if (state.awaitingThemeSelection) {
@@ -5952,7 +5952,7 @@ function finishAtBat(title, text, options = {}) {
     MP.rewardTimer = window.setTimeout(() => {
       MP.rewardTimer = null;
       openStageTagReward();
-    }, transition ? GAME_TIMING.rewardAfterOutWithTransition : 600);
+    }, delayAfterInningTransition(transition, 600));
     return;
   }
   if (state.dugoutPending) {
@@ -5960,7 +5960,7 @@ function finishAtBat(title, text, options = {}) {
     MP.rewardTimer = window.setTimeout(() => {
       MP.rewardTimer = null;
       openDugoutChoiceOverlay();
-    }, transition ? GAME_TIMING.rewardAfterOutWithTransition : 450);
+    }, delayAfterInningTransition(transition, 450));
     return;
   }
   if (stageOverlay) {
@@ -5968,6 +5968,13 @@ function finishAtBat(title, text, options = {}) {
     return;
   }
   scheduleAutoAdvance(transition ? GAME_TIMING.autoAdvanceAfterTransition : GAME_TIMING.autoAdvanceDefault);
+}
+
+function delayAfterInningTransition(transition, fallbackDelay) {
+  if (!transition) return fallbackDelay;
+  const startDelay = Number(GAME_TIMING.inningTransitionDelay) || 0;
+  const overlayDuration = Number(transition.duration) || Number(GAME_TIMING.inningChangeOverlay) || 0;
+  return startDelay + overlayDuration + 280;
 }
 
 function showInningChangeOverlay(transition) {

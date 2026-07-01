@@ -165,6 +165,22 @@ test("dugout choice reveals applied effect before advancing", async ({ page }) =
   await expect(page.locator("#dugoutOverlay")).toBeHidden();
 });
 
+test("stage clear reward cards appear after inning transition overlay", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.pendingTransitionBanner = { text: "INNING CHANGE · 4 INNING", tone: "inning", duration: 500 };
+    MP.state.pendingCoreEvolutionReward = true;
+    MP.state.awaitingThemeSelection = true;
+    MP.debug.finishAtBat("GROUND OUT!", "테스트 스테이지 종료");
+  });
+  await expect(page.locator("#stageOverlay")).toBeVisible();
+  await expect(page.locator("#stageOverlay")).toBeHidden({ timeout: 3000 });
+  await expect(page.locator("#rewardOverlay")).toBeVisible({ timeout: 3000 });
+  await expect(page.locator("#rewardChoiceList .reward-choice-card")).toHaveCount(3);
+});
+
 test("mobile player tags open detail modal with tag text", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
