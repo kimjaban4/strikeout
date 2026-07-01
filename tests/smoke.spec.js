@@ -117,6 +117,7 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
   await chooseFirstPitcher(page);
   await page.evaluate(() => {
     const MP = window.MountPsycho;
+    Math.random = () => 0.99;
     const run = MP.state.stageRun;
     run.rewardBoost.absorbed = 3;
     run.rewardBoost.performanceScore = 19;

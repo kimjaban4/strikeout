@@ -1471,14 +1471,42 @@ function calculateStageResult() {
   };
 }
 
-function stageRewardRarityPlan(result) {
+function rollStageRewardBaseRarity(result) {
+  const boost = result.rewardBoost || {};
+  const coreChance = clamp(0.03 + (boost.coreBonus || 0), 0.01, 0.25);
+  const rareChance = clamp(0.22 + (boost.rareBonus || 0), 0.12, 0.7);
+  const roll = Math.random();
+  if (roll < coreChance) return "core";
+  if (roll < coreChance + rareChance) return "rare";
+  return "common";
+}
+
+function stageRewardUpgradePlan(result) {
   const score = result.rewardBoost?.performanceScore || 0;
-  if ((result.rewardBoost?.coreChoiceBonus || 0) > 0 || score >= 19) return ["core", "rare", "common"];
-  if (score >= 15) return ["rare", "rare", "common"];
-  if (score >= 11) return ["rare", "rare", "common"];
-  if (score >= 7) return ["rare", "common", "common"];
-  if (score >= 4 || (result.rewardBoost?.guaranteedRare || 0) > 0) return ["common", "rare", "common"];
-  return ["common", "common", "common"];
+  if ((result.rewardBoost?.coreChoiceBonus || 0) > 0 || score >= 19) return ["core", "rare", "rare"];
+  if (score >= 15) return ["rare", "rare"];
+  if (score >= 7) return ["rare"];
+  if (score >= 4 || (result.rewardBoost?.guaranteedRare || 0) > 0) return ["rare"];
+  return [];
+}
+
+function applyStageRewardPerformanceUpgrades(choices, result, used) {
+  stageRewardUpgradePlan(result).forEach((targetRarity) => {
+    const candidates = choices
+      .map((choice, index) => ({ choice, index }))
+      .filter(({ choice }) => choice.type === "rewardCard" && raritySortValue(choice.rarity) < raritySortValue(targetRarity));
+    const selected = pick(candidates);
+    if (!selected) return;
+    const card = pickRewardCardByRarity(targetRarity, used);
+    if (!card) return;
+    used.add(card.id);
+    choices[selected.index] = {
+      ...toRewardCardChoice(card, `${result.starLabel} · 등급 상승`),
+      upgradedByPerformance: true,
+      upgradedFromRarity: selected.choice.rarity
+    };
+  });
+  return choices;
 }
 
 function pickRewardCardByRarity(rarity, usedIds = new Set()) {
@@ -1564,21 +1592,18 @@ function generateStageCardChoices() {
   const used = new Set();
   const choices = [];
   const conditionChoice = sample(conditionalStageCardCandidates(result), 1)[0] || null;
-  const plan = stageRewardRarityPlan(result);
   if (conditionChoice) {
     choices.push(conditionChoice);
     used.add(conditionChoice.cardId || conditionChoice.tagId || conditionChoice.weaknessTagId || conditionChoice.title);
   }
-  let planIndex = 0;
   while (choices.length < maxStageCardChoices) {
-    const rarity = plan[planIndex] || "common";
-    planIndex += 1;
+    const rarity = rollStageRewardBaseRarity(result);
     const card = pickRewardCardByRarity(rarity, used) || pickRewardCardByRarity("common", used);
     if (!card) break;
     used.add(card.id);
     choices.push(toRewardCardChoice(card, `${result.starLabel} · 성과 ${result.rewardBoost?.performanceScore || 0}점`));
   }
-  return choices.slice(0, maxStageCardChoices);
+  return applyStageRewardPerformanceUpgrades(choices.slice(0, maxStageCardChoices), result, used);
 }
 
 function cardEffectMultiplier() {
@@ -7129,9 +7154,13 @@ function rewardChoiceMetaHtml(reward) {
 
 function buildRewardUpgradeTokens(kind) {
   if (kind !== "stageCard" || !state.rewardChoices?.length) return [];
+  const targetIndexes = state.rewardChoices
+    .map((choice, index) => (choice.upgradedByPerformance ? index : -1))
+    .filter((index) => index >= 0);
+  if (!targetIndexes.length) return [];
   return stagePerformanceEventsForReward().map((event, index) => ({
     label: event.label,
-    cardIndex: Math.floor(Math.random() * state.rewardChoices.length),
+    cardIndex: targetIndexes[Math.floor(Math.random() * targetIndexes.length)],
     delayIndex: index,
     offsetX: [-34, 0, 34][index % 3]
   }));
@@ -7244,7 +7273,7 @@ function renderCoreEvolutionRewardCard(reward, index) {
   const rarity = reward.rarity || (reward.type === "coreEvolution" ? "core" : "common");
   const subtitle = rewardUnifiedSubtitle(reward);
   const title = rewardDisplayTitle(reward);
-  const hasUpgradeToken = (state.rewardUpgradeTokens || []).some((token) => token.cardIndex === index);
+  const hasUpgradeToken = reward.upgradedByPerformance || (state.rewardUpgradeTokens || []).some((token) => token.cardIndex === index);
   return `
     <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(rarity)}${hasUpgradeToken ? " is-upgraded-by-performance" : ""}" type="button" data-reward-index="${index}">
       ${rewardUpgradeTokensHtml(index)}
