@@ -6836,7 +6836,7 @@ button.card-toggle {
 
 .reward-card-upgrade-token {
   position: absolute;
-  left: 50%;
+  left: calc(50% + var(--token-x, 0px));
   bottom: -18px;
   max-width: calc(100% - 20px);
   padding: 6px 10px;
@@ -6844,7 +6844,7 @@ button.card-toggle {
   background: rgba(255, 247, 194, 0.96);
   box-shadow: 0 10px 22px rgba(98, 78, 20, 0.18);
   color: #6b4500;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 1000;
   line-height: 1.15;
   white-space: nowrap;
@@ -6914,7 +6914,7 @@ button.card-toggle {
 
 .reward-overlay.is-revealing .reward-card-upgrade-text {
   animation: rewardUpgradeTextPop 680ms ease-out both;
-  animation-delay: 1320ms;
+  animation-delay: var(--upgrade-text-delay, 1320ms);
 }
 
 .reward-overlay.is-revealing .reward-choice-card::after {
@@ -6953,6 +6953,17 @@ button.card-toggle {
   animation:
     rewardCoreCardDealIn 680ms cubic-bezier(0.16, 0.88, 0.2, 1.04) both,
     rewardCardAbsorbPulse 520ms ease-out 980ms both;
+}
+
+.reward-overlay.is-revealing .reward-choice-card.core-evolution-card.is-upgraded-by-performance .reward-card-upgrade-tokens::after {
+  content: "";
+  position: absolute;
+  inset: 12px;
+  border: 2px solid rgba(246, 185, 64, 0.9);
+  border-radius: 12px;
+  opacity: 0;
+  box-shadow: 0 0 0 0 rgba(246, 185, 64, 0.38);
+  animation: rewardEvolutionRing 920ms ease-out var(--evolution-delay, 1120ms) both;
 }
 
 .dugout-overlay.is-revealing .dugout-box {
@@ -7211,6 +7222,24 @@ button.card-toggle {
   }
 }
 
+@keyframes rewardEvolutionRing {
+  0% {
+    opacity: 0;
+    transform: scale(0.88);
+    box-shadow: 0 0 0 0 rgba(246, 185, 64, 0.38);
+  }
+  34% {
+    opacity: 1;
+    transform: scale(1.02);
+    box-shadow: 0 0 0 8px rgba(246, 185, 64, 0.18);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.12);
+    box-shadow: 0 0 0 18px rgba(246, 185, 64, 0);
+  }
+}
+
 @keyframes dugoutEffectPop {
   0% {
     opacity: 0;
@@ -7233,6 +7262,7 @@ button.card-toggle {
   .reward-overlay.is-revealing .reward-performance-pill,
   .reward-overlay.is-revealing .reward-card-upgrade-token,
   .reward-overlay.is-revealing .reward-card-upgrade-text,
+  .reward-overlay.is-revealing .reward-choice-card.core-evolution-card.is-upgraded-by-performance .reward-card-upgrade-tokens::after,
   .dugout-overlay.is-revealing .dugout-box,
   .dugout-overlay.is-revealing .dugout-choice-card,
   .dugout-overlay.is-revealing .dugout-result-card,

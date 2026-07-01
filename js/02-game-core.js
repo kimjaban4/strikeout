@@ -7132,7 +7132,8 @@ function buildRewardUpgradeTokens(kind) {
   return stagePerformanceEventsForReward().map((event, index) => ({
     label: event.label,
     cardIndex: Math.floor(Math.random() * state.rewardChoices.length),
-    delayIndex: index
+    delayIndex: index,
+    offsetX: [-34, 0, 34][index % 3]
   }));
 }
 
@@ -7141,7 +7142,7 @@ function rewardUpgradeTokensHtml(index) {
   if (!tokens.length) return "";
   return `
     <div class="reward-card-upgrade-tokens" aria-hidden="true">
-      ${tokens.map((token) => `<span class="reward-card-upgrade-token" style="--token-delay:${760 + token.delayIndex * 140}ms">${escapeHtml(token.label)}</span>`).join("")}
+      ${tokens.map((token) => `<span class="reward-card-upgrade-token" style="--token-delay:${760 + token.delayIndex * 140}ms;--token-x:${token.offsetX || 0}px">${escapeHtml(token.label)}</span>`).join("")}
       <span class="reward-card-upgrade-text">등급 상승</span>
     </div>
   `;
