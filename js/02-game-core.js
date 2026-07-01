@@ -6532,30 +6532,8 @@ function stagePerformanceGrade(score = 0) {
 
 function renderStagePerformanceAbsorbList(kind) {
   if (!els.rewardAbsorbList) return;
-  if (kind !== "stageCard") {
-    els.rewardAbsorbList.hidden = true;
-    els.rewardAbsorbList.innerHTML = "";
-    return;
-  }
-  const result = state.lastStageResult || calculateStageResult();
-  const events = stagePerformanceEventsForReward();
-  const score = result.rewardBoost?.performanceScore || 0;
-  els.rewardAbsorbList.hidden = false;
-  els.rewardAbsorbList.innerHTML = `
-    <header><span>성과 흡수</span><strong>${score}점 · ${escapeHtml(stagePerformanceGrade(score))}</strong></header>
-    <div class="reward-performance-list">
-      ${
-        events.length
-          ? events
-              .map(
-                (event) =>
-                  `<span class="reward-performance-pill"><b>+${escapeHtml(event.score)}</b>${escapeHtml(event.label)}${event.source ? `<em>${escapeHtml(event.source)}</em>` : ""}</span>`
-              )
-              .join("")
-          : '<span class="reward-performance-empty">누적 성과 없음</span>'
-      }
-    </div>
-  `;
+  els.rewardAbsorbList.hidden = true;
+  els.rewardAbsorbList.innerHTML = "";
 }
 
 function stageCardRewardReasonText() {
@@ -6563,8 +6541,7 @@ function stageCardRewardReasonText() {
   const rival = result.rivalGoalMet ? "라이벌 과제 달성" : "라이벌 과제 미달성";
   const lines = [`${result.stageName} · ${result.starLabel}`, rival];
   if (result.highlightSuccesses) lines.push(`하이라이트 ${result.highlightSuccesses}회 성공`);
-  if (result.rewardBoost?.absorbed) lines.push(`승부 성과 ${result.rewardBoost.absorbed}회 카드 보상 흡수`);
-  lines.push(`성과 점수 ${result.rewardBoost?.performanceScore || 0}점 · ${stagePerformanceGrade(result.rewardBoost?.performanceScore || 0)}`);
+  if (result.rewardBoost?.absorbed) lines.push("좋은 승부가 카드 후보를 끌어올렸습니다.");
   lines.push("스테이지 카드 3개 중 하나를 고르세요.");
   return lines.join("\n");
 }
@@ -6928,6 +6905,7 @@ function openRewardDraft(reason, result, kind = "normal") {
   if (!state.rewardChoices.length) {
     state.rewardPending = false;
     state.rewardKind = "normal";
+    state.rewardUpgradeTokens = [];
     if (state.dugoutPending) {
       openDugoutChoiceOverlay();
       return;
@@ -6935,6 +6913,7 @@ function openRewardDraft(reason, result, kind = "normal") {
     scheduleAutoAdvance(900);
     return;
   }
+  state.rewardUpgradeTokens = buildRewardUpgradeTokens(kind);
   els.rewardTitle.textContent = rewardDraftTitle(reason, kind);
   els.rewardReason.textContent =
     kind === "coreEvolution"
@@ -7033,6 +7012,7 @@ function applyReward(index) {
   state.rewardKind = "normal";
   state.afterRewardStageOverlay = null;
   state.rewardChoices = [];
+  state.rewardUpgradeTokens = [];
   if (MP.rewardRevealTimer) {
     window.clearTimeout(MP.rewardRevealTimer);
     MP.rewardRevealTimer = null;
@@ -7147,6 +7127,26 @@ function rewardChoiceMetaHtml(reward) {
     .join("")}</footer>`;
 }
 
+function buildRewardUpgradeTokens(kind) {
+  if (kind !== "stageCard" || !state.rewardChoices?.length) return [];
+  return stagePerformanceEventsForReward().map((event, index) => ({
+    label: event.label,
+    cardIndex: Math.floor(Math.random() * state.rewardChoices.length),
+    delayIndex: index
+  }));
+}
+
+function rewardUpgradeTokensHtml(index) {
+  const tokens = (state.rewardUpgradeTokens || []).filter((token) => token.cardIndex === index);
+  if (!tokens.length) return "";
+  return `
+    <div class="reward-card-upgrade-tokens" aria-hidden="true">
+      ${tokens.map((token) => `<span class="reward-card-upgrade-token" style="--token-delay:${760 + token.delayIndex * 140}ms">${escapeHtml(token.label)}</span>`).join("")}
+      <span class="reward-card-upgrade-text">등급 상승</span>
+    </div>
+  `;
+}
+
 function rewardDisplayDescription(reward) {
   if (!reward) return "";
   if (reward.type === "rewardCard") {
@@ -7243,8 +7243,10 @@ function renderCoreEvolutionRewardCard(reward, index) {
   const rarity = reward.rarity || (reward.type === "coreEvolution" ? "core" : "common");
   const subtitle = rewardUnifiedSubtitle(reward);
   const title = rewardDisplayTitle(reward);
+  const hasUpgradeToken = (state.rewardUpgradeTokens || []).some((token) => token.cardIndex === index);
   return `
-    <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(rarity)}" type="button" data-reward-index="${index}">
+    <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(rarity)}${hasUpgradeToken ? " is-upgraded-by-performance" : ""}" type="button" data-reward-index="${index}">
+      ${rewardUpgradeTokensHtml(index)}
       <header class="core-evo-head">
         <div class="core-evo-titles">
           <strong class="core-evo-name">${escapeHtml(title)}</strong>

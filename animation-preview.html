@@ -91,23 +91,24 @@
         <div class="reward-box">
           <p class="eyebrow">ROGUELIKE REWARD</p>
           <h2>스테이지 보상</h2>
-          <p>승부 성과가 카드 등급에 흡수됩니다.</p>
-          <div class="reward-absorb-list">
-            <header><span>성과 흡수</span><strong>19점 · GOLD</strong></header>
-            <div class="reward-performance-list">
-              <span class="reward-performance-pill"><b>+19</b>성과 흡수<em>스테이지</em></span>
-              <span class="reward-performance-pill"><b>+3</b>설계 삼진<em>삼진</em></span>
-              <span class="reward-performance-pill"><b>+2</b>판단 적중<em>덕아웃</em></span>
-            </div>
-          </div>
+          <p>좋은 승부가 카드 후보를 끌어올렸습니다.</p>
           <div class="reward-choice-list">
-            <button class="reward-choice-card" type="button">
+            <button class="reward-choice-card is-upgraded-by-performance" type="button">
+              <div class="reward-card-upgrade-tokens" aria-hidden="true">
+                <span class="reward-card-upgrade-token" style="--token-delay:760ms">설계 삼진</span>
+                <span class="reward-card-upgrade-text">등급 상승</span>
+              </div>
               <em class="reward-rarity-badge reward-rarity-badge--rare">RARE</em>
               <strong>결정구 완성</strong>
               <span>2스트라이크 이후 변화구 위력이 상승합니다.</span>
               <div class="reward-card-foot"><i class="reward-chip">변화구</i><i class="reward-chip">위닝샷</i></div>
             </button>
-            <button class="reward-choice-card core-evolution-card" type="button">
+            <button class="reward-choice-card core-evolution-card is-upgraded-by-performance" type="button">
+              <div class="reward-card-upgrade-tokens" aria-hidden="true">
+                <span class="reward-card-upgrade-token" style="--token-delay:900ms">덕아웃 판단</span>
+                <span class="reward-card-upgrade-token" style="--token-delay:1040ms">병살 유도</span>
+                <span class="reward-card-upgrade-text">등급 상승</span>
+              </div>
               <em class="reward-rarity-badge reward-rarity-badge--core">CORE</em>
               <strong>마운드 지배</strong>
               <span>핵심 운영 태그가 한 단계 진화합니다.</span>

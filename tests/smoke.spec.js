@@ -109,10 +109,10 @@ test("mobile throw records a log entry", async ({ page }) => {
   await page.locator("#mobileRecentLogMore").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
   await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toBeVisible({ timeout: 8000 });
-  await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toContainText(/타자가|같은|흐름|다음 공/);
+  await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toContainText(/타자가|같은|흐름|다음 공|빠른 공|코스|스윙/);
 });
 
-test("stage card reward shows absorbed performance score", async ({ page }) => {
+test("stage card reward assigns performance tokens to cards", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
   await page.evaluate(() => {
@@ -127,8 +127,9 @@ test("stage card reward shows absorbed performance score", async ({ page }) => {
     MP.state.lastStageResult = MP.debug.calculateStageResult();
     MP.debug.openRewardDraft("스테이지 보상", null, "stageCard");
   });
-  await expect(page.locator("#rewardAbsorbList")).toBeVisible();
-  await expect(page.locator("#rewardAbsorbList")).toContainText(/19/);
+  await expect(page.locator("#rewardAbsorbList")).toBeHidden();
+  await expect(page.locator("#rewardChoiceList .reward-card-upgrade-token")).toHaveCount(2);
+  await expect(page.locator("#rewardChoiceList .reward-card-upgrade-token").filter({ hasText: /설계 삼진/ })).toHaveCount(1);
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
 });
 
