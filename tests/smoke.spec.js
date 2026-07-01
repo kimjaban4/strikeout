@@ -79,8 +79,8 @@ test("mobile pitch controls render and unlock throw after choosing a zone", asyn
   await expect(page.locator("#mobilePitchButtons .mobile-pitch-button").first()).toHaveAttribute("data-burden", /stable|warn|danger/);
   await expect(page.locator("#mobileDuelReadRisk")).toHaveText(/\d+%/);
   await expect(page.locator("#mobileReleasePanel")).toBeHidden();
-  await expect(page.locator('#mobileStrikeZone [data-target-col="0"][data-target-row="1"]')).toHaveAttribute("aria-label", "몸쪽");
-  await expect(page.locator('#mobileStrikeZone [data-target-col="2"][data-target-row="1"]')).toHaveAttribute("aria-label", "바깥쪽");
+  await expect(page.locator('#mobileStrikeZone [data-target-col="0"][data-target-row="1"]')).toHaveAttribute("aria-label", "바깥쪽");
+  await expect(page.locator('#mobileStrikeZone [data-target-col="2"][data-target-row="1"]')).toHaveAttribute("aria-label", "몸쪽");
 
   await chooseMobilePitchAndZone(page);
   await expect(page.locator("#mobileReleasePanel")).toBeVisible();
@@ -107,6 +107,26 @@ test("mobile throw records a log entry", async ({ page }) => {
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
   await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toBeVisible({ timeout: 8000 });
   await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toContainText(/타자가|같은|흐름|다음 공/);
+});
+
+test("stage card reward shows absorbed performance score", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const run = MP.state.stageRun;
+    run.rewardBoost.absorbed = 3;
+    run.rewardBoost.performanceScore = 19;
+    run.stagePerformanceEvents = [
+      { key: "strikeout", label: "설계 삼진", score: 3, source: "삼진" },
+      { key: "doublePlay", label: "병살 유도", score: 4, source: "병살" }
+    ];
+    MP.state.lastStageResult = MP.debug.calculateStageResult();
+    MP.debug.openRewardDraft("스테이지 보상", null, "stageCard");
+  });
+  await expect(page.locator("#rewardAbsorbList")).toBeVisible();
+  await expect(page.locator("#rewardAbsorbList")).toContainText(/19/);
+  await expect(page.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
 });
 
 test("mobile player tags open detail modal with tag text", async ({ page }) => {

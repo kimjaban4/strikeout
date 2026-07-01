@@ -167,6 +167,7 @@ MP.els = {
   rewardOverlay: document.querySelector("#rewardOverlay"),
   rewardTitle: document.querySelector("#rewardTitle"),
   rewardReason: document.querySelector("#rewardReason"),
+  rewardAbsorbList: document.querySelector("#rewardAbsorbList"),
   rewardChoiceList: document.querySelector("#rewardChoiceList"),
   stageOverlay: document.querySelector("#stageOverlay"),
   stageTitle: document.querySelector("#stageTitle"),

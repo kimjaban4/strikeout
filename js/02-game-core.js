@@ -551,8 +551,8 @@ function evolutionPitchContext(pitch, location, atBat, intent) {
     afterSecondary: prevCategory && prevCategory !== "fast",
     fast: pitch.category === "fast",
     secondary: pitch.category !== "fast",
-    inside: location.col <= 0,
-    outside: location.col >= 2,
+    inside: location.col >= 2,
+    outside: location.col <= 0,
     edge,
     strike: intent === "strike",
     chaseZone: !location.inZone,
@@ -712,8 +712,8 @@ function pitcherTagControlBonus(pitch, aimed, intent) {
   const tags = pitcherAllTagIds().map(tagById).filter(Boolean);
   const context = {
     low: aimed.row >= 2,
-    outside: aimed.col >= 2,
-    inside: aimed.col <= 0,
+    outside: aimed.col <= 0,
+    inside: aimed.col >= 2,
     high: aimed.row <= 0,
     firstPitch: (state.atBat?.pitchHistory?.length || 0) <= 1,
     strike: intent === "strike",
@@ -1204,7 +1204,8 @@ function createStageRunState(stageIndex = 0) {
     missionResults: {},
     missionOverrides: {},
     inningStats: {},
-    rewardBoost: { choiceBonus: 0, rareBonus: 0, coreBonus: 0, guaranteedRare: 0, coreChoiceBonus: 0, absorbed: 0 },
+    rewardBoost: { choiceBonus: 0, rareBonus: 0, coreBonus: 0, guaranteedRare: 0, coreChoiceBonus: 0, absorbed: 0, performanceScore: 0 },
+    stagePerformanceEvents: [],
     reactionCounts: {},
     recentReactions: [],
     rival: {
@@ -1465,28 +1466,19 @@ function calculateStageResult() {
     rivalGoalMet,
     highlightSuccesses: run.highlight.successes,
     highlightFailures: run.highlight.failures,
-    rewardBoost: { ...run.rewardBoost }
+    rewardBoost: { ...run.rewardBoost },
+    stagePerformanceEvents: (run.stagePerformanceEvents || []).slice()
   };
 }
 
 function stageRewardRarityPlan(result) {
-  const stageIndex = result.stageIndex;
-  const stars = result.stars;
-  const base =
-    stageIndex === 0
-      ? { common: 0.8, rare: 0.2, core: 0 }
-      : stageIndex === 1
-        ? { common: 0.6, rare: 0.35, core: 0.05 }
-        : { common: 0.45, rare: 0.4, core: 0.15 };
-  const starBonus = Math.max(0, stars - 1);
-  const rareChance = clamp(base.rare + starBonus * 0.04 + (result.rewardBoost.rareBonus || 0), 0, 0.75);
-  const coreChance = clamp(base.core + starBonus * 0.015 + (result.rewardBoost.coreBonus || 0), 0, stageIndex >= 2 ? 0.28 : 0.1);
-  return Array.from({ length: 3 }, () => {
-    const roll = Math.random();
-    if (roll < coreChance) return "core";
-    if (roll < coreChance + rareChance) return "rare";
-    return "common";
-  });
+  const score = result.rewardBoost?.performanceScore || 0;
+  if ((result.rewardBoost?.coreChoiceBonus || 0) > 0 || score >= 19) return ["core", "rare", "common"];
+  if (score >= 15) return ["rare", "rare", "common"];
+  if (score >= 11) return ["rare", "rare", "common"];
+  if (score >= 7) return ["rare", "common", "common"];
+  if (score >= 4 || (result.rewardBoost?.guaranteedRare || 0) > 0) return ["common", "rare", "common"];
+  return ["common", "common", "common"];
 }
 
 function pickRewardCardByRarity(rarity, usedIds = new Set()) {
@@ -1568,43 +1560,23 @@ function conditionalStageCardCandidates(result) {
 
 function generateStageCardChoices() {
   const result = state.lastStageResult || calculateStageResult();
-  const run = ensureStageRunState();
   const maxStageCardChoices = 3;
   const used = new Set();
   const choices = [];
-  const guaranteedRare = Math.min(
-    1,
-    (result.rivalGoalMet ? (stageConfig(result.stageIndex).rival?.reward?.guaranteedRare || 0) : 0) +
-      (run.rewardBoost.guaranteedRare || 0)
-  );
-  const coreChoiceBonus =
-    (result.rivalGoalMet ? (stageConfig(result.stageIndex).rival?.reward?.coreChoiceBonus || 0) : 0) +
-    (run.rewardBoost.coreChoiceBonus || 0);
-  const extraChoiceQuality =
-    (result.rivalGoalMet ? (stageConfig(result.stageIndex).rival?.reward?.choiceBonus || 0) : 0) +
-    (run.rewardBoost.choiceBonus || 0) +
-    (run.highlight.successes && hasRewardCard("R013") ? 1 : 0);
   const conditionChoice = sample(conditionalStageCardCandidates(result), 1)[0] || null;
-  const normalCount = conditionChoice ? 1 : 2;
-  while (choices.length < normalCount) {
-    const card = pickRewardCardByRarity("common", used);
-    if (!card) break;
-    used.add(card.id);
-    choices.push(toRewardCardChoice(card, `${result.starLabel} 보상`));
-  }
-  if (conditionChoice) choices.push(conditionChoice);
   const plan = stageRewardRarityPlan(result);
-  let gradeRarity = coreChoiceBonus > 0 ? "core" : guaranteedRare > 0 || extraChoiceQuality > 0 ? "rare" : plan.find((rarity) => rarity !== "common") || "rare";
-  const gradeCard = pickRewardCardByRarity(gradeRarity, used) || pickRewardCardByRarity("rare", used);
-  if (gradeCard) {
-    used.add(gradeCard.id);
-    choices.push(toRewardCardChoice(gradeCard, gradeRarity === "core" ? "핵심 보상" : "등급 보상"));
+  if (conditionChoice) {
+    choices.push(conditionChoice);
+    used.add(conditionChoice.cardId || conditionChoice.tagId || conditionChoice.weaknessTagId || conditionChoice.title);
   }
+  let planIndex = 0;
   while (choices.length < maxStageCardChoices) {
-    const card = pickRewardCardByRarity("common", used);
+    const rarity = plan[planIndex] || "common";
+    planIndex += 1;
+    const card = pickRewardCardByRarity(rarity, used) || pickRewardCardByRarity("common", used);
     if (!card) break;
     used.add(card.id);
-    choices.push(toRewardCardChoice(card, `${result.starLabel} 보상`));
+    choices.push(toRewardCardChoice(card, `${result.starLabel} · 성과 ${result.rewardBoost?.performanceScore || 0}점`));
   }
   return choices.slice(0, maxStageCardChoices);
 }
@@ -1893,6 +1865,7 @@ function finalizeInningMission(inningNumber) {
   const success = missionSuccess(mission, stats);
   run.missionResults[mission.id] = { mission, success };
   if (success) {
+    absorbCardPerformance(0.015, 0, { key: `mission:${mission.id}`, label: "이닝 미션 성공", score: 2, source: mission.title, limit: 1 });
     if (hasRewardCard("C013")) run.rewardBoost.choiceBonus += cardStackCount("C013");
     if (dugoutEffectValue("missionChoiceBonus")) run.rewardBoost.choiceBonus += dugoutEffectValue("missionChoiceBonus");
     const revealed = revealUpcomingBatterWeakness();
@@ -2158,11 +2131,25 @@ function countKey() {
   return `${state.balls}-${state.strikes}`;
 }
 
-function absorbCardPerformance(rareBonus = 0.03, coreBonus = 0) {
-  const boost = ensureStageRunState().rewardBoost;
+function absorbCardPerformance(rareBonus = 0.03, coreBonus = 0, event = null) {
+  const run = ensureStageRunState();
+  const boost = run.rewardBoost;
   boost.absorbed = (boost.absorbed || 0) + 1;
   boost.rareBonus += rareBonus;
   boost.coreBonus += coreBonus;
+  if (event?.label && event.score > 0) {
+    const key = event.key || event.label;
+    const used = run.stagePerformanceEvents || [];
+    if (event.limit && used.filter((item) => item.key === key).length >= event.limit) return;
+    const entry = {
+      key,
+      label: event.label,
+      score: event.score,
+      source: event.source || ""
+    };
+    run.stagePerformanceEvents = [...used, entry].slice(-12);
+    boost.performanceScore = (boost.performanceScore || 0) + event.score;
+  }
 }
 
 const COUNT_PRESSURE = {
@@ -2191,8 +2178,8 @@ function runnersKey() {
 
 function zoneSide(zone) {
   const col = courseZones[zone]?.col ?? 1;
-  if (col <= 0) return "inside";
-  if (col >= 2) return "outside";
+  if (col <= 0) return "outside";
+  if (col >= 2) return "inside";
   return "middle";
 }
 
@@ -2306,8 +2293,8 @@ function pitchDisplayResult(result) {
 
 function locationSideTag(location) {
   const col = Number(location?.col);
-  if (col <= 0) return "inside";
-  if (col >= 2) return "outside";
+  if (col <= 0) return "outside";
+  if (col >= 2) return "inside";
   return "middle";
 }
 
@@ -2952,12 +2939,12 @@ function createEmptyBatterMemory(batter) {
 
 function locationSideFromRowCol(row, col) {
   if (row >= 0 && row <= 2 && col >= 0 && col <= 2) {
-    if (col <= 0) return "inside";
-    if (col >= 2) return "outside";
+    if (col <= 0) return "outside";
+    if (col >= 2) return "inside";
     return "center";
   }
-  if (col < 0) return "inside";
-  if (col > 2) return "outside";
+  if (col < 0) return "outside";
+  if (col > 2) return "inside";
   return "center";
 }
 
@@ -4032,14 +4019,14 @@ function intendedCourse(zone, intent, targetRow = null, targetCol = null) {
 
 function actualCourseLabel(row, col) {
   if (row >= 0 && row <= 2 && col >= 0 && col <= 2) {
-    if (col <= 0) return "몸쪽";
-    if (col >= 2) return "바깥쪽";
+    if (col <= 0) return "바깥쪽";
+    if (col >= 2) return "몸쪽";
     return "중앙";
   }
   if (row < 0) return "높은 볼";
   if (row > 2) return "낮은 볼";
-  if (col < 0) return "몸쪽 볼";
-  return "바깥쪽 볼";
+  if (col < 0) return "바깥쪽 볼";
+  return "몸쪽 볼";
 }
 
 function ballTakeDetail(location) {
@@ -5538,7 +5525,7 @@ function recordHighlightResult(result, runsScored) {
     stats.highlightSuccesses += 1;
     run.rewardBoost.rareBonus += 0.1;
     run.rewardBoost.coreBonus += 0.05;
-    absorbCardPerformance(0.025, 0.01);
+    absorbCardPerformance(0.025, 0.01, { key: "highlight", label: "위기 승부 제압", score: 4, source: "하이라이트", limit: 3 });
     if (result.batter?.isRival) revealBatterWeakness(result.batter);
     addLog("하이라이트 승부 성공", "위기 승부를 이겨냈습니다. 보상 흐름이 좋아집니다.");
   } else {
@@ -5561,7 +5548,7 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
   if ((result.result === "calledStrike" || result.result === "swingingStrike") && state.strikes >= 3) {
     run.strikeouts += 1;
     stats.strikeouts += 1;
-    absorbCardPerformance(0.02);
+    absorbCardPerformance(0.02, 0, { key: "strikeout", label: "설계 삼진", score: 3, source: "삼진", limit: 4 });
   }
   if (["single", "double", "homerun"].includes(result.result)) {
     run.hits += 1;
@@ -5592,18 +5579,19 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
       stats.weaknessPitchSuccesses += 1;
       if (result.weaknessFeedback !== "공략 성공") showEventBanner("약점 공략 성공", "reward", 900);
       result.weaknessFeedback = "공략 성공";
-      absorbCardPerformance(0.02);
+      absorbCardPerformance(0.02, 0, { key: "weakness", label: "공략 보조태그 적중", score: 2, source: "공략", limit: 4 });
       if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "공략 보조태그 활용", "공략 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
       if (hasRewardCard("K005")) state.nextPitchControlBonus += 7;
     }
   }
-  if (result.result === "doublePlay") absorbCardPerformance(0.03, 0.005);
+  if (result.result === "doublePlay") absorbCardPerformance(0.03, 0.005, { key: "doublePlay", label: "병살 유도", score: 4, source: "병살", limit: 3 });
   if ((result.result === "calledStrike" || result.result === "swingingStrike") && state.strikes >= 3 && hasRewardCard("K008")) {
     run.rewardBoost.guaranteedRare += 1;
     addCardTriggerLog("결승구 설계", "2스트 이후 삼진으로 희귀 보상 흐름이 열렸습니다.");
   }
   if ((result.result === "calledStrike" || result.result === "swingingStrike") && state.strikes >= 3 && result.batter?.isBoss) {
     run.rewardBoost.guaranteedRare += 1;
+    absorbCardPerformance(0, 0.005, { key: "bossStrikeout", label: "보스 삼진 제압", score: 4, source: "보스", limit: 2 });
     addLog("보스 제압 성과 흡수", "보스 타자를 삼진으로 잡은 성과가 카드 보상 흐름에 흡수되었습니다.");
   }
   if (result.outLabel === "GROUND OUT!" && hasRewardCard("K001")) {
@@ -6402,7 +6390,7 @@ function applyDugoutChoice(choice) {
   state.mobileDugoutCue = choice.title;
   if (choice.dugoutEventId) {
     const resultHtml = escapeHtml(choice.resultText || choice.title).replaceAll("\n", "<br>");
-    if (choice.correct) absorbCardPerformance(0.025, 0.005);
+    if (choice.correct) absorbCardPerformance(0.025, 0.005, { key: "dugoutRead", label: "덕아웃 판단 적중", score: 2, source: "덕아웃", limit: 3 });
     const hintHtml = choice.hint ? `<p class="log-muted">${escapeHtml(choice.hint)}</p>` : "";
     addLog("덕아웃 판단", `<p>${resultHtml}</p>${hintHtml}<p class="log-muted">선택: ${escapeHtml(choice.title)}</p>`);
     showEventBanner(`${choice.correct ? "판단 적중" : "판단 빗나감"}\n${choice.title}`, choice.correct ? "reward" : "walk", 1300);
@@ -6455,12 +6443,55 @@ function rewardDraftTitle(reason, kind) {
   return "승부 보상";
 }
 
+function stagePerformanceEventsForReward() {
+  const result = state.lastStageResult || calculateStageResult();
+  return (result.stagePerformanceEvents || []).slice(0, 8);
+}
+
+function stagePerformanceGrade(score = 0) {
+  if (score >= 19) return "Core 후보 개방";
+  if (score >= 15) return "Rare 2장 보장";
+  if (score >= 11) return "Rare 2장 후보";
+  if (score >= 7) return "Rare 1장 보장";
+  if (score >= 4) return "Rare 후보 개방";
+  return "Common 보상";
+}
+
+function renderStagePerformanceAbsorbList(kind) {
+  if (!els.rewardAbsorbList) return;
+  if (kind !== "stageCard") {
+    els.rewardAbsorbList.hidden = true;
+    els.rewardAbsorbList.innerHTML = "";
+    return;
+  }
+  const result = state.lastStageResult || calculateStageResult();
+  const events = stagePerformanceEventsForReward();
+  const score = result.rewardBoost?.performanceScore || 0;
+  els.rewardAbsorbList.hidden = false;
+  els.rewardAbsorbList.innerHTML = `
+    <header><span>성과 흡수</span><strong>${score}점 · ${escapeHtml(stagePerformanceGrade(score))}</strong></header>
+    <div class="reward-performance-list">
+      ${
+        events.length
+          ? events
+              .map(
+                (event) =>
+                  `<span class="reward-performance-pill"><b>+${escapeHtml(event.score)}</b>${escapeHtml(event.label)}${event.source ? `<em>${escapeHtml(event.source)}</em>` : ""}</span>`
+              )
+              .join("")
+          : '<span class="reward-performance-empty">누적 성과 없음</span>'
+      }
+    </div>
+  `;
+}
+
 function stageCardRewardReasonText() {
   const result = state.lastStageResult || calculateStageResult();
   const rival = result.rivalGoalMet ? "라이벌 과제 달성" : "라이벌 과제 미달성";
   const lines = [`${result.stageName} · ${result.starLabel}`, rival];
   if (result.highlightSuccesses) lines.push(`하이라이트 ${result.highlightSuccesses}회 성공`);
   if (result.rewardBoost?.absorbed) lines.push(`승부 성과 ${result.rewardBoost.absorbed}회 카드 보상 흡수`);
+  lines.push(`성과 점수 ${result.rewardBoost?.performanceScore || 0}점 · ${stagePerformanceGrade(result.rewardBoost?.performanceScore || 0)}`);
   lines.push("스테이지 카드 3개 중 하나를 고르세요.");
   return lines.join("\n");
 }
@@ -6839,6 +6870,7 @@ function openRewardDraft(reason, result, kind = "normal") {
         : kind === "stageTag"
           ? "스테이지 종료 후 투수 성향을 정리합니다. 보조태그는 최대 3개까지만 보유합니다."
           : rewardReasonText(reason);
+  renderStagePerformanceAbsorbList(kind);
   renderRewardChoices();
   els.rewardOverlay.hidden = false;
   startRewardRevealAnimation();
@@ -8126,8 +8158,8 @@ function mobilePitchZoneLabel(location) {
   const col = Number(location.col);
   const high = row <= 0;
   const low = row >= 2;
-  const inside = col <= 0;
-  const outside = col >= 2;
+  const inside = col >= 2;
+  const outside = col <= 0;
   if (inside && high) return "몸쪽높게";
   if (inside && low) return "몸쪽낮게";
   if (outside && high) return "바깥높게";
@@ -9934,6 +9966,8 @@ function setupTestConsoleBridge() {
       })),
       reactionCounts: run.reactionCounts || {},
       recentReactions: run.recentReactions || [],
+      stagePerformanceEvents: run.stagePerformanceEvents || [],
+      performanceScore: run.rewardBoost?.performanceScore || 0,
       highlight: run.highlight,
       lastStageResult: state.lastStageResult
     };

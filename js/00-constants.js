@@ -1065,15 +1065,15 @@ MP.pitchLevelNames = {
 };
 
 MP.courseZones = {
-  1: { row: 0, col: 0, label: "1번 높은 몸쪽" },
+  1: { row: 0, col: 0, label: "1번 높은 바깥쪽" },
   2: { row: 0, col: 1, label: "2번 높은 중앙" },
-  3: { row: 0, col: 2, label: "3번 높은 바깥쪽" },
-  4: { row: 1, col: 0, label: "4번 가운데 몸쪽" },
+  3: { row: 0, col: 2, label: "3번 높은 몸쪽" },
+  4: { row: 1, col: 0, label: "4번 가운데 바깥쪽" },
   5: { row: 1, col: 1, label: "5번 정중앙" },
-  6: { row: 1, col: 2, label: "6번 가운데 바깥쪽" },
-  7: { row: 2, col: 0, label: "7번 낮은 몸쪽" },
+  6: { row: 1, col: 2, label: "6번 가운데 몸쪽" },
+  7: { row: 2, col: 0, label: "7번 낮은 바깥쪽" },
   8: { row: 2, col: 1, label: "8번 낮은 중앙" },
-  9: { row: 2, col: 2, label: "9번 낮은 바깥쪽" }
+  9: { row: 2, col: 2, label: "9번 낮은 몸쪽" }
 };
 
 })(window.MountPsycho);
