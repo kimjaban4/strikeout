@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Stage Flow Debug</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: minmax(250px, 320px) minmax(390px, 1fr);
+      gap: 12px;
+      padding: 12px;
+      background: #eaf4fb;
+      color: #142438;
+      font-family: Arial, "Malgun Gothic", sans-serif;
+    }
+    .panel {
+      display: grid;
+      align-content: start;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid rgba(31, 65, 96, 0.18);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.92);
+      box-shadow: 0 12px 36px rgba(22, 48, 72, 0.12);
+    }
+    h1 { margin: 0; font-size: 18px; }
+    p { margin: 0; color: #536474; font-size: 13px; line-height: 1.45; }
+    button {
+      width: 100%;
+      min-height: 42px;
+      border: 0;
+      border-radius: 8px;
+      background: #14314d;
+      color: #fff;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    button.secondary { background: #276e82; }
+    button.warn { background: #8c4a18; }
+    button:disabled { opacity: 0.5; cursor: wait; }
+    .status {
+      min-height: 84px;
+      padding: 10px;
+      border-radius: 8px;
+      background: #102033;
+      color: #d8ecff;
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+    .frame-wrap {
+      min-height: calc(100vh - 24px);
+      display: grid;
+      place-items: center;
+      border-radius: 8px;
+      background: #d7eaf6;
+      overflow: hidden;
+    }
+    iframe {
+      width: 390px;
+      height: 844px;
+      border: 1px solid rgba(31, 65, 96, 0.28);
+      border-radius: 8px;
+      background: white;
+      box-shadow: 0 18px 50px rgba(21, 45, 67, 0.24);
+    }
+    @media (max-width: 760px) {
+      body { grid-template-columns: 1fr; }
+      .frame-wrap { min-height: 860px; }
+    }
+  </style>
+</head>
+<body>
+  <aside class="panel">
+    <h1>스테이지 플로우 테스트</h1>
+    <p>게임을 다시 플레이하지 않고 종료/보상/덕아웃 흐름을 빠르게 확인합니다.</p>
+    <button data-action="prepare">게임 준비</button>
+    <button class="secondary" data-action="stageReward">스테이지 보상 바로 열기</button>
+    <button class="secondary" data-action="naturalStageEnd">자연 종료 보상</button>
+    <button class="secondary" data-action="inningChange">이닝 교체</button>
+    <button class="secondary" data-action="dugout">덕아웃 이벤트</button>
+    <button class="warn" data-action="runComplete">런 클리어 보상</button>
+    <button data-action="reload">새로고침</button>
+    <div id="status" class="status">대기 중</div>
+  </aside>
+
+  <main class="frame-wrap">
+    <iframe id="gameFrame" title="마운드 심리전 테스트 화면" src="index.html?debug=stage"></iframe>
+  </main>
+
+  <script>
+    const frame = document.querySelector("#gameFrame");
+    const statusBox = document.querySelector("#status");
+
+    function log(message) {
+      statusBox.textContent = `${new Date().toLocaleTimeString()}\n${message}`;
+    }
+
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
+    async function waitFor(check, timeout = 6000) {
+      const start = Date.now();
+      while (Date.now() - start < timeout) {
+        const value = check();
+        if (value) return value;
+        await sleep(80);
+      }
+      throw new Error("대상 화면을 찾지 못했습니다.");
+    }
+
+    function doc() {
+      return frame.contentDocument;
+    }
+
+    function game() {
+      return frame.contentWindow?.MountPsycho;
+    }
+
+    function visibleElement(selector) {
+      const element = doc()?.querySelector(selector);
+      if (!element || element.hidden || element.disabled) return null;
+      if (element.closest("[hidden]")) return null;
+      return element;
+    }
+
+    async function clickWhenReady(selector, ready = () => true) {
+      const button = await waitFor(() => {
+        const element = visibleElement(selector);
+        return element && ready(element) ? element : null;
+      });
+      button.click();
+      await sleep(140);
+    }
+
+    async function prepareGame() {
+      await waitFor(() => game()?.debug);
+      const MP = game();
+      if (MP.state?.screenPhase === "game" && MP.state?.pitcher) return MP;
+      await clickWhenReady("#titleStartButton");
+      await clickWhenReady(".pitcher-choice-card", () => {
+        const overlay = doc().querySelector("#pitcherSelectOverlay");
+        return overlay && !overlay.hidden && !overlay.classList.contains("is-revealing");
+      });
+      await clickWhenReady("#stageStartButton", () => {
+        const overlay = doc().querySelector("#stageOverlay");
+        return overlay && !overlay.hidden;
+      });
+      if (!doc().querySelector("#dugoutOverlay")?.hidden) {
+        doc().querySelector(".dugout-choice-card")?.click();
+        await sleep(120);
+        doc().querySelector("[data-dugout-continue]")?.click();
+      }
+      await waitFor(() => MP.state?.pitcher && MP.state?.lineup?.length);
+      return MP;
+    }
+
+    async function stageReward() {
+      const MP = await prepareGame();
+      MP.state.lastStageResult = MP.debug.calculateStageResult();
+      MP.state.pendingCoreEvolutionReward = true;
+      MP.debug.openStageTagReward();
+      log("스테이지 보상 오버레이를 직접 열었습니다.");
+    }
+
+    async function naturalStageEnd() {
+      const MP = await prepareGame();
+      MP.state.inning = MP.debug.currentStageInnings();
+      MP.state.outs = 2;
+      MP.debug.addOut();
+      MP.debug.finishAtBat("GROUND OUT!", "테스트 스테이지 종료");
+      log("마지막 이닝 2아웃에서 실제 addOut 경로로 종료했습니다.");
+    }
+
+    async function inningChange() {
+      const MP = await prepareGame();
+      MP.state.inning = Math.min(MP.state.inning, MP.debug.currentStageInnings() - 1 || 1);
+      MP.state.outs = 2;
+      MP.debug.addOut();
+      MP.debug.finishAtBat("GROUND OUT!", "테스트 이닝 종료");
+      log("3아웃 이닝 교체 흐름을 실행했습니다.");
+    }
+
+    async function dugout() {
+      const MP = await prepareGame();
+      MP.state.pendingDugoutChoices = MP.debug.generateDugoutChoices();
+      MP.state.dugoutPending = true;
+      MP.state.dugoutBeforeAtBat = true;
+      MP.state.dugoutAdvanceBatterOnConfirm = false;
+      MP.debug.openDugoutChoiceOverlay();
+      log("덕아웃 선택/판단 오버레이를 열었습니다.");
+    }
+
+    async function runComplete() {
+      const MP = await prepareGame();
+      MP.state.stageIndex = 2;
+      MP.state.inning = MP.debug.currentStageInnings();
+      MP.state.outs = 2;
+      MP.debug.addOut();
+      MP.debug.finishAtBat("GROUND OUT!", "테스트 최종 스테이지 종료");
+      log("최종 스테이지 종료 보상 흐름을 실행했습니다.");
+    }
+
+    function reloadFrame() {
+      frame.src = `index.html?debug=stage&v=${Date.now()}`;
+      log("테스트 화면을 새로 불러옵니다.");
+    }
+
+    const actions = { prepare: prepareGame, stageReward, naturalStageEnd, inningChange, dugout, runComplete, reload: reloadFrame };
+
+    document.querySelector(".panel").addEventListener("click", async (event) => {
+      const button = event.target.closest("button[data-action]");
+      if (!button) return;
+      const action = actions[button.dataset.action];
+      if (!action) return;
+      document.querySelectorAll("button").forEach((item) => { item.disabled = true; });
+      try {
+        await action();
+        if (button.dataset.action === "prepare") log("게임 준비 완료");
+      } catch (error) {
+        log(`실패: ${error.message}`);
+      } finally {
+        document.querySelectorAll("button").forEach((item) => { item.disabled = false; });
+      }
+    });
+
+    frame.addEventListener("load", () => log("테스트 화면 로드 완료"));
+  </script>
+</body>
+</html>
