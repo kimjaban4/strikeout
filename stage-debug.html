@@ -42,6 +42,19 @@
     button.secondary { background: #276e82; }
     button.warn { background: #8c4a18; }
     button:disabled { opacity: 0.5; cursor: wait; }
+    .server-link {
+      display: none;
+      min-height: 42px;
+      place-items: center;
+      border-radius: 8px;
+      background: #14314d;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 900;
+      text-decoration: none;
+    }
+    body.is-file-mode .server-link { display: grid; }
+    body.is-file-mode iframe { opacity: 0.28; }
     .status {
       min-height: 84px;
       padding: 10px;
@@ -85,6 +98,7 @@
     <button class="secondary" data-action="dugout">덕아웃 이벤트</button>
     <button class="warn" data-action="runComplete">런 클리어 보상</button>
     <button data-action="reload">새로고침</button>
+    <a class="server-link" href="http://127.0.0.1:4173/stage-debug.html">로컬 서버 주소 열기</a>
     <div id="status" class="status">대기 중</div>
   </aside>
 
@@ -95,6 +109,8 @@
   <script>
     const frame = document.querySelector("#gameFrame");
     const statusBox = document.querySelector("#status");
+    const localServerUrl = "http://127.0.0.1:4173/stage-debug.html";
+    const fileMode = window.location.protocol === "file:";
 
     function log(message) {
       statusBox.textContent = `${new Date().toLocaleTimeString()}\n${message}`;
@@ -107,19 +123,34 @@
     async function waitFor(check, timeout = 6000) {
       const start = Date.now();
       while (Date.now() - start < timeout) {
-        const value = check();
+        const value = checkFrameAccess(check);
         if (value) return value;
         await sleep(80);
       }
       throw new Error("대상 화면을 찾지 못했습니다.");
     }
 
+    function fileModeMessage() {
+      return `이 페이지는 file://로 직접 열면 브라우저가 iframe 제어를 막습니다.\n로컬에서는 npm.cmd start 실행 후 ${localServerUrl} 로 여세요.`;
+    }
+
+    function checkFrameAccess(check) {
+      try {
+        return check();
+      } catch (error) {
+        if (fileMode || String(error.message).includes("cross-origin")) {
+          throw new Error(fileModeMessage());
+        }
+        throw error;
+      }
+    }
+
     function doc() {
-      return frame.contentDocument;
+      return checkFrameAccess(() => frame.contentDocument);
     }
 
     function game() {
-      return frame.contentWindow?.MountPsycho;
+      return checkFrameAccess(() => frame.contentWindow?.MountPsycho);
     }
 
     function visibleElement(selector) {
@@ -207,6 +238,10 @@
     }
 
     function reloadFrame() {
+      if (fileMode) {
+        window.location.href = localServerUrl;
+        return;
+      }
       frame.src = `index.html?debug=stage&v=${Date.now()}`;
       log("테스트 화면을 새로 불러옵니다.");
     }
@@ -216,6 +251,10 @@
     document.querySelector(".panel").addEventListener("click", async (event) => {
       const button = event.target.closest("button[data-action]");
       if (!button) return;
+      if (fileMode && button.dataset.action !== "reload") {
+        log(fileModeMessage());
+        return;
+      }
       const action = actions[button.dataset.action];
       if (!action) return;
       document.querySelectorAll("button").forEach((item) => { item.disabled = true; });
@@ -229,7 +268,13 @@
       }
     });
 
-    frame.addEventListener("load", () => log("테스트 화면 로드 완료"));
+    if (fileMode) {
+      document.body.classList.add("is-file-mode");
+      frame.src = "about:blank";
+      log(fileModeMessage());
+    } else {
+      frame.addEventListener("load", () => log("테스트 화면 로드 완료"));
+    }
   </script>
 </body>
 </html>
