@@ -868,11 +868,7 @@ function rewardCardPitchEffect(pitch, location, plannedCourse, pattern, batter) 
 }
 
 function applyInningStartCardEffects() {
-  const run = ensureStageRunState();
-  if (!run.scoutingApplied && hasRewardCard("R007")) {
-    revealRivalWeakness();
-    run.scoutingApplied = true;
-  }
+  ensureStageRunState();
 }
 
 function buildPitcherStats(profile) {
@@ -3796,7 +3792,6 @@ function assignStageRival() {
     pitchUseCounts: {},
     succeeded: false
   };
-  if (hasRewardCard("R007")) revealBatterWeakness(rival);
 }
 
 function createPlan(batter) {
@@ -4076,7 +4071,6 @@ function startAtBat() {
     if (hasRewardCard("R006")) state.atBat.suspicion = clamp((state.atBat.suspicion || 0) - 10, 0, 100);
     const firstBatterSuspicion = dugoutEffectValue("firstBatterSuspicion");
     if (firstBatterSuspicion) state.atBat.suspicion = clamp((state.atBat.suspicion || 0) + firstBatterSuspicion, 0, 100);
-    if (hasRewardCard("R008")) revealBatterWeakness(currentBatter());
     if (hasRewardCard("R019") && state.batterIndex < 3) markBatterWeaknessCandidates(currentBatter(), 3);
     if (dugoutEffectValue("revealNextFirstWeakness")) revealBatterWeakness(currentBatter());
     if (dugoutEffectValue("revealCourseWeakness")) revealBatterWeakness(currentBatter(), { category: "zone" });
@@ -5687,7 +5681,7 @@ function recordPrePitchStageProgress(result, plannedCourse, pattern) {
     addCardTriggerLog("플레이트 점유", "초구 스트라이크로 타자가 플레이트를 의식합니다.");
   }
   if (result.countBefore === "0-0" && hasRewardCard("R016")) {
-    addCardTriggerLog("반응 체크", "초구 반응으로 다음 승부의 기준을 좁혔습니다.");
+    addCardTriggerLog("반응 데이터 축적", "초구 반응 데이터로 다음 승부의 기준을 좁혔습니다.");
   }
   if (result.result === "foul" && hasRewardCard("R017")) {
     addCardTriggerLog("파울 분석", "파울 타이밍으로 타자의 기준점을 읽었습니다.");
@@ -6890,7 +6884,7 @@ function generateRewardChoices(reason, result) {
     { type: "stat", stat: "구속", amount: rewardAmount("stat"), title: "팔 스피드 상승", desc: "구속이 소폭 상승합니다." },
     { type: "stat", stat: "변화", amount: rewardAmount("stat"), title: "손끝 감각", desc: "변화 수치가 소폭 상승합니다." },
     { type: "stat", stat: "멘탈", amount: rewardAmount("stat"), title: "위기관리 루틴", desc: "멘탈이 소폭 상승합니다." },
-    { type: "stat", stat: "예측", amount: rewardAmount("stat"), title: "타자 반응 체크", desc: "마운드 판단 정확도에 쓰이는 예측 수치가 소폭 상승합니다." }
+    { type: "stat", stat: "예측", amount: rewardAmount("stat"), title: "반응 데이터 축적", desc: "마운드 판단 정확도에 쓰이는 예측 수치가 소폭 상승합니다." }
   ];
 
   if (usedPitch) {
@@ -9139,7 +9133,7 @@ function renderReadBars() {
 
 function playerBotConceptScoreText(text = "") {
   let score = 0;
-  if (/심리전|노림|분석|제구|땅볼|득점권|풀카운트|약점|반응 체크|포수|배합|인상/.test(text)) score += 18;
+  if (/심리전|노림|분석|제구|땅볼|득점권|풀카운트|약점|반응 데이터|반응 체크|포수|배합|인상/.test(text)) score += 18;
   if (/장타|홈런|담장|장타력|위력/.test(text)) score -= 24;
   if (/도박|감수|실점 위험|볼넷 위험/.test(text)) score -= 10;
   return score;

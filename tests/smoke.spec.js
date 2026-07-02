@@ -134,6 +134,24 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
 });
 
+test("stage reward card pool excludes dugout-only planning cards", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.ownedRewardCards = ["R007", "R008", "R014", "R016"];
+    MP.state.lastStageResult = MP.debug.calculateStageResult();
+    const stageChoices = MP.debug.generateStageCardChoices().map((choice) => choice.title);
+    const ownedCards = MP.debug.ownedRewardCardEntries().map((entry) => entry.card.name);
+    return { stageChoices, ownedCards };
+  });
+
+  expect(result.stageChoices).not.toContain("라이벌 사전 분석");
+  expect(result.stageChoices).not.toContain("첫 타자 반응 체크");
+  expect(result.stageChoices).not.toContain("덕아웃 플랜");
+  expect(result.ownedCards).toEqual(["반응 데이터 축적"]);
+});
+
 test("psych reward cards feed batter impressions", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
