@@ -303,6 +303,21 @@ test("stage clear reward cards appear after inning transition overlay", async ({
   await expect(page.locator("#rewardChoiceList .reward-choice-card")).toHaveCount(3);
 });
 
+test("natural stage final out opens stage reward cards", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.inning = MP.debug.currentStageInnings();
+    MP.state.outs = 2;
+    MP.debug.addOut();
+    MP.debug.finishAtBat("GROUND OUT!", "테스트 스테이지 종료");
+  });
+  await expect(page.locator("#rewardOverlay")).toBeVisible({ timeout: 3000 });
+  await expect(page.locator("#rewardTitle")).toContainText("스테이지 보상");
+  await expect(page.locator("#rewardChoiceList .reward-choice-card")).toHaveCount(3);
+});
+
 test("mobile player tags open detail modal with tag text", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
