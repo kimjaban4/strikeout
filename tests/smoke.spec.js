@@ -165,6 +165,39 @@ test("psych reward cards feed batter impressions", async ({ page }) => {
   expect(result.withSameRelease).toBeLessThan(result.withoutSameRelease);
 });
 
+test("stage themes and rivals affect pitch resolution hooks", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const batter = MP.debug.currentBatter();
+    const themeFx = MP.stageThemePitchEffect("power", batter, {
+      stageIndex: 2,
+      balls: 0,
+      strikes: 0,
+      outs: 0,
+      inZone: true,
+      pitchCategory: "breaking",
+      side: "outside",
+      height: "low",
+      targetMatch: false,
+      centerMistake: false
+    });
+    batter.rivalPatternId = "patternReader";
+    MP.state.atBat.choiceHistory = [{ pitchId: "four", category: "fast", side: "inside" }];
+    const rivalFx = MP.debug.rivalPitchEffect(MP.debug.pitchById("four"), batter, {
+      row: 1,
+      col: 2,
+      inZone: true,
+      centerMistake: false
+    });
+    return { themeContactQuality: themeFx.contactQuality, rivalContactQuality: rivalFx.contactQuality };
+  });
+
+  expect(result.themeContactQuality).toBeLessThan(0);
+  expect(result.rivalContactQuality).toBeGreaterThan(0);
+});
+
 test("dugout choice reveals applied effect before advancing", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);

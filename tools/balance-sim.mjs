@@ -441,7 +441,7 @@ function summarizeGame(index, seed, events, finalState, errors, transitions = []
     seed,
     completed,
     failed: balanceRun ? balanceRun.outcome === "failed" : finalState.gameOver && !completed,
-    stopped: !finalState.gameOver,
+    stopped: balanceRun ? balanceRun.outcome === "stopped" : !finalState.gameOver,
     gameOver: finalState.gameOver,
     resultTitle: balanceRun?.resultTitle || finalState.resultTitle,
     outcome: balanceRun?.outcome || (completed ? "clear" : finalState.gameOver ? "failed" : "stopped"),

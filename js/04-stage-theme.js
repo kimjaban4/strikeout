@@ -346,6 +346,10 @@ window.MountPsycho = window.MountPsycho || {};
     const slot = batter?.slot ?? 1;
     const isBottom = slot >= 7;
     const twoOut = (context.outs ?? 0) >= 2;
+    const isLow = context.height === "low";
+    const isEdge = context.side === "inside" || context.side === "outside";
+    const isSlow = context.pitchCategory === "breaking" || context.pitchCategory === "offspeed";
+    const switched = context.categorySwitch || context.sideSwitch;
 
     if (fx.contactBonus) out.contact += scale(fx.contactBonus);
     if (theme.id === "contact" && fx.contactBonus) out.contactQuality -= scale(fx.contactBonus) * 6;
@@ -377,6 +381,30 @@ window.MountPsycho = window.MountPsycho || {};
     }
     if (fx.twoOutBottomBonus && isBottom && twoOut) {
       out.contact += scale(fx.twoOutBottomBonus);
+    }
+    const counter = (value) => Math.abs(scale(value));
+    if (theme.id === "contact" && isLow && isSlow) {
+      out.contact -= counter(0.03);
+      out.contactQuality -= counter(0.5) * 8;
+    }
+    if (theme.id === "power" && (isLow || isEdge) && !context.centerMistake) {
+      out.contactQuality -= counter(0.55) * 9;
+      out.homerunBonus -= counter(0.03);
+    }
+    if ((theme.id === "eye" || theme.id === "patience") && context.inZone && (isEdge || isFirstPitch)) {
+      out.swing -= counter(0.03);
+      out.contactQuality -= counter(0.3) * 5;
+    }
+    if (theme.id === "tricky" && switched) {
+      out.falseClueBonus -= counter(0.03);
+      out.contactQuality -= counter(0.35) * 6;
+    }
+    if (theme.id === "first_pitch" && isFirstPitch && (isLow || isEdge)) {
+      out.contact -= counter(0.02);
+      out.contactQuality -= counter(0.5) * 7;
+    }
+    if (theme.id === "bottom_revolt" && isBottom && context.inZone && (isLow || isEdge)) {
+      out.contactQuality -= counter(0.45) * 7;
     }
     return out;
   };

@@ -4574,6 +4574,42 @@ function pitchSpecialEffect(pitch, location, atBat) {
   return effect;
 }
 
+function rivalPitchEffect(pitch, batter, location) {
+  const pattern = rivalPsychPatterns[batter?.rivalPatternId];
+  const effect = { swing: 0, chase: 0, contact: 0, foul: 0, contactQuality: 0, homerunBonus: 0, label: "" };
+  if (!pattern) return effect;
+  const side = locationSideFromRowCol(location.row, location.col);
+  const height = locationHeightFromRowCol(location.row);
+  const last = state.atBat?.choiceHistory?.[state.atBat.choiceHistory.length - 1] || null;
+  const firstPitch = currentAtBatPitchCount() <= 1;
+
+  if (pattern.id === "leadoffProbe" && firstPitch) {
+    effect.swing += location.inZone ? -0.03 : -0.06;
+    effect.chase -= location.inZone ? 0 : 0.06;
+    effect.label = "선두타자 관찰";
+  }
+  if (pattern.id === "patternReader" && last) {
+    if (last.pitchId === pitch.id || last.category === pitch.category || last.side === side) {
+      effect.contact += 0.03;
+      effect.foul += 0.03;
+      effect.contactQuality += 4;
+      effect.label = "라이벌 반복 간파";
+    }
+  }
+  if (pattern.id === "clutchSlugger") {
+    if (location.centerMistake) {
+      effect.contactQuality += pattern.mistakeQualityBonus || 8;
+      effect.homerunBonus += 0.04;
+      effect.label = "해결사 실투 노림";
+    } else if (height === "low" || side === "outside") {
+      effect.contactQuality -= 3;
+      effect.homerunBonus -= 0.02;
+      effect.label = "해결사 장타 억제";
+    }
+  }
+  return effect;
+}
+
 function appendEffectLabel(base, note) {
   return [base, note].filter(Boolean).join(" · ");
 }
@@ -4864,6 +4900,9 @@ function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {})
   const repeatCount = [...atBat.pitchHistory].reverse().filter((category) => category === pitch.category).length;
   const repeatedPenalty = Math.max(0, repeatCount - 1) * 0.07;
   const inZone = location.inZone;
+  const side = locationSideFromRowCol(location.row, location.col);
+  const height = locationHeightFromRowCol(location.row);
+  const lastChoice = atBat.choiceHistory?.[atBat.choiceHistory.length - 1] || null;
   const themeFx = MP.stageThemePitchEffect
     ? MP.stageThemePitchEffect(state.stageThemeId, batter, {
         stageIndex: state.stageIndex,
@@ -4871,11 +4910,18 @@ function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {})
         strikes: state.strikes,
         outs: state.outs,
         inZone,
+        pitchId: pitch.id,
+        pitchCategory: pitch.category,
+        side,
+        height,
+        categorySwitch: !!lastChoice && lastChoice.category !== pitch.category,
+        sideSwitch: !!lastChoice && lastChoice.side !== side,
         targetMatch,
         centerMistake: location.centerMistake,
         calledStrikeBias: false
       })
     : {};
+  const rivalEffect = rivalPitchEffect(pitch, batter, location, plannedCourse, pattern);
   const centerSwingBonus = location.centerMistake ? (location.unintendedCenter ? 0.18 : 0.11) : 0;
   const centerContactBonus = location.centerMistake ? (location.unintendedCenter ? 0.12 : 0.07) : 0;
   const centerQualityBonus = location.centerMistake ? (location.unintendedCenter ? 18 : 11) : 0;
@@ -4903,6 +4949,7 @@ function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {})
     repeatedPenalty,
     inZone,
     themeFx,
+    rivalEffect,
     centerSwingBonus,
     centerContactBonus,
     centerQualityBonus,
@@ -4912,7 +4959,7 @@ function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {})
 }
 
 function pitchSwingProbability(context) {
-  const { atBat, batter, targetMatch, inZone, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, mem, themeFx, centerSwingBonus, countPressure } = context;
+  const { atBat, batter, targetMatch, inZone, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, mem, themeFx, rivalEffect, centerSwingBonus, countPressure } = context;
   let swingProbability = inZone ? 0.46 : 0.21;
   if (atBat.approach === "적극") swingProbability += 0.13;
   if (atBat.approach === "신중") swingProbability -= 0.12;
@@ -4928,11 +4975,12 @@ function pitchSwingProbability(context) {
     cardEffect.swing +
     impressionEffect.swing +
     batterMindEffect.swing +
+    rivalEffect.swing +
     centerSwingBonus +
     (inZone ? countPressure.swingInZone : countPressure.swingOutZone) +
     (mem.swingBonus || 0) +
     (themeFx.swing || 0);
-  if (!inZone) swingProbability += mind.chase + tagEffect.chase + batterTag.chase + cardEffect.chase + batterMindEffect.chase + (mem.chasePenalty || 0) + (themeFx.chase || 0);
+  if (!inZone) swingProbability += mind.chase + tagEffect.chase + batterTag.chase + cardEffect.chase + batterMindEffect.chase + rivalEffect.chase + (mem.chasePenalty || 0) + (themeFx.chase || 0);
   if (!inZone) swingProbability -= batter.stats.선구 / 280;
   return swingProbability;
 }
@@ -4957,7 +5005,7 @@ function pitchTiming(context, balanceMeta = null) {
 }
 
 function pitchContactProbability(context, timing) {
-  const { batter, targetMatch, quality, repeatedPenalty, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, centerContactBonus, themeFx, burden, mem, release, countPressure } = context;
+  const { batter, targetMatch, quality, repeatedPenalty, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, rivalEffect, centerContactBonus, themeFx, burden, mem, release, countPressure } = context;
   return (
     0.14 +
     batter.stats.컨택 / 170 +
@@ -4972,6 +5020,7 @@ function pitchContactProbability(context, timing) {
     cardEffect.contact +
     impressionEffect.contact +
     batterMindEffect.contact +
+    rivalEffect.contact +
     centerContactBonus +
     timing.fooledContactPenalty +
     (themeFx.contact || 0) +
@@ -4984,12 +5033,12 @@ function pitchContactProbability(context, timing) {
 }
 
 function pitchFoulProbability(context, timingValue) {
-  const { mind, batterTag, cardEffect, impressionEffect, batterMindEffect, mem, themeFx, countPressure } = context;
-  return 0.34 + Math.abs(0.58 - timingValue) * 0.28 + (state.strikes === 2 ? 0.12 : 0) + mind.foul + batterTag.foul + cardEffect.foul + impressionEffect.foul + batterMindEffect.foul + countPressure.foul + (mem.foulBonus || 0) + (themeFx.foul || 0);
+  const { mind, batterTag, cardEffect, impressionEffect, batterMindEffect, rivalEffect, mem, themeFx, countPressure } = context;
+  return 0.34 + Math.abs(0.58 - timingValue) * 0.28 + (state.strikes === 2 ? 0.12 : 0) + mind.foul + batterTag.foul + cardEffect.foul + impressionEffect.foul + batterMindEffect.foul + rivalEffect.foul + countPressure.foul + (mem.foulBonus || 0) + (themeFx.foul || 0);
 }
 
 function pitchContactQuality(context, timing) {
-  const { batter, targetMatch, quality, repeatedPenalty, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, profile, centerQualityBonus, memoryQualityBonus, burden, themeFx, release, countPressure } = context;
+  const { batter, targetMatch, quality, repeatedPenalty, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, rivalEffect, profile, centerQualityBonus, memoryQualityBonus, burden, themeFx, release, countPressure } = context;
   return (
     batter.stats.컨택 * 0.28 +
     batter.stats.파워 * 0.48 +
@@ -5004,6 +5053,7 @@ function pitchContactQuality(context, timing) {
     cardEffect.contactQuality +
     impressionEffect.contactQuality +
     batterMindEffect.contactQuality +
+    rivalEffect.contactQuality +
     profile.contactQuality +
     centerQualityBonus +
     countPressure.contactQuality +
@@ -5011,6 +5061,7 @@ function pitchContactQuality(context, timing) {
     memoryQualityBonus +
     burden.mistakeBonus * 120 +
     burden.homerunBonus * 160 +
+    rivalEffect.homerunBonus * 140 +
     (themeFx.homerunBonus || 0) * 120 +
     (themeFx.contactQuality || 0) +
     (release?.contactQualityMod || 0) +
@@ -5019,8 +5070,8 @@ function pitchContactQuality(context, timing) {
 }
 
 function pitchResultSpecial(context) {
-  const { special, mind, batterTag, tagEffect, cardEffect, impressionEffect, batterMindEffect, profile } = context;
-  return { ...special, label: mind.label || impressionEffect.label || batterMindEffect.label || cardEffect.label || batterTag.label || tagEffect.label || special.label || profile.label };
+  const { special, mind, batterTag, tagEffect, cardEffect, impressionEffect, batterMindEffect, rivalEffect, profile } = context;
+  return { ...special, label: mind.label || impressionEffect.label || batterMindEffect.label || rivalEffect.label || cardEffect.label || batterTag.label || tagEffect.label || special.label || profile.label };
 }
 
 function ballInPlaySpecial(context) {
@@ -9981,6 +10032,7 @@ MP.debug = {
   currentStageInnings,
   impressionFromResult,
   currentImpressionEffect,
+  rivalPitchEffect,
   getBatterMind: () => state.atBat?.batterMind || null,
   getLastImpression: () => state.atBat?.batterMind?.lastImpression || null,
   getBatterMemory: () => state.atBat?.batterMemory || null,
