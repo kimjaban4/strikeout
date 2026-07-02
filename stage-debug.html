@@ -191,21 +191,62 @@
       return MP;
     }
 
+    function seedStageRewardDemo(MP) {
+      const labels = [
+        "설계 삼진", "덕아웃 판단 적중", "병살 유도", "위기 승부 제압", "공략 보조태그 적중",
+        "이닝 미션 성공", "보스 삼진 제압", "초구 스트라이크", "카운트 압박", "약점 공략",
+        "정타 억제", "풀카운트 제압", "테마 운영 성공", "흔들림 차단", "주자 묶기",
+        "낮은 코스 유도", "바깥쪽 승부", "타이밍 흔듦", "마운드 지배", "마지막 아웃"
+      ];
+      const run = MP.state.stageRun;
+      run.stagePerformanceEvents = labels.map((label, index) => ({
+        key: `debug:${index}`,
+        label,
+        score: 1,
+        source: "테스트"
+      }));
+      run.rewardBoost.absorbed = labels.length;
+      run.rewardBoost.performanceScore = labels.length;
+      run.rewardBoost.rareBonus = Math.max(run.rewardBoost.rareBonus || 0, 0.4);
+      run.rewardBoost.coreBonus = Math.max(run.rewardBoost.coreBonus || 0, 0.08);
+      MP.state.pitcher.rewardHistory.conditionTypesByStage = ["pitchUpgrade", "weaknessMitigation", "bonusTag"].map((type) => ({
+        stageIndex: MP.state.stageIndex,
+        type
+      }));
+    }
+
+    function withCommonBaseCards(action) {
+      const frameWindow = frame.contentWindow;
+      const originalRandom = frameWindow.Math.random;
+      frameWindow.Math.random = () => 0.99;
+      try {
+        return action();
+      } finally {
+        frameWindow.Math.random = originalRandom;
+      }
+    }
+
     async function stageReward() {
       const MP = await prepareGame();
-      MP.state.lastStageResult = MP.debug.calculateStageResult();
-      MP.state.pendingCoreEvolutionReward = true;
-      MP.debug.openStageTagReward();
-      log("스테이지 보상 오버레이를 직접 열었습니다.");
+      seedStageRewardDemo(MP);
+      withCommonBaseCards(() => {
+        MP.state.lastStageResult = MP.debug.calculateStageResult();
+        MP.state.pendingCoreEvolutionReward = true;
+        MP.debug.openStageTagReward();
+      });
+      log("성과 20개 샘플로 흡수/등급 상승 보상을 열었습니다.");
     }
 
     async function naturalStageEnd() {
       const MP = await prepareGame();
+      seedStageRewardDemo(MP);
       MP.state.inning = MP.debug.currentStageInnings();
       MP.state.outs = 2;
-      MP.debug.addOut();
-      MP.debug.finishAtBat("GROUND OUT!", "테스트 스테이지 종료");
-      log("마지막 이닝 2아웃에서 실제 addOut 경로로 종료했습니다.");
+      withCommonBaseCards(() => {
+        MP.debug.addOut();
+        MP.debug.finishAtBat("GROUND OUT!", "테스트 스테이지 종료");
+      });
+      log("성과 20개 샘플을 넣고 실제 addOut 경로로 종료했습니다.");
     }
 
     async function inningChange() {
@@ -229,11 +270,14 @@
 
     async function runComplete() {
       const MP = await prepareGame();
+      seedStageRewardDemo(MP);
       MP.state.stageIndex = 2;
       MP.state.inning = MP.debug.currentStageInnings();
       MP.state.outs = 2;
-      MP.debug.addOut();
-      MP.debug.finishAtBat("GROUND OUT!", "테스트 최종 스테이지 종료");
+      withCommonBaseCards(() => {
+        MP.debug.addOut();
+        MP.debug.finishAtBat("GROUND OUT!", "테스트 최종 스테이지 종료");
+      });
       log("최종 스테이지 종료 보상 흐름을 실행했습니다.");
     }
 

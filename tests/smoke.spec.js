@@ -321,11 +321,14 @@ test("natural stage final out opens stage reward cards", async ({ page }) => {
 test("stage debug page can force stage reward flow", async ({ page }) => {
   await page.setViewportSize({ width: 1100, height: 900 });
   await page.goto("/stage-debug.html");
-  await page.locator('[data-action="naturalStageEnd"]').click();
+  await page.locator('[data-action="stageReward"]').click();
   const frame = page.frameLocator("#gameFrame");
   await expect(frame.locator("#rewardOverlay")).toBeVisible({ timeout: 5000 });
   await expect(frame.locator("#rewardTitle")).toContainText("스테이지 보상");
   await expect(frame.locator("#rewardChoiceList .reward-choice-card")).toHaveCount(3);
+  await expect(frame.locator("#rewardChoiceList .reward-card-upgrade-token")).toHaveCount(8);
+  await expect(frame.locator("#rewardChoiceList .reward-card-upgrade-badge")).toHaveCount(3);
+  await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
 });
 
 test("mobile player tags open detail modal with tag text", async ({ page }) => {
