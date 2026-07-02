@@ -185,7 +185,7 @@ async function preparePage(browser, baseUrl, gameSeed, pitcherIndex, botProfile 
 
 async function settlePage(page, botProfile = "player") {
   const actions = [];
-  for (let guard = 0; guard < 100; guard += 1) {
+  for (let guard = 0; guard < 700; guard += 1) {
     await page.waitForTimeout(5);
     const action = await page.evaluate((bot) => {
       const MP = window.MountPsycho;
@@ -194,6 +194,13 @@ async function settlePage(page, botProfile = "player") {
       if (!MP?.debugReady || !state || !debug) return { kind: "booting" };
       if (state.pendingGameOver) return { kind: "wait", phase: "pendingGameOver" };
       if (state.gameOver) return { kind: "ready", phase: "gameOver" };
+      if (
+        !state.rewardPending &&
+        (state.pendingRunComplete || state.awaitingThemeSelection) &&
+        (state.pendingCoreEvolutionReward || state.pendingRewardKindAfterCurrent)
+      ) {
+        return { kind: "wait", phase: "stageRewardQueued" };
+      }
       const pickRewardIndex = (choices, rewardKind) => {
         if (bot === "oracle") {
           if (rewardKind === "normal") {
@@ -253,6 +260,7 @@ async function settlePage(page, botProfile = "player") {
     actions.push(action);
     if (action.kind === "ready") return actions;
   }
+  actions.push({ kind: "stalled" });
   return actions;
 }
 
@@ -372,7 +380,7 @@ async function throwAutoPitch(page, botProfile = "player") {
       targetCol: Number.isFinite(Number(targetCol)) ? Number(targetCol) : null
     };
     const release = debug.modelReleaseForBot?.(pitch, plannedCourse, bot);
-    const result = debug.throwPitch(pitch.id, zone, targetRow, targetCol, release);
+    const result = debug.throwPitch(pitch.id, zone, targetRow, targetCol, release, true);
     if (!result) return null;
 
     const afterRunStats = { ...(state.runStats || {}) };
@@ -472,6 +480,7 @@ function summarizeGame(index, seed, events, finalState, errors, transitions = []
     stageClears: balanceRun?.stageClears || [],
     fatalPitch: balanceRun?.fatalPitch || null,
     balanceRun,
+    finalState: finalState.diagnostics || null,
     errors
   };
 }
@@ -509,6 +518,19 @@ async function runGame(browser, baseUrl, options, gameIndex) {
     return {
       gameOver: state.gameOver,
       pendingRunComplete: state.pendingRunComplete,
+      diagnostics: {
+        screenPhase: state.screenPhase,
+        pendingGameOver: state.pendingGameOver,
+        rewardPending: state.rewardPending,
+        rewardKind: state.rewardKind,
+        dugoutPending: state.dugoutPending,
+        awaitingThemeSelection: state.awaitingThemeSelection,
+        awaitingStageStart: state.awaitingStageStart,
+        waitingNextBatter: state.waitingNextBatter,
+        pendingCoreEvolutionReward: state.pendingCoreEvolutionReward,
+        pendingRewardKindAfterCurrent: state.pendingRewardKindAfterCurrent || "",
+        hasAtBat: !!state.atBat
+      },
       stageIndex: state.stageIndex,
       stageNumber: MP.debug.currentStageNumber(),
       inning: state.inning,

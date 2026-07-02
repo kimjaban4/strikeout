@@ -11308,7 +11308,11 @@ MP.debug = {
   enableBalancePlayLog,
   setBalancePlayLogMeta,
   buildBalanceRunSummary,
-  getBalanceRunSummary: () => balanceLog.active?.summary || buildBalanceRunSummary(state.gameOver && els.resultTitle?.textContent === "클리어", ""),
+  getBalanceRunSummary: () => {
+    if (balanceLog.active?.summary) return balanceLog.active.summary;
+    if (!state.gameOver) return null;
+    return buildBalanceRunSummary(els.resultTitle?.textContent === "클리어", "");
+  },
   exportBalanceRunJson: (includePitchEvents = true) => {
     const summary = balanceLog.active?.summary || MP.debug.getBalanceRunSummary();
     if (!summary) return null;
