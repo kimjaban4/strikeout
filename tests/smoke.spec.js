@@ -198,6 +198,41 @@ test("stage themes and rivals affect pitch resolution hooks", async ({ page }) =
   expect(result.rivalContactQuality).toBeGreaterThan(0);
 });
 
+test("count pressure and foul timing expose pitch intent reads", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const fast = MP.debug.pitchById("four");
+    const breaking = MP.debug.pitchById("slider");
+    const expectedStrike = MP.debug.countIntentReadEffect(
+      fast,
+      { intent: "strike" },
+      { row: 1, col: 1, inZone: true },
+      { count: "2-0" }
+    );
+    const counterPitch = MP.debug.countIntentReadEffect(
+      breaking,
+      { intent: "strike" },
+      { row: 2, col: 0, inZone: true },
+      { count: "2-0" }
+    );
+    const lateFoul = MP.debug.foulTimingRead({ pitch: fast, pattern: { count: "1-1" } }, 0.38);
+    const protectFoul = MP.debug.foulTimingRead({ pitch: breaking, pattern: { count: "1-2" } }, 0.58);
+    return {
+      expectedStrikeQuality: expectedStrike.contactQuality,
+      counterPitchQuality: counterPitch.contactQuality,
+      lateFoul: lateFoul.id,
+      protectFoul: protectFoul.id
+    };
+  });
+
+  expect(result.expectedStrikeQuality).toBeGreaterThan(0);
+  expect(result.counterPitchQuality).toBeLessThan(0);
+  expect(result.lateFoul).toBe("late");
+  expect(result.protectFoul).toBe("protect");
+});
+
 test("dugout choice reveals applied effect before advancing", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);

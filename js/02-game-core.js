@@ -2196,6 +2196,58 @@ function countPressureProfile(balls = state.balls, strikes = state.strikes) {
   return COUNT_PRESSURE[`${balls}-${strikes}`] || COUNT_PRESSURE["0-0"];
 }
 
+function countIntentReadEffect(pitch, plannedCourse = {}, location = {}, pattern = {}) {
+  const count = pattern.count || countKey();
+  const side = locationSideFromRowCol(location.row ?? 1, location.col ?? 1);
+  const height = locationHeightFromRowCol(location.row ?? 1);
+  const inZone = !!location.inZone;
+  const intent = plannedCourse.intent === "ball" ? "ball" : "strike";
+  const isEdgeOrLow = side !== "center" || height === "low";
+  const effect = { swing: 0, chase: 0, contact: 0, foul: 0, contactQuality: 0, label: "" };
+
+  if (["1-0", "2-0", "3-1"].includes(count)) {
+    if (inZone && pitch.category === "fast" && !isEdgeOrLow) {
+      effect.contact += count === "2-0" || count === "3-1" ? 0.04 : 0.02;
+      effect.contactQuality += count === "3-1" ? 6 : 4;
+      effect.label = "스트라이크 예상";
+    } else if (inZone && isEdgeOrLow) {
+      effect.contact -= 0.02;
+      effect.contactQuality -= pitch.category === "fast" ? 2 : 5;
+      effect.label = "카운트 역이용";
+    } else if (intent === "ball") {
+      effect.chase -= count === "3-1" ? 0.08 : 0.05;
+      effect.label = "스트라이크 대기";
+    }
+  } else if (["0-2", "1-2"].includes(count)) {
+    if (!inZone) {
+      effect.chase -= 0.07;
+      effect.foul += 0.03;
+      effect.label = "유인구 경계";
+    } else if (isEdgeOrLow) {
+      effect.swing += 0.03;
+      effect.contactQuality -= 4;
+      effect.label = "존 승부 허 찌름";
+    }
+  } else if (count === "3-2") {
+    if (inZone && isEdgeOrLow) {
+      effect.contactQuality -= pitch.category === "fast" ? 2 : 5;
+      effect.label = "풀카운트 코너 승부";
+    } else if (inZone) {
+      effect.contact += 0.04;
+      effect.contactQuality += 5;
+      effect.label = "풀카운트 스트라이크 대기";
+    } else {
+      effect.chase -= 0.04;
+      effect.foul += 0.04;
+      effect.label = "풀카운트 선별";
+    }
+  } else if (count === "0-0" && intent === "ball" && isEdgeOrLow) {
+    effect.contactQuality -= 2;
+    effect.label = "초구 탐색";
+  }
+  return effect;
+}
+
 function runnersKey() {
   const runners = state.bases.map((occupied, index) => (occupied ? index + 1 : "")).filter(Boolean).join("");
   return runners || "empty";
@@ -3016,6 +3068,12 @@ function patternLogLine(pattern, lastPitch) {
     const sideLabel = lastPitch.side === "inside" ? "몸쪽" : lastPitch.side === "outside" ? "바깥" : "중앙";
     const heightLabel = lastPitch.height === "low" ? "낮은" : lastPitch.height === "high" ? "높은" : "가운데";
     line = `타자가 ${heightLabel} ${sideLabel} 코스를 기다리기 시작합니다.`;
+  } else if (pattern.id === "late_foul_timing") {
+    line = "늦은 파울입니다. 빠른 공 기준은 살아 있고, 느린 공은 타이밍을 맞춰줄 수 있습니다.";
+  } else if (pattern.id === "early_foul_timing") {
+    line = "빠른 파울입니다. 타자가 먼저 나와 느린 공이나 바깥쪽 승부가 열립니다.";
+  } else if (pattern.id === "solid_foul_timing") {
+    line = "정타성 파울입니다. 같은 계열을 반복하면 다음에는 강한 타구가 나올 수 있습니다.";
   }
   return line;
 }
@@ -3129,6 +3187,31 @@ function detectPitchPatterns(batterMemory, batter) {
       suspicionAdd: 9,
       swingBonus: 0.08,
       hardHitBonus: 0.06
+    });
+  }
+  if (last.result === "foul" && last.foulReadId === "late") {
+    patterns.push({
+      id: "late_foul_timing",
+      label: "늦은 파울",
+      suspicionAdd: 3,
+      readBarBoost: 0.2,
+      readBarCategory: "fast"
+    });
+  } else if (last.result === "foul" && last.foulReadId === "early") {
+    patterns.push({
+      id: "early_foul_timing",
+      label: "빠른 파울",
+      suspicionAdd: 3,
+      readBarBoost: 0.18,
+      readBarCategory: last.category === "fast" ? "breaking" : "offspeed"
+    });
+  } else if (last.result === "foul" && last.foulReadId === "solid") {
+    patterns.push({
+      id: "solid_foul_timing",
+      label: "정타성 파울",
+      suspicionAdd: 6,
+      contactBonus: 0.03,
+      hardHitBonus: 0.03
     });
   }
 
@@ -3353,6 +3436,8 @@ function buildBatterMemoryItem(pitch, plannedCourse, location, result) {
     countBefore: result.countBefore || countKey(),
     runners: result.runnersBefore || runnersKey(),
     result: pitchResultMemoryType(result),
+    foulReadId: result.foulRead?.id || "",
+    foulReadLabel: result.foulRead?.label || "",
     targetMatch: !!result.targetMatch,
     mistake: !!(result.mistake || result.location?.centerMistake),
     wasTwoStrike: strikesBefore === 2,
@@ -4927,6 +5012,7 @@ function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {})
   const centerQualityBonus = location.centerMistake ? (location.unintendedCenter ? 18 : 11) : 0;
   const memoryQualityBonus = (mem.qualityBonus || 0) * 10 + (mem.hardHitBonus || 0) * 12;
   const countPressure = countPressureProfile(state.balls, state.strikes);
+  const countIntentEffect = countIntentReadEffect(pitch, plannedCourse, location, pattern);
 
   return {
     pitch,
@@ -4950,6 +5036,7 @@ function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {})
     inZone,
     themeFx,
     rivalEffect,
+    countIntentEffect,
     centerSwingBonus,
     centerContactBonus,
     centerQualityBonus,
@@ -4959,7 +5046,7 @@ function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {})
 }
 
 function pitchSwingProbability(context) {
-  const { atBat, batter, targetMatch, inZone, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, mem, themeFx, rivalEffect, centerSwingBonus, countPressure } = context;
+  const { atBat, batter, targetMatch, inZone, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, mem, themeFx, rivalEffect, countIntentEffect, centerSwingBonus, countPressure } = context;
   let swingProbability = inZone ? 0.46 : 0.21;
   if (atBat.approach === "적극") swingProbability += 0.13;
   if (atBat.approach === "신중") swingProbability -= 0.12;
@@ -4976,11 +5063,12 @@ function pitchSwingProbability(context) {
     impressionEffect.swing +
     batterMindEffect.swing +
     rivalEffect.swing +
+    countIntentEffect.swing +
     centerSwingBonus +
     (inZone ? countPressure.swingInZone : countPressure.swingOutZone) +
     (mem.swingBonus || 0) +
     (themeFx.swing || 0);
-  if (!inZone) swingProbability += mind.chase + tagEffect.chase + batterTag.chase + cardEffect.chase + batterMindEffect.chase + rivalEffect.chase + (mem.chasePenalty || 0) + (themeFx.chase || 0);
+  if (!inZone) swingProbability += mind.chase + tagEffect.chase + batterTag.chase + cardEffect.chase + batterMindEffect.chase + rivalEffect.chase + countIntentEffect.chase + (mem.chasePenalty || 0) + (themeFx.chase || 0);
   if (!inZone) swingProbability -= batter.stats.선구 / 280;
   return swingProbability;
 }
@@ -5004,8 +5092,47 @@ function pitchTiming(context, balanceMeta = null) {
   };
 }
 
+function foulTimingRead(context, timingValue) {
+  const count = context?.pattern?.count || countKey();
+  const selected = context?.pitch?.category || "fast";
+  if (count.endsWith("-2") && timingValue >= 0.45 && timingValue <= 0.7) {
+    return {
+      id: "protect",
+      label: "억지 파울",
+      text: "타자가 보호 스윙으로 겨우 걷어냈습니다. 유인구를 한 번 더 쓸 수 있습니다.",
+      readBarCategory: selected,
+      readBarBoost: 0.18
+    };
+  }
+  if (timingValue < 0.45) {
+    return {
+      id: "late",
+      label: "늦은 파울",
+      text: "빠른 공 기준에 늦었습니다. 느린 공은 타이밍을 맞춰줄 수 있습니다.",
+      readBarCategory: "fast",
+      readBarBoost: 0.5
+    };
+  }
+  if (timingValue > 0.7) {
+    return {
+      id: "early",
+      label: "빠른 파울",
+      text: "타자가 먼저 나왔습니다. 느린 공이나 바깥쪽으로 타이밍을 뺄 수 있습니다.",
+      readBarCategory: selected === "fast" ? "breaking" : "offspeed",
+      readBarBoost: 0.45
+    };
+  }
+  return {
+    id: "solid",
+    label: "정타성 파울",
+    text: "타이밍이 맞아가고 있습니다. 같은 계열 반복은 정타 위험이 큽니다.",
+    readBarCategory: selected,
+    readBarBoost: 0.65
+  };
+}
+
 function pitchContactProbability(context, timing) {
-  const { batter, targetMatch, quality, repeatedPenalty, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, rivalEffect, centerContactBonus, themeFx, burden, mem, release, countPressure } = context;
+  const { batter, targetMatch, quality, repeatedPenalty, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, rivalEffect, countIntentEffect, centerContactBonus, themeFx, burden, mem, release, countPressure } = context;
   return (
     0.14 +
     batter.stats.컨택 / 170 +
@@ -5021,6 +5148,7 @@ function pitchContactProbability(context, timing) {
     impressionEffect.contact +
     batterMindEffect.contact +
     rivalEffect.contact +
+    countIntentEffect.contact +
     centerContactBonus +
     timing.fooledContactPenalty +
     (themeFx.contact || 0) +
@@ -5033,12 +5161,12 @@ function pitchContactProbability(context, timing) {
 }
 
 function pitchFoulProbability(context, timingValue) {
-  const { mind, batterTag, cardEffect, impressionEffect, batterMindEffect, rivalEffect, mem, themeFx, countPressure } = context;
-  return 0.34 + Math.abs(0.58 - timingValue) * 0.28 + (state.strikes === 2 ? 0.12 : 0) + mind.foul + batterTag.foul + cardEffect.foul + impressionEffect.foul + batterMindEffect.foul + rivalEffect.foul + countPressure.foul + (mem.foulBonus || 0) + (themeFx.foul || 0);
+  const { mind, batterTag, cardEffect, impressionEffect, batterMindEffect, rivalEffect, countIntentEffect, mem, themeFx, countPressure } = context;
+  return 0.34 + Math.abs(0.58 - timingValue) * 0.28 + (state.strikes === 2 ? 0.12 : 0) + mind.foul + batterTag.foul + cardEffect.foul + impressionEffect.foul + batterMindEffect.foul + rivalEffect.foul + countIntentEffect.foul + countPressure.foul + (mem.foulBonus || 0) + (themeFx.foul || 0);
 }
 
 function pitchContactQuality(context, timing) {
-  const { batter, targetMatch, quality, repeatedPenalty, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, rivalEffect, profile, centerQualityBonus, memoryQualityBonus, burden, themeFx, release, countPressure } = context;
+  const { batter, targetMatch, quality, repeatedPenalty, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, rivalEffect, countIntentEffect, profile, centerQualityBonus, memoryQualityBonus, burden, themeFx, release, countPressure } = context;
   return (
     batter.stats.컨택 * 0.28 +
     batter.stats.파워 * 0.48 +
@@ -5054,6 +5182,7 @@ function pitchContactQuality(context, timing) {
     impressionEffect.contactQuality +
     batterMindEffect.contactQuality +
     rivalEffect.contactQuality +
+    countIntentEffect.contactQuality +
     profile.contactQuality +
     centerQualityBonus +
     countPressure.contactQuality +
@@ -5070,8 +5199,8 @@ function pitchContactQuality(context, timing) {
 }
 
 function pitchResultSpecial(context) {
-  const { special, mind, batterTag, tagEffect, cardEffect, impressionEffect, batterMindEffect, rivalEffect, profile } = context;
-  return { ...special, label: mind.label || impressionEffect.label || batterMindEffect.label || rivalEffect.label || cardEffect.label || batterTag.label || tagEffect.label || special.label || profile.label };
+  const { special, mind, batterTag, tagEffect, cardEffect, impressionEffect, batterMindEffect, rivalEffect, countIntentEffect, profile } = context;
+  return { ...special, label: mind.label || impressionEffect.label || batterMindEffect.label || rivalEffect.label || countIntentEffect.label || cardEffect.label || batterTag.label || tagEffect.label || special.label || profile.label };
 }
 
 function ballInPlaySpecial(context) {
@@ -5140,6 +5269,7 @@ function resolvePitch(pitch, batter, plannedCourse, pattern = {}, balanceMeta = 
   const foulProbability = pitchFoulProbability(context, timing.timingValue);
   if (balanceMeta) balanceMeta.probabilities.foul = balanceRound(foulProbability, 4);
   if (balanceChance(foulProbability, "foul", balanceMeta) && timing.timingValue < 0.78) {
+    const foulRead = foulTimingRead(context, timing.timingValue);
     return {
       pitch,
       batter,
@@ -5151,9 +5281,10 @@ function resolvePitch(pitch, batter, plannedCourse, pattern = {}, balanceMeta = 
       impressionEffect: context.impressionEffect,
       timingValue: timing.timingValue,
       timingLabel: timing.timingLabel,
+      foulRead,
       result: "foul",
       detail: "가까스로 걷어냈습니다.",
-      clue: targetMatch ? "타자가 타이밍을 맞춰가고 있습니다." : "타이밍은 빗나갔지만 배트에 맞혔습니다. 다음 공은 더 확실한 의도가 필요합니다."
+      clue: foulRead?.text || (targetMatch ? "타자가 타이밍을 맞춰가고 있습니다." : "타이밍은 빗나갔지만 배트에 맞혔습니다. 다음 공은 더 확실한 의도가 필요합니다.")
     };
   }
 
@@ -5374,6 +5505,9 @@ function updateRead(result) {
   if (hasRewardCard("R017") && result.result === "foul") {
     scores[selected] += 0.65;
     if (target && result.targetMatch) scores[target] += 0.45;
+  }
+  if (result.foulRead?.readBarCategory && scores[result.foulRead.readBarCategory] !== undefined) {
+    scores[result.foulRead.readBarCategory] += result.foulRead.readBarBoost || 0.35;
   }
   if (dugoutEffectValue("courseReadBoost") && result.result === "foul") {
     scores[selected] += dugoutEffectValue("courseReadBoost");
@@ -8382,6 +8516,7 @@ function mobilePitchReactionText(result) {
     return "노린 공과 달라 배트가 헛나갔습니다";
   }
   if (result.result === "foul") {
+    if (result.foulRead?.label) return result.foulRead.label;
     const side = mobilePitchTimingSide(result);
     if (side === "early") return "타자가 먼저 맞혔습니다";
     if (side === "late") return "타자가 늦게 따라왔습니다";
@@ -8434,7 +8569,17 @@ function mobilePitchDetailText(result, note = "") {
           : "직전 배합이 먹혔지만 같은 패턴 반복은 바로 읽힐 수 있습니다.";
     return `${zone} ${pitchName}에 배트가 나왔습니다. ${mobilePitchReactionText(result)} ${next}${weaknessText}`;
   }
-  if (result.result === "foul") return `${zone} ${pitchName}을 파울로 걷어냈습니다. ${mobilePitchReactionText(result)} 같은 구종이나 같은 코스를 바로 반복하면 다음에는 정타 위험이 올라갑니다.${weaknessText}`;
+  if (result.result === "foul") {
+    const next =
+      result.foulRead?.id === "late"
+        ? "빠른 공은 아직 유효하지만 느린 공은 타이밍을 맞춰줄 수 있습니다."
+        : result.foulRead?.id === "early"
+          ? "느린 공이나 바깥쪽 승부로 먼저 나온 배트를 더 끌어낼 수 있습니다."
+          : result.foulRead?.id === "protect"
+            ? "보호 스윙에 가까워 유인구를 한 번 더 쓸 여지가 있습니다."
+            : "같은 계열 반복은 다음 정타 위험을 키웁니다.";
+    return `${zone} ${pitchName}을 파울로 걷어냈습니다. ${mobilePitchReactionText(result)} ${next}${weaknessText}`;
+  }
   if (result.result === "inPlayOut") return `${zone} ${pitchName}을 맞혔지만 정타는 아니었습니다. ${mobilePitchReactionText(result)} 범타 흐름을 유지하려면 높이나 계열을 한 번 바꿔 읽히는 것을 줄이세요.${weaknessText}`;
   if (result.result === "doublePlay") return `${zone} ${pitchName}으로 땅볼 흐름을 만들었습니다. 주자까지 함께 지우며 승부를 크게 정리했습니다.${weaknessText}`;
   if (result.result === "single") return `${zone} ${pitchName}에 타자가 배트를 맞혔습니다. 다음 승부는 같은 계열을 피하고 반대 코스나 높이 변화로 기준을 흔드세요.${weaknessText}`;
@@ -10030,6 +10175,8 @@ MP.debug = {
   currentStageNumber,
   currentStageRunLimit,
   currentStageInnings,
+  countIntentReadEffect,
+  foulTimingRead,
   impressionFromResult,
   currentImpressionEffect,
   rivalPitchEffect,
