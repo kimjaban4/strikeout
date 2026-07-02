@@ -8922,10 +8922,19 @@ function batterInfoLines(batter) {
   return [...new Set([String(batter.type || "-").replace("보스 타자 · ", ""), ...(batter.tags || [])].filter(Boolean))];
 }
 
-function batterTagToneClass(tagName) {
-  const tag = batterTagCatalog.find((item) => item.name === tagName);
-  const weaknessIds = new Set(["breaking_weak", "inside_weak", "high_fast_vulnerable", "dp_risk"]);
-  return tag && weaknessIds.has(tag.id) ? " weakness-chip is-revealed" : "";
+function batterCatalogTag(label) {
+  return batterTagCatalog.find((item) => item.name === label) || null;
+}
+
+function batterTagRole(label, fallbackIndex = 0) {
+  const tag = batterCatalogTag(label);
+  if (tag?.type === "weakness") return "weakness";
+  if (fallbackIndex === 0) return "strength";
+  return "variance";
+}
+
+function batterTagToneClass(label) {
+  return batterTagRole(label) === "weakness" ? " weakness-chip is-revealed" : "";
 }
 
 function batterVisibleTagLimit(batter) {
@@ -8934,11 +8943,36 @@ function batterVisibleTagLimit(batter) {
 }
 
 function batterVisibleInfoLines(batter) {
-  return batterInfoLines(batter).slice(0, batterVisibleTagLimit(batter));
+  return batterVisibleTagItems(batter).map((item) => item.label);
+}
+
+function batterTagRoleRank(role) {
+  return role === "strength" ? 0 : role === "weakness" ? 1 : 2;
+}
+
+function batterVisibleTagItems(batter) {
+  if (!batter) return [];
+  const limit = batterVisibleTagLimit(batter);
+  const items = batterInfoLines(batter).map((label, index) => ({
+    label,
+    role: batterTagRole(label, index),
+    weaknessTagId: ""
+  }));
+  const visibleLabels = new Set(items.map((item) => item.label));
+  const revealed = new Set(batter.revealedWeaknessTagIds || []);
+  const candidates = new Set(batter.candidateWeaknessTagIds || []);
+  (batter.weaknessTags || []).forEach((tagId) => {
+    if (!revealed.has(tagId) && !candidates.has(tagId)) return;
+    const tag = batterWeaknessById(tagId);
+    if (!tag || visibleLabels.has(tag.name)) return;
+    items.push({ label: tag.name, role: "weakness", weaknessTagId: tagId });
+    visibleLabels.add(tag.name);
+  });
+  return items.sort((a, b) => batterTagRoleRank(a.role) - batterTagRoleRank(b.role)).slice(0, limit);
 }
 
 function batterDisplayTagTier(batter, label, index) {
-  if (batterTagToneClass(label).includes("weakness")) return "danger";
+  if (batterTagRole(label, index) === "weakness") return "silver";
   if (batter?.isBoss && index === 0) return "platinum";
   if (batter?.isRival && index === 0) return (state.stageIndex || 0) >= 2 ? "gold" : "silver";
   const stage = state.stageIndex || 0;
@@ -8950,8 +8984,7 @@ function batterDisplayTagTier(batter, label, index) {
 }
 
 function batterDisplayTagRole(label, index) {
-  if (batterTagToneClass(label).includes("weakness")) return "weakness";
-  return index === 0 ? "strength" : "variance";
+  return batterTagRole(label, index);
 }
 
 function tagDetailText(tag, batter) {
@@ -9496,9 +9529,10 @@ function mobilePitcherTagItems() {
 }
 
 function mobileBatterTagItems(batter) {
-  return batterVisibleInfoLines(batter).map((label, index) => {
+  return batterVisibleTagItems(batter).map((item, index) => {
+    const label = item.label;
     const tier = batterDisplayTagTier(batter, label, index);
-    const role = batterDisplayTagRole(label, index);
+    const role = item.role || batterDisplayTagRole(label, index);
     return { label, tier, role, text: tagDetailText(label, batter) };
   });
 }
@@ -10199,33 +10233,20 @@ function renderPitcherTags() {
 
 function renderBatterTypeV2(batter) {
   if (!els.batterType) return;
-  const tags = batterVisibleInfoLines(batter);
+  const tags = batterVisibleTagItems(batter);
   const tagButtons = tags
-    .map((line, index) => {
+    .map((item, index) => {
+      const line = item.label;
       const cls = `${index === 0 ? "type-main" : "type-tag"}${batterTagToneClass(line)}`;
       const tier = batterDisplayTagTier(batter, line, index);
-      const role = batterDisplayTagRole(line, index);
-      return `<button class="${cls}" type="button" data-batter-tag="${escapeHtml(line)}" data-tier="${escapeHtml(tier)}" data-role="${escapeHtml(role)}">${escapeHtml(line)}</button>`;
-    })
-    .join("");
-  const revealed = new Set(batter.revealedWeaknessTagIds || []);
-  const candidates = new Set(batter.candidateWeaknessTagIds || []);
-  const hintChips = [...new Set(batter.weaknessTags || [])]
-    .map((tagId) => {
-      const tag = batterWeaknessById(tagId);
-      if (!tag) return "";
-      if (revealed.has(tagId)) {
-        return `<button class="type-tag weakness-chip is-revealed" type="button" data-batter-weakness="${escapeHtml(tagId)}">${escapeHtml(tag.name)}</button>`;
-      }
-      if (candidates.has(tagId)) {
-        return `<button class="type-tag weakness-chip is-candidate" type="button" data-batter-weakness="${escapeHtml(tagId)}">${escapeHtml(tag.name)}</button>`;
-      }
-      return "";
+      const role = item.role || batterDisplayTagRole(line, index);
+      const weaknessAttr = item.weaknessTagId ? ` data-batter-weakness="${escapeHtml(item.weaknessTagId)}"` : "";
+      return `<button class="${cls}" type="button" data-batter-tag="${escapeHtml(line)}"${weaknessAttr} data-tier="${escapeHtml(tier)}" data-role="${escapeHtml(role)}">${escapeHtml(line)}</button>`;
     })
     .join("");
   els.batterType.innerHTML = `
     <span class="card-v2-inline-kicker">보조태그</span>
-    <span class="card-v2-inline-row">${tagButtons}${hintChips}</span>
+    <span class="card-v2-inline-row">${tagButtons}</span>
   `;
 }
 

@@ -4868,6 +4868,13 @@ button.card-toggle {
   color: #fff1f2 !important;
 }
 
+.batter-type .type-main[data-role="weakness"],
+.batter-type .type-tag[data-role="weakness"] {
+  border-color: rgba(45, 212, 191, 0.68) !important;
+  background: rgba(15, 118, 110, 0.9) !important;
+  color: #ecfeff !important;
+}
+
 .pitcher-card .pitcher-tag-detail,
 .batter-card .tag-detail {
   grid-column: 1 / 3 !important;

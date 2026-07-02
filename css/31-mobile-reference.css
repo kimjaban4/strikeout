@@ -606,6 +606,13 @@
     color: #ffb0b0;
   }
 
+  .mobile-player-card > span button[data-role="weakness"],
+  .mobile-detail-tags button[data-role="weakness"] {
+    border-color: rgba(45, 212, 191, 0.82);
+    background: rgba(13, 94, 88, 0.78);
+    color: #c7fff7;
+  }
+
   .mobile-detail-status {
     display: grid;
     gap: 4px;

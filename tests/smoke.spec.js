@@ -306,6 +306,16 @@ test("stage clear reward cards appear after inning transition overlay", async ({
 test("mobile player tags open detail modal with tag text", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const batter = MP.debug.currentBatter();
+    batter.revealedWeaknessTagIds = (batter.weaknessTags || []).slice();
+    MP.debug.render();
+  });
+
+  await expect(page.locator("#mobileBatterTags [data-mobile-batter-tag]")).toHaveCount(2);
+  await expect(page.locator("#mobileBatterTags [data-role='weakness']").first()).toBeVisible();
+  await expect(page.locator("#mobileBatterTags [data-role='weakness']").first()).not.toHaveAttribute("data-tier", "danger");
 
   const tagText = (await page.locator("[data-mobile-batter-tag]").first().textContent()).trim();
   await page.locator("[data-mobile-batter-tag]").first().click();
