@@ -8434,11 +8434,15 @@ function buildRewardUpgradeTokens(kind) {
 
 function rewardUpgradeTokensHtml(index) {
   const tokens = (state.rewardUpgradeTokens || []).filter((token) => token.cardIndex === index);
-  if (!tokens.length) return "";
+  const reward = state.rewardChoices?.[index];
+  if (!tokens.length && !reward?.upgradedByPerformance) return "";
+  const from = reward?.upgradedFromRarity ? cardRarityLabel(reward.upgradedFromRarity) : "";
+  const to = reward?.rarity ? cardRarityLabel(reward.rarity) : "";
   return `
     <div class="reward-card-upgrade-tokens" aria-hidden="true">
       ${tokens.map((token) => `<span class="reward-card-upgrade-token" style="--token-delay:${760 + token.delayIndex * 140}ms;--token-x:${token.offsetX || 0}px">${escapeHtml(token.label)}</span>`).join("")}
-      <span class="reward-card-upgrade-text">등급 상승</span>
+      <span class="reward-card-upgrade-badge">${from && to ? `${escapeHtml(from)} → ${escapeHtml(to)}` : "등급 상승"}</span>
+      <span class="reward-card-upgrade-text">${to === "핵심" ? "진화 개방" : "등급 상승"}</span>
     </div>
   `;
 }
