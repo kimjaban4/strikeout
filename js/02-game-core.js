@@ -8354,7 +8354,7 @@ function renderMobileRelease() {
     const goodLeft = (0.5 - active.goodSize / 2) * 100;
     const perfectLeft = (0.5 - active.perfectSize / 2) * 100;
     els.mobileReleaseGrade.textContent = "타이밍";
-    els.mobileReleaseMode.textContent = `제구 ${Math.round(active.control)} · 압박 ${Math.round(active.pressure)}`;
+    els.mobileReleaseMode.textContent = active.shake ? "흔들림 주의" : "정확 구간을 노리세요";
     els.mobileReleasePanel.style.setProperty("--good-left", `${goodLeft}%`);
     els.mobileReleasePanel.style.setProperty("--good-width", `${active.goodSize * 100}%`);
     els.mobileReleasePanel.style.setProperty("--perfect-left", `${perfectLeft}%`);
@@ -8362,7 +8362,7 @@ function renderMobileRelease() {
     els.mobileReleasePanel.style.setProperty("--cursor-duration", `${active.duration}ms`);
   } else if (result) {
     els.mobileReleaseGrade.textContent = result.label;
-    els.mobileReleaseMode.textContent = `정확도 ${result.accuracy}%`;
+    els.mobileReleaseMode.textContent = result.message || "릴리즈 결과 반영";
     els.mobileReleaseCursor?.style.setProperty("--cursor-x", `${(result.position || 0.5) * 100}%`);
   } else {
     els.mobileReleaseGrade.textContent = "대기";
@@ -8375,21 +8375,28 @@ function renderMobileRelease() {
   }
 }
 
-function renderMobileDuelRead(recommendation) {
+function renderMobileDuelRead() {
   if (!els.mobileDuelReadFlow) return;
   const flowLabel = els.mobileDuelReadFlow.closest("span");
-  if (flowLabel?.firstChild) flowLabel.firstChild.textContent = "흐름 ";
+  if (flowLabel?.firstChild) flowLabel.firstChild.textContent = "포수 ";
   els.mobileDuelReadFlow.textContent = mobileCatcherLine();
-  els.mobileDuelReadPitch.textContent = recommendation?.title || "대기";
+  els.mobileDuelReadPitch.textContent = mobileNextActionLine();
   const riskLabel = els.mobileDuelReadRisk.closest("span");
-  if (riskLabel?.firstChild) riskLabel.firstChild.textContent = "판단 ";
-  els.mobileDuelReadRisk.textContent = recommendation?.confidence ? `${Math.round(recommendation.confidence)}%` : "대기";
-  return;
-  const confidence = recommendation?.confidence || 0;
+  if (riskLabel?.firstChild) riskLabel.firstChild.textContent = "간파 ";
+  els.mobileDuelReadRisk.textContent = mobileSuspicionTone();
+}
+
+function mobileSuspicionTone() {
   const suspicion = Math.round(clamp(state.atBat?.suspicion || 0, 0, 100));
-  els.mobileDuelReadFlow.textContent = confidence >= 76 ? "강함" : confidence >= 58 ? "보통" : "흐림";
-  els.mobileDuelReadPitch.textContent = recommendation?.title || "대기";
-  els.mobileDuelReadRisk.textContent = `${suspicion}%`;
+  if (suspicion >= 75) return "위험";
+  if (suspicion >= 50) return "경계";
+  return "안정";
+}
+
+function mobileNextActionLine() {
+  if (state.releaseTiming?.active) return "타이밍 확정";
+  if (!state.selectedPitchId) return "구종 선택";
+  return "코스 선택";
 }
 
 function mobileCatcherLine() {
@@ -8399,11 +8406,6 @@ function mobileCatcherLine() {
   if (state.balls >= 2) return "존 근처로 수습";
   if (state.strikes >= 2) return "코스 보고 결정";
   return "반응 보고 다음 코스";
-  if (suspicion >= 70) return "같은 흐름은 읽힐 수 있습니다.";
-  if (state.bases.some(Boolean)) return "주자부터 묶고 낮게 버티세요.";
-  if (state.balls >= 2) return "무리한 유인보다 존 근처가 낫습니다.";
-  if (state.strikes >= 2) return "결정은 서두르지 말고 코스를 보세요.";
-  return "타자 반응을 보고 다음 코스를 정하세요.";
 }
 
 function mobilePitchOutcomeLabel(result) {
@@ -8735,8 +8737,8 @@ function renderMobileGameUi() {
   const missionResult = mission ? ensureStageRunState().missionResults[mission.id] : null;
   const missionStats = mission ? ensureStageRunState().inningStats[state.inning] || state.currentInningStats : null;
   const liveStatus = liveMissionStatus(mission, missionStats, missionResult);
-  const recommendation = state.atBat?.recommendation;
   const theme = MP.getStageTheme?.(state.stageThemeId);
+  const catcherSign = currentCatcherSign();
 
   if (els.mobileStageThemeSummary) {
     els.mobileStageThemeSummary.innerHTML = `<span>STAGE ${currentStageNumber()}</span><strong>${escapeHtml(theme?.name || stageConfig().name || "테마")}</strong>`;
@@ -8770,12 +8772,12 @@ function renderMobileGameUi() {
   renderMobileZones();
   renderMobilePitchButtons();
   renderMobileRelease();
-  renderMobileDuelRead(recommendation);
+  renderMobileDuelRead();
   renderMobileRecentLog();
   renderMobilePlayerDetail();
-  els.mobileRecommendConfidence.textContent = "판단";
-  els.mobileRecommendTitle.textContent = "마운드 판단";
-  els.mobileRecommendText.textContent = mobileCatcherLine();
+  els.mobileRecommendConfidence.textContent = "힌트";
+  els.mobileRecommendTitle.textContent = "포수 한마디";
+  els.mobileRecommendText.textContent = catcherSign.text;
   if (mobilePanelMode) renderMobileInfoPanel();
 }
 

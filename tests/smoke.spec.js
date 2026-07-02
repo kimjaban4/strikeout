@@ -80,7 +80,8 @@ test("mobile pitch controls render and unlock throw after choosing a zone", asyn
   await expect(page.locator("#mobilePitchButtons .mobile-pitch-button")).toHaveCount(mobilePitchCount);
   await expect(page.locator("#mobilePitchButtons .mobile-pitch-button > b")).toHaveCount(0);
   await expect(page.locator("#mobilePitchButtons .mobile-pitch-button").first()).toHaveAttribute("data-burden", /stable|warn|danger/);
-  await expect(page.locator("#mobileDuelReadRisk")).toHaveText(/\d+%/);
+  await expect(page.locator(".mobile-duel-read-card")).not.toContainText(/추천|예측/);
+  await expect(page.locator("#mobileDuelReadRisk")).toHaveText(/안정|경계|위험/);
   await expect(page.locator("#mobileReleasePanel")).toBeHidden();
   await expect(page.locator('#mobileStrikeZone [data-target-col="0"][data-target-row="1"]')).toHaveAttribute("aria-label", "바깥쪽");
   await expect(page.locator('#mobileStrikeZone [data-target-col="2"][data-target-row="1"]')).toHaveAttribute("aria-label", "몸쪽");
