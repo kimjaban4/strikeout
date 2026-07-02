@@ -3902,6 +3902,12 @@ function impressionFromResult(result) {
   const pitch = result.pitch;
   const side = locationSideFromRowCol(result.location?.row ?? 1, result.location?.col ?? 1);
   const height = locationHeightFromRowCol(result.location?.row ?? 1);
+  if (side === "inside" && hasRewardCard("C010")) {
+    return { id: "inside_fast", label: "몸쪽 의식", text: "몸쪽 성공으로 타자가 플레이트 안쪽을 의식합니다.", age: 0 };
+  }
+  if (side === "outside" && hasRewardCard("C011")) {
+    return { id: "outside_slow", label: "바깥쪽 의식", text: "바깥쪽 성공으로 타자의 배트가 멀리 나옵니다.", age: 0 };
+  }
   if (isFastPitch(pitch) && side === "inside") {
     return { id: "inside_fast", label: "몸쪽 의식", text: "몸쪽 빠른 공을 의식합니다.", age: 0 };
   }
@@ -3931,6 +3937,7 @@ function impressionBoostForPitch(impression, pitch, side, height) {
     boost += dugoutEffectValue("slowAfterFastBoost");
     if (hasRewardCard("R001")) boost += 0.18;
     if (pitch.id === "change" && hasRewardCard("C005")) boost += Math.min(0.24, stack("C005") * 0.12);
+    if (["change", "splitter", "cutter"].includes(pitch.id) && hasRewardCard("C015")) boost += Math.min(0.18, stack("C015") * 0.09);
   }
   if (impression?.id === "inside_fast" && side === "outside") {
     if (hasRewardCard("R010")) boost += 0.18;
@@ -11238,6 +11245,8 @@ MP.debug = {
   currentStageNumber,
   currentStageRunLimit,
   currentStageInnings,
+  impressionFromResult,
+  currentImpressionEffect,
   getBatterMind: () => state.atBat?.batterMind || null,
   getLastImpression: () => state.atBat?.batterMind?.lastImpression || null,
   getBatterMemory: () => state.atBat?.batterMemory || null,

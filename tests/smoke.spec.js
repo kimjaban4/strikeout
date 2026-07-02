@@ -134,6 +134,37 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
 });
 
+test("psych reward cards feed batter impressions", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.ownedRewardCards = ["C010", "C011", "C015", "C015"];
+    const fast = MP.debug.pitchById("four");
+    const slider = MP.debug.pitchById("slider");
+    const change = MP.debug.pitchById("change");
+    const inside = MP.debug.impressionFromResult({
+      result: "calledStrike",
+      pitch: fast,
+      location: { row: 1, col: 2, inZone: true }
+    })?.id;
+    const outside = MP.debug.impressionFromResult({
+      result: "calledStrike",
+      pitch: slider,
+      location: { row: 1, col: 0, inZone: true }
+    })?.id;
+    MP.state.atBat.batterMind.lastImpression = { id: "fast_timing", label: "빠른 공 의식", age: 0 };
+    const withSameRelease = MP.debug.currentImpressionEffect(change, { row: 1, col: 1, inZone: true }).contactQuality;
+    MP.state.ownedRewardCards = [];
+    const withoutSameRelease = MP.debug.currentImpressionEffect(change, { row: 1, col: 1, inZone: true }).contactQuality;
+    return { inside, outside, withSameRelease, withoutSameRelease };
+  });
+
+  expect(result.inside).toBe("inside_fast");
+  expect(result.outside).toBe("outside_slow");
+  expect(result.withSameRelease).toBeLessThan(result.withoutSameRelease);
+});
+
 test("dugout choice reveals applied effect before advancing", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
