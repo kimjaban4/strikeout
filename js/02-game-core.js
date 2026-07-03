@@ -1479,8 +1479,8 @@ function rollStageRewardBaseRarity(result) {
 
 function stageRewardUpgradePlan(result) {
   const score = result.rewardBoost?.performanceScore || 0;
-  if ((result.rewardBoost?.coreChoiceBonus || 0) > 0 || score >= 19) return ["core", "rare", "rare"];
-  if (score >= 15) return ["rare", "rare"];
+  if ((result.rewardBoost?.coreChoiceBonus || 0) > 0 || score >= 19) return ["core", "rare"];
+  if (score >= 11) return ["rare", "rare"];
   if (score >= 7) return ["rare"];
   if (score >= 4 || (result.rewardBoost?.guaranteedRare || 0) > 0) return ["rare"];
   return [];
@@ -2173,6 +2173,66 @@ function absorbCardPerformance(rareBonus = 0.03, coreBonus = 0, event = null) {
   }
 }
 
+function pitchPerformanceEvent(result) {
+  if (!result?.displayReaction) return null;
+  const reaction = result.displayReaction;
+  const source = result.result || "";
+  const base = { source, limit: 4 };
+
+  if (result.result === "swingingStrike") {
+    if (/유인구에 끌려나왔습니다|완전히 속았습니다/.test(reaction)) return { ...base, key: `whiff:${reaction}`, label: reaction.replace("습니다", ""), score: 2 };
+    if (/스윙이 빨랐습니다|스윙이 늦었습니다/.test(reaction)) return { ...base, key: `whiff:${reaction}`, label: reaction.replace("습니다", ""), score: 1 };
+    return { ...base, key: "whiff:normal", label: "헛스윙 유도", score: 1 };
+  }
+
+  if (result.result === "foul" && !/정타에 가까웠습니다/.test(reaction)) {
+    return { ...base, key: `foul:${reaction}`, label: reaction.replace("습니다", ""), score: 1, limit: 3 };
+  }
+
+  if (result.result === "ball") {
+    if (/몸쪽을 의식했습니다/.test(reaction)) return { ...base, key: "ball:inside", label: "몸쪽 각인", score: 2, limit: 3 };
+    if (/눈높이가 올라갔습니다|바깥쪽을 의식했습니다|타자의 반응을 확인했습니다/.test(reaction)) return { ...base, key: `ball:${reaction}`, label: reaction.replace("습니다", ""), score: 1, limit: 3 };
+    return null;
+  }
+
+  if (result.result === "doublePlay") {
+    return { ...base, key: hasScoringPositionFromKey(result.runnersBefore) ? "doublePlay:pressure" : "doublePlay:normal", label: hasScoringPositionFromKey(result.runnersBefore) ? "위기 병살" : "병살 유도", score: hasScoringPositionFromKey(result.runnersBefore) ? 4 : 3, limit: 3 };
+  }
+
+  if (result.result === "inPlayOut") {
+    if (/먹힌 타구|급하게|배트 중심|약한 땅볼/.test(reaction)) return { ...base, key: `out:${reaction}`, label: reaction.replace("습니다", ""), score: /먹힌 타구|급하게/.test(reaction) ? 2 : 1, limit: 4 };
+  }
+
+  return null;
+}
+
+function countPerformanceEvent(result) {
+  if (!isOutResult(result)) return null;
+  const count = String(result.countBefore || "");
+  const balls = Number(count.split("-")[0]) || 0;
+  if (balls < 2) return null;
+  if (count === "3-2") {
+    const strikeout = result.result === "swingingStrike" || result.result === "calledStrike";
+    return { key: "count:fullOut", label: strikeout ? "풀카운트 삼진" : "풀카운트 제압", score: strikeout ? 3 : 2, source: "카운트 운영", limit: 3 };
+  }
+  return { key: "count:recovery", label: "불리한 카운트 회복", score: 1, source: "카운트 운영", limit: 4 };
+}
+
+function recordPitchPerformance(result) {
+  const event = pitchPerformanceEvent(result);
+  if (event) absorbCardPerformance(0.01, 0, event);
+  const countEvent = countPerformanceEvent(result);
+  if (countEvent) absorbCardPerformance(0.01, 0, countEvent);
+  const previous = result?.previousPattern;
+  const current = result?.pattern;
+  if (!previous || !current || !isOutResult(result)) return;
+  const brokePattern = previous.pitchId === current.pitchId || previous.category === current.category || previous.side === current.side;
+  const changed = previous.pitchId !== current.pitchId && (previous.category !== current.category || previous.side !== current.side || previous.height !== current.height);
+  if (brokePattern && changed) {
+    absorbCardPerformance(0.015, 0, { key: "pattern:breakOut", label: result.result === "doublePlay" ? "반복 끊고 병살" : result.result === "swingingStrike" || result.result === "calledStrike" ? "반복 끊고 삼진" : "반복 위험 회피", score: result.result === "doublePlay" ? 4 : result.result === "swingingStrike" || result.result === "calledStrike" ? 3 : 1, source: "반복 대응", limit: 3 });
+  }
+}
+
 const COUNT_PRESSURE = {
   "0-0": { label: "기본 상태", swingInZone: 0, swingOutZone: 0, contact: 0, foul: 0, contactQuality: 0 },
   "1-0": { label: "존 안 공 예상", swingInZone: 0.04, swingOutZone: -0.03, contact: 0.02, foul: 0.01, contactQuality: 2 },
@@ -2413,9 +2473,12 @@ function pitchDisplayReaction(result) {
 
   if (result.result === "ball") {
     if (ballIntent === "brush" || side === "inside") return "몸쪽을 의식했습니다";
+    if (ballIntent === "waste") return "타자의 반응을 확인했습니다";
+    if (ballIntent === "show" && height === "high") return "눈높이가 올라갔습니다";
+    if (ballIntent === "show" && side === "outside") return "바깥쪽을 의식했습니다";
     if (ballIntent === "fishing") return "속지 않았습니다";
     if (count.startsWith("3-")) return "끝까지 골라냈습니다";
-    if (ballIntent === "show") return "타자가 쉽게 참았습니다";
+    if (ballIntent === "show") return "타자가 흔들리지 않았습니다";
     return "여유 있게 골랐습니다";
   }
 
@@ -5831,6 +5894,7 @@ function checkStageRunLimit(result = {}) {
 function applyPitchResult(result) {
   enrichPitchDisplay(result);
   recordPitchReactionSummary(result);
+  recordPitchPerformance(result);
   const title = pitchLogTitle(result);
   const text = pitchLogText(result);
   const revealText = targetRevealText(result);
@@ -6228,13 +6292,13 @@ const DUGOUT_READ_EVENTS = [
       {
         label: "강속구로 먼저 밀어붙인다",
         correct: true,
-        resultText: "판단 적중\n강속구 구위 상승",
+        resultText: "코치의 사인이 맞았습니다.\n강속구 구위 상승",
         effects: { fastControl: 6, firstStrikePressure: 1 }
       },
       {
         label: "느린 공 유인을 늘린다",
         correct: false,
-        resultText: "판단 빗나감\n초구 정타 위험 증가",
+        resultText: "타자들이 빠른 승부를 기다리고 있었습니다.\n초구 정타 위험 증가",
         effects: { firstBatterSuspicion: 8, singleRisk: 0.08 }
       }
     ]
@@ -6248,13 +6312,13 @@ const DUGOUT_READ_EVENTS = [
       {
         label: "느린 공과 변화구를 믿는다",
         correct: true,
-        resultText: "판단 적중\n변화구 제구 상승",
+        resultText: "손끝 감각이 살아났습니다.\n변화구 제구 상승",
         effects: { breakingQuality: 5, slowAfterFastBoost: 0.12 }
       },
       {
         label: "강속구 비중을 더 높인다",
         correct: false,
-        resultText: "판단 빗나감\n강속구 정타 위험 증가",
+        resultText: "타자들이 빠른 공을 기다리고 있었습니다.\n강속구 정타 위험 증가",
         effects: { firstBatterSuspicion: 6, singleRisk: 0.1 }
       }
     ]
@@ -6268,13 +6332,13 @@ const DUGOUT_READ_EVENTS = [
       {
         label: "바깥쪽 승부로 빼낸다",
         correct: true,
-        resultText: "판단 적중\n몸쪽 각인 이후 바깥쪽 범타 확률 증가",
+        resultText: "타자들의 시선을 안쪽에 묶었습니다.\n몸쪽 각인 이후 바깥쪽 범타 확률 증가",
         effects: { impressionBonus: 0.14, courseReadBoost: 0.25 }
       },
       {
         label: "몸쪽을 한 번 더 찌른다",
         correct: false,
-        resultText: "판단 빗나감\n몸쪽 반복 의심 증가",
+        resultText: "타자들이 몸쪽 반복을 의식했습니다.\n몸쪽 반복 의심 증가",
         effects: { repeatSuspicionMult: 1.12, firstBatterSuspicion: 5 }
       }
     ]
@@ -6288,13 +6352,13 @@ const DUGOUT_READ_EVENTS = [
       {
         label: "구종이나 높이를 바꾼다",
         correct: true,
-        resultText: "판단 적중\n반복 간파 위험 감소",
+        resultText: "배합 흐름을 끊었습니다.\n반복 간파 위험 감소",
         effects: { repeatSuspicionMult: 0.82, suspicionMult: 0.92 }
       },
       {
         label: "성공했던 흐름을 유지한다",
         correct: false,
-        resultText: "판단 빗나감\n반복 패턴 의심 증가",
+        resultText: "타자들이 같은 흐름을 기다렸습니다.\n반복 패턴 의심 증가",
         effects: { repeatSuspicionMult: 1.18, firstBatterSuspicion: 10 }
       }
     ]
@@ -6630,13 +6694,13 @@ function applyDugoutChoice(choice) {
   state.mobileDugoutCue = choice.title;
   if (choice.dugoutEventId) {
     const resultHtml = escapeHtml(choice.resultText || choice.title).replaceAll("\n", "<br>");
-    if (choice.correct) absorbCardPerformance(0.025, 0.005, { key: "dugoutRead", label: "덕아웃 판단 적중", score: 2, source: "덕아웃", limit: 3 });
+    if (choice.correct) absorbCardPerformance(0.025, 0.005, { key: "dugoutRead", label: "덕아웃 판단", score: 2, source: "덕아웃", limit: 3 });
     const effectLines = dugoutEffectSummary(effects, choice.correct);
     const hintHtml = choice.hint ? `<p class="log-muted">${escapeHtml(choice.hint)}</p>` : "";
     const effectHtml = effectLines.length ? `<p class="log-muted">효과: ${effectLines.map(escapeHtml).join(" · ")}</p>` : "";
     addLog("덕아웃 판단", `<p>${resultHtml}</p>${hintHtml}${effectHtml}<p class="log-muted">선택: ${escapeHtml(choice.title)}</p>`);
-    showEventBanner(`${choice.correct ? "판단 적중" : "판단 빗나감"}\n${choice.title}`, choice.correct ? "reward" : "walk", 1300);
-    return { title: choice.correct ? "덕아웃 판단 적중" : "덕아웃 판단 빗나감", resultText: choice.resultText || choice.title, effectLines };
+    showEventBanner(`덕아웃 판단\n${choice.title}`, choice.correct ? "reward" : "walk", 1300);
+    return { title: "덕아웃 판단", resultText: choice.resultText || choice.title, effectLines };
   } else {
     addLog("덕아웃 선택", `${choice.title}${rarityNote} · ${choice.desc}`);
     showEventBanner(`이닝 작전\n${choice.title}`, "reward", 1200);

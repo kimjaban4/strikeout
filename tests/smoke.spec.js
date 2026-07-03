@@ -120,6 +120,10 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
     const MP = window.MountPsycho;
     Math.random = () => 0.99;
     const run = MP.state.stageRun;
+    MP.state.pitcher.rewardHistory.conditionTypesByStage = ["pitchUpgrade", "weaknessMitigation", "bonusTag"].map((type) => ({
+      stageIndex: MP.state.stageIndex,
+      type
+    }));
     run.rewardBoost.absorbed = 3;
     run.rewardBoost.performanceScore = 19;
     run.stagePerformanceEvents = [
@@ -133,6 +137,7 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
   await expect(page.locator("#rewardChoiceList .reward-card-upgrade-token")).toHaveCount(2);
   await expect(page.locator("#rewardChoiceList .reward-card-upgrade-token").filter({ hasText: /설계 삼진/ })).toHaveCount(1);
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
+  await expect(page.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(1);
 });
 
 test("stage reward card pool excludes dugout-only planning cards", async ({ page }) => {
@@ -265,7 +270,7 @@ test("dugout choice reveals applied effect before advancing", async ({ page }) =
         title: "강속구로 먼저 압박한다",
         desc: "테스트 덕아웃 판단",
         hint: "관찰 0-0 스트라이크",
-        resultText: "판단 적중\n강속구 구위 상승",
+        resultText: "코치의 사인이 맞았습니다.\n강속구 구위 상승",
         correct: true,
         effects: { fastControl: 6, firstStrikePressure: 1 },
         rarity: "common"
@@ -279,6 +284,7 @@ test("dugout choice reveals applied effect before advancing", async ({ page }) =
   await page.waitForTimeout(1300);
   await page.locator("[data-dugout-index='0']").click();
   await expect(page.locator("#dugoutTitle")).toContainText(/판단/);
+  await expect(page.locator(".dugout-result-card")).not.toContainText(/판단 적중|판단 빗나감/);
   await expect(page.locator(".dugout-result-card")).toContainText(/강속구 제구/);
   await expect(page.locator(".dugout-result-card")).toContainText(/최종 카드 보상 성과/);
   await page.locator("[data-dugout-continue]").click();
@@ -327,8 +333,9 @@ test("stage debug page can force stage reward flow", async ({ page }) => {
   await expect(frame.locator("#rewardTitle")).toContainText("스테이지 보상");
   await expect(frame.locator("#rewardChoiceList .reward-choice-card")).toHaveCount(3);
   await expect(frame.locator("#rewardChoiceList .reward-card-upgrade-token")).toHaveCount(8);
-  await expect(frame.locator("#rewardChoiceList .reward-card-upgrade-badge")).toHaveCount(3);
+  await expect(frame.locator("#rewardChoiceList .reward-card-upgrade-badge")).toHaveCount(2);
   await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
+  await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(1);
 });
 
 test("mobile player tags open detail modal with tag text", async ({ page }) => {
