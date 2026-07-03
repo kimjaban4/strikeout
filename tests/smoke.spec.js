@@ -133,9 +133,9 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
     MP.state.lastStageResult = MP.debug.calculateStageResult();
     MP.debug.openRewardDraft("스테이지 보상", null, "stageCard");
   });
-  await expect(page.locator("#rewardAbsorbList")).toBeHidden();
-  await expect(page.locator("#rewardChoiceList .reward-card-upgrade-token")).toHaveCount(2);
-  await expect(page.locator("#rewardChoiceList .reward-card-upgrade-token").filter({ hasText: /설계 삼진/ })).toHaveCount(1);
+  await expect(page.locator("#rewardAbsorbList")).toBeVisible();
+  await expect(page.locator("#rewardAbsorbList .reward-performance-pill")).toHaveCount(2);
+  await expect(page.locator("#rewardAbsorbList .reward-performance-pill").filter({ hasText: /설계 삼진/ })).toHaveCount(1);
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(1);
 });
@@ -358,7 +358,7 @@ test("stage debug page can force stage reward flow", async ({ page }) => {
   await expect(frame.locator("#rewardOverlay")).toBeVisible({ timeout: 5000 });
   await expect(frame.locator("#rewardTitle")).toContainText("스테이지 보상");
   await expect(frame.locator("#rewardChoiceList .reward-choice-card")).toHaveCount(3);
-  await expect(frame.locator("#rewardChoiceList .reward-card-upgrade-token")).toHaveCount(8);
+  await expect(frame.locator("#rewardAbsorbList .reward-performance-pill")).toHaveCount(8);
   await expect(frame.locator("#rewardChoiceList .reward-card-upgrade-badge")).toHaveCount(2);
   await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
   await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(1);

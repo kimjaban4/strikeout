@@ -7153,8 +7153,22 @@ function stagePerformanceGrade(score = 0) {
 
 function renderStagePerformanceAbsorbList(kind) {
   if (!els.rewardAbsorbList) return;
-  els.rewardAbsorbList.hidden = true;
-  els.rewardAbsorbList.innerHTML = "";
+  const tokens = kind === "stageCard" ? state.rewardUpgradeTokens || [] : [];
+  if (!tokens.length) {
+    els.rewardAbsorbList.hidden = true;
+    els.rewardAbsorbList.innerHTML = "";
+    return;
+  }
+  els.rewardAbsorbList.hidden = false;
+  els.rewardAbsorbList.innerHTML = tokens
+    .map(
+      (token) => `
+        <span class="reward-performance-pill reward-performance-pill--card-${token.cardIndex}" style="--token-delay:${token.delayMs}ms;--absorb-x:${token.absorbX}px;--absorb-y:${token.absorbY}px;--start-x:${token.startX}px">
+          ${escapeHtml(token.label)}
+        </span>
+      `
+    )
+    .join("");
 }
 
 function stageCardRewardReasonText() {
@@ -7754,27 +7768,29 @@ function rewardChoiceMetaHtml(reward) {
 
 function buildRewardUpgradeTokens(kind) {
   if (kind !== "stageCard" || !state.rewardChoices?.length) return [];
-  const targetIndexes = state.rewardChoices
-    .map((choice, index) => (choice.upgradedByPerformance ? index : -1))
-    .filter((index) => index >= 0);
-  if (!targetIndexes.length) return [];
-  return stagePerformanceEventsForReward().map((event, index) => ({
-    label: event.label,
-    cardIndex: targetIndexes[Math.floor(Math.random() * targetIndexes.length)],
-    delayIndex: index,
-    offsetX: [-34, 0, 34][index % 3]
-  }));
+  const targetIndexes = state.rewardChoices.map((_, index) => index);
+  const absorbXByCard = [-220, 0, 220];
+  return stagePerformanceEventsForReward().map((event, index) => {
+    const cardIndex = targetIndexes[Math.floor(Math.random() * targetIndexes.length)];
+    return {
+      label: event.label,
+      cardIndex,
+      delayIndex: index,
+      delayMs: 520 + index * 150,
+      startX: [-56, -20, 24, 58][index % 4],
+      absorbX: absorbXByCard[cardIndex] || 0,
+      absorbY: -196
+    };
+  });
 }
 
 function rewardUpgradeTokensHtml(index) {
-  const tokens = (state.rewardUpgradeTokens || []).filter((token) => token.cardIndex === index);
   const reward = state.rewardChoices?.[index];
-  if (!tokens.length && !reward?.upgradedByPerformance) return "";
+  if (!reward?.upgradedByPerformance) return "";
   const from = reward?.upgradedFromRarity ? cardRarityLabel(reward.upgradedFromRarity) : "";
   const to = reward?.rarity ? cardRarityLabel(reward.rarity) : "";
   return `
     <div class="reward-card-upgrade-tokens" aria-hidden="true">
-      ${tokens.map((token) => `<span class="reward-card-upgrade-token" style="--token-delay:${760 + token.delayIndex * 140}ms;--token-x:${token.offsetX || 0}px">${escapeHtml(token.label)}</span>`).join("")}
       <span class="reward-card-upgrade-badge">${from && to ? `${escapeHtml(from)} → ${escapeHtml(to)}` : "등급 상승"}</span>
       <span class="reward-card-upgrade-text">${to === "핵심" ? "진화 개방" : "등급 상승"}</span>
     </div>

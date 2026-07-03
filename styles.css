@@ -2142,6 +2142,7 @@ h2 {
 }
 
 .reward-box {
+  position: relative;
   width: min(760px, 100%);
   padding: 24px;
   border: 1px solid rgba(176, 207, 232, 0.9);
@@ -2173,11 +2174,11 @@ h2 {
 }
 
 .reward-absorb-list {
-  margin-top: 14px;
-  padding: 12px;
-  border: 1px solid rgba(108, 145, 172, 0.36);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.72);
+  position: fixed;
+  inset: 0;
+  z-index: 360;
+  pointer-events: none;
+  overflow: visible;
 }
 
 .reward-absorb-list[hidden] {
@@ -2217,6 +2218,20 @@ h2 {
   font-size: 0.75rem;
   font-weight: 900;
   transform-origin: 50% 50%;
+}
+
+.reward-absorb-list > .reward-performance-pill {
+  position: absolute;
+  left: calc(50% + var(--start-x, 0px));
+  bottom: 18px;
+  z-index: 9;
+  padding: 7px 10px;
+  background: rgba(255, 247, 194, 0.98);
+  box-shadow: 0 12px 26px rgba(92, 72, 18, 0.2);
+  color: #6b4500;
+  font-size: 16px;
+  opacity: 0;
+  white-space: nowrap;
 }
 
 .reward-performance-pill b {
@@ -6246,6 +6261,28 @@ button.card-toggle {
     padding: 12px 14px;
   }
 
+  .reward-absorb-list > .reward-performance-pill {
+    font-size: 15px;
+    max-width: 220px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .reward-absorb-list > .reward-performance-pill--card-0 {
+    --absorb-x: 0px !important;
+    --absorb-y: -320px !important;
+  }
+
+  .reward-absorb-list > .reward-performance-pill--card-1 {
+    --absorb-x: 0px !important;
+    --absorb-y: -205px !important;
+  }
+
+  .reward-absorb-list > .reward-performance-pill--card-2 {
+    --absorb-x: 0px !important;
+    --absorb-y: -90px !important;
+  }
+
   .reward-choice-card strong,
   .theme-choice-card strong {
     font-size: 21px;
@@ -6898,6 +6935,7 @@ button.card-toggle {
 
 .reward-overlay.is-revealing .reward-performance-pill {
   animation: rewardPerformanceAbsorb 1040ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  animation-delay: var(--token-delay, 520ms);
 }
 
 .reward-overlay.is-revealing .reward-performance-pill:nth-child(1) {
@@ -6924,10 +6962,14 @@ button.card-toggle {
   animation-delay: 420ms;
 }
 
+.reward-overlay.is-revealing .reward-absorb-list > .reward-performance-pill {
+  animation-delay: var(--token-delay, 520ms);
+}
+
 .reward-overlay.is-revealing .reward-choice-card.is-upgraded-by-performance {
   animation:
     rewardCardDealIn 680ms cubic-bezier(0.16, 0.88, 0.2, 1.04) both,
-    rewardCardAbsorbPulse 520ms ease-out 980ms both;
+    rewardCardAbsorbPulse 760ms ease-out 1320ms both;
 }
 
 .reward-overlay.is-revealing .reward-card-upgrade-token {
@@ -6937,11 +6979,11 @@ button.card-toggle {
 
 .reward-overlay.is-revealing .reward-card-upgrade-text {
   animation: rewardUpgradeTextPop 1280ms ease-out both;
-  animation-delay: var(--upgrade-text-delay, 1320ms);
+  animation-delay: var(--upgrade-text-delay, 1640ms);
 }
 
 .reward-overlay.is-revealing .reward-card-upgrade-badge {
-  animation: rewardUpgradeBadgeIn 520ms ease-out 980ms both;
+  animation: rewardUpgradeBadgeIn 520ms ease-out 1540ms both;
 }
 
 .reward-overlay.is-revealing .reward-choice-card::after {
@@ -6979,7 +7021,7 @@ button.card-toggle {
 .reward-overlay.is-revealing .reward-choice-card.core-evolution-card.is-upgraded-by-performance {
   animation:
     rewardCoreCardDealIn 680ms cubic-bezier(0.16, 0.88, 0.2, 1.04) both,
-    rewardCardAbsorbPulse 520ms ease-out 980ms both;
+    rewardCardAbsorbPulse 760ms ease-out 1320ms both;
 }
 
 .reward-overlay.is-revealing .reward-choice-card.core-evolution-card.is-upgraded-by-performance .reward-card-upgrade-tokens::after {
@@ -6990,7 +7032,7 @@ button.card-toggle {
   border-radius: 12px;
   opacity: 0;
   box-shadow: 0 0 0 0 rgba(246, 185, 64, 0.38);
-  animation: rewardEvolutionRing 920ms ease-out var(--evolution-delay, 1120ms) both;
+  animation: rewardEvolutionRing 920ms ease-out var(--evolution-delay, 1540ms) both;
 }
 
 .dugout-overlay.is-revealing .dugout-box {
@@ -7189,19 +7231,19 @@ button.card-toggle {
 @keyframes rewardPerformanceAbsorb {
   0% {
     opacity: 0;
-    transform: translateY(-8px) scale(0.96);
+    transform: translate(-50%, 46px) scale(0.9);
   }
   26% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translate(-50%, 0) scale(1.08);
   }
   72% {
     opacity: 1;
-    transform: translate(calc(var(--absorb-x, 0px) * 0.78), calc(var(--absorb-y, 150px) * 0.78)) scale(0.74);
+    transform: translate(calc(-50% + var(--absorb-x, 0px)), var(--absorb-y, -196px)) scale(0.74);
   }
   100% {
     opacity: 0;
-    transform: translate(var(--absorb-x, 0px), var(--absorb-y, 150px)) scale(0.18);
+    transform: translate(calc(-50% + var(--absorb-x, 0px)), var(--absorb-y, -196px)) scale(0.16);
   }
 }
 
