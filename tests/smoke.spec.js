@@ -309,6 +309,32 @@ test("stage clear reward cards appear after inning transition overlay", async ({
   await expect(page.locator("#rewardChoiceList .reward-choice-card")).toHaveCount(3);
 });
 
+test("stage reward selection routes through stage-break dugout before theme select", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.pendingCoreEvolutionReward = false;
+    MP.state.awaitingThemeSelection = true;
+    MP.state.stageBreakDugoutDone = false;
+    MP.state.pendingThemeChoices = MP.rollThemeChoices
+      ? MP.rollThemeChoices(MP.state.stageIndex + 1, MP.state.pitcher)
+      : [];
+    MP.debug.openStageTagReward();
+  });
+  await expect(page.locator("#rewardOverlay")).toBeVisible({ timeout: 3000 });
+  await page.waitForTimeout(1300);
+  await page.locator("#rewardChoiceList .reward-choice-card").first().click();
+  await expect(page.locator("#dugoutOverlay")).toBeVisible({ timeout: 3000 });
+  await expect(page.locator("#dugoutTitle")).toContainText("덕아웃 판단");
+  await page.waitForTimeout(1300);
+  await page.locator("[data-dugout-index='0']").click();
+  await expect(page.locator(".dugout-result-card")).toBeVisible();
+  await expect(page.locator("[data-dugout-continue]")).toContainText("테마 선택");
+  await page.locator("[data-dugout-continue]").click();
+  await expect(page.locator("#themeSelectOverlay")).toBeVisible({ timeout: 3000 });
+});
+
 test("natural stage final out opens stage reward cards", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);

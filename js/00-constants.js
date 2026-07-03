@@ -316,6 +316,10 @@ MP.rewardCardCatalog = [
   { id: "C012", rarity: "common", name: "첫 이닝 흐름 잡기", type: ["심리전"], description: "스테이지 초반에는 배합을 넓게 가져가며 타자를 흔듭니다.", triggerCondition: "각 스테이지 1이닝", effectText: "각 스테이지 첫 이닝에는 반복 흐름이 조금 덜 읽힙니다.", stackType: "unique", synergyTags: ["운영"], effects: { firstInningSuspicionMult: 0.9 } },
   { id: "C013", rarity: "common", name: "이닝 미션 집중", type: ["보상 강화"], description: "이닝 미션을 달성하면 다음 선택지가 넓어집니다.", triggerCondition: "이닝 미션 성공", effectText: "이닝 미션 성공 시 보상 선택지가 증가합니다.", stackType: "limited", maxStack: 2, synergyTags: ["미션"], effects: { missionChoiceBonus: 1 } },
   { id: "C014", rarity: "common", name: "기본기 다지기", type: ["구종 강화"], description: "모든 구종의 손끝 감각이 조금 안정됩니다.", triggerCondition: "항상 적용", effectText: "모든 구종 제구가 조금 증가합니다.", stackType: "stackable", maxStack: 3, synergyTags: ["기본기"], effects: { allControl: 2 } },
+  { id: "C016", rarity: "common", name: "초구 설계", type: ["초구", "심리전"], description: "타석 첫 공으로 의식이나 카운트 주도권을 잡습니다.", triggerCondition: "타자별 첫 투구", effectText: "초구 제구와 초구 설계 성과가 좋아집니다.", stackType: "stackable", maxStack: 2, synergyTags: ["초구", "운영"], effects: { firstPitchControl: 3, firstPitchPlan: 1 } },
+  { id: "C017", rarity: "common", name: "타이밍 체크", type: ["분석", "심리전"], description: "앞/뒤 타이밍 반응을 보고 다음 공의 속도차를 살립니다.", triggerCondition: "타이밍 반응 후 다른 계열", effectText: "타이밍을 읽은 뒤 다른 흐름으로 흔들기 쉽습니다.", stackType: "stackable", maxStack: 2, synergyTags: ["타이밍", "완급"], effects: { timingCounter: 1 } },
+  { id: "C018", rarity: "common", name: "존 끝 감각", type: ["카운트", "코스 운영"], description: "볼카운트가 불리해도 존 끝과 낮은 코스로 버팁니다.", triggerCondition: "2볼 이상 존 끝 선택", effectText: "불리한 카운트의 존 끝 제구가 좋아집니다.", stackType: "stackable", maxStack: 2, synergyTags: ["카운트", "코스"], effects: { behindEdgeControl: 3 } },
+  { id: "C019", rarity: "common", name: "반응 관찰", type: ["분석", "보상 강화"], description: "버리는 공과 보여주는 공의 반응을 최종 카드 성과로 회수합니다.", triggerCondition: "반응 확인용 볼", effectText: "타자 반응 관찰 성과가 더 안정적으로 쌓입니다.", stackType: "stackable", maxStack: 2, synergyTags: ["분석", "볼 의도"], effects: { readBallBonus: 1 } },
   { id: "R001", rarity: "rare", name: "완급으로 흔들기", type: ["심리전", "구종 운영"], description: "빠른 공 뒤에 느린 공을 섞어 타자의 기준 타이밍을 무너뜨립니다.", triggerCondition: "직구 이후 느린 구종", effectText: "직구 이후 느린 구종으로 타이밍을 빼앗습니다.", stackType: "unique", synergyTags: ["완급"], effects: { slowAfterFastSuspicion: -8 } },
   { id: "R002", rarity: "rare", name: "결정구 미끼", type: ["심리전", "구종 운영"], description: "유리한 카운트에서 변화구를 미끼로 써 배트를 끌어냅니다.", triggerCondition: "0-2, 1-2, 2-2 변화구", effectText: "유리 카운트 변화구 헛스윙 확률이 증가합니다.", stackType: "limited", maxStack: 2, synergyTags: ["유인구"], effects: { aheadBreakingWhiff: 0.12 } },
   { id: "R003", rarity: "rare", name: "득점권 호흡", type: ["위기관리"], description: "주자가 득점권에 있어도 손끝과 호흡을 유지합니다.", triggerCondition: "주자 2루 또는 3루", effectText: "득점권 제구가 증가합니다.", stackType: "unique", synergyTags: ["득점권"], effects: { scoringControl: 10 } },
@@ -338,9 +342,17 @@ MP.rewardCardCatalog = [
   { id: "K006", rarity: "core", name: "클러치 에이스", type: ["위기관리"], description: "득점권에서도 호흡을 유지해 손끝과 제구가 흔들리지 않습니다.", triggerCondition: "주자 2루 또는 3루", effectText: "득점권 멘탈과 제구가 상승합니다.", stackType: "unique", synergyTags: ["득점권"], effects: { scoringControl: 5, scoringQuality: 4 } },
   { id: "K007", rarity: "core", name: "배합 배신", type: ["심리전", "구종 운영"], description: "앞선 두 공과 다른 흐름으로 타자의 기다림을 끊습니다.", triggerCondition: "직전 2구와 다른 계열", effectText: "직전 2구와 다른 계열로 타자의 기다림을 흔듭니다.", stackType: "unique", synergyTags: ["배합"], effects: { patternBreaker: 1 } },
   { id: "K008", rarity: "core", name: "결승구 설계", type: ["구종 운영", "보상 강화"], description: "2스트라이크 이후 삼진을 잡을수록 보상 흐름이 좋아집니다.", triggerCondition: "2스트 이후 삼진", effectText: "2스트 이후 삼진 시 희귀 카드 선택지가 추가됩니다.", stackType: "unique", synergyTags: ["삼진", "보상"], effects: { twoStrikeGuaranteedRare: 1 } },
+  { id: "K009", rarity: "core", name: "배합 설계자", type: ["심리전", "볼 의도"], description: "보여준 공과 버린 공의 의미를 다음 결과까지 이어갑니다.", triggerCondition: "볼 의도 후 결과", effectText: "볼 설계 후 범타·삼진 성과가 크게 좋아집니다.", stackType: "unique", synergyTags: ["배합", "볼 의도"], effects: { ballIntentDesign: 1 } },
+  { id: "K010", rarity: "core", name: "정면승부형", type: ["초구", "제구"], description: "첫 공부터 스트라이크를 꽂아 타자의 선택지를 좁힙니다.", triggerCondition: "초구 스트라이크", effectText: "초구 스트라이크 제구와 타구 억제가 좋아집니다.", stackType: "unique", synergyTags: ["초구", "스트라이크"], effects: { firstStrikeDirect: 1 } },
+  { id: "K011", rarity: "core", name: "타이밍 지배", type: ["완급", "심리전"], description: "빠름과 느림의 기준점을 빼앗아 타자의 컨택 질을 낮춥니다.", triggerCondition: "다른 계열 연계", effectText: "속도차와 계열 전환으로 타이밍을 지배합니다.", stackType: "unique", synergyTags: ["완급", "타이밍"], effects: { timingDominance: 1 } },
+  { id: "K012", rarity: "core", name: "승부 설계자", type: ["보상 강화", "심리전"], description: "정타 위험이나 좋은 볼을 다음 결과로 회수해 보상 등급을 밀어 올립니다.", triggerCondition: "위험 반응 후 범타·삼진", effectText: "연계 성과 점수가 크게 증가합니다.", stackType: "unique", synergyTags: ["보상", "연계"], effects: { foulPlanReward: 1 } },
   { id: "R018", rarity: "rare", name: "불리한 카운트 수습", type: ["위기 관리"], description: "2볼 이상에서 다음 1타석의 제구 불안을 줄입니다.", triggerCondition: "2볼 이상", effectText: "2볼 이상 제구 불안 감소", stackType: "unique", synergyTags: ["카운트", "제구"], effects: { fullCountControlBonus: 4, fullCountWalkReduce: 1 } },
   { id: "R019", rarity: "rare", name: "약점 노출 유도", type: ["타자 분석"], description: "다음 스테이지 첫 3타자의 공략 보조태그 발견 확률이 올라갑니다.", triggerCondition: "다음 스테이지 첫 3타자", effectText: "초반 타자 약점 발견률 증가", stackType: "unique", synergyTags: ["분석", "공략"], effects: { candidateNextFirstWeakness: 3 } },
-  { id: "R020", rarity: "rare", name: "반복 패턴 절단", type: ["심리전"], description: "직전 2구와 다른 계열이나 높이를 고르면 반복 간파 위험이 줄어듭니다.", triggerCondition: "직전 2구와 다른 선택", effectText: "반복 간파 위험 감소", stackType: "unique", synergyTags: ["반복", "배합"], effects: { patternBreaker: 1 } }
+  { id: "R020", rarity: "rare", name: "반복 패턴 절단", type: ["심리전"], description: "직전 2구와 다른 계열이나 높이를 고르면 반복 간파 위험이 줄어듭니다.", triggerCondition: "직전 2구와 다른 선택", effectText: "반복 간파 위험 감소", stackType: "unique", synergyTags: ["반복", "배합"], effects: { patternBreaker: 1 } },
+  { id: "R021", rarity: "rare", name: "몸쪽 각인", type: ["코스 운영", "심리전"], description: "몸쪽 의식을 심은 뒤 반대쪽 승부를 더 선명하게 살립니다.", triggerCondition: "몸쪽 후 바깥쪽", effectText: "몸쪽 각인 후 바깥쪽 제구와 약타 유도가 좋아집니다.", stackType: "unique", synergyTags: ["몸쪽", "바깥쪽"], effects: { insideImpressionOutside: 1 } },
+  { id: "R022", rarity: "rare", name: "배합 복선", type: ["구종 운영", "심리전"], description: "앞선 공과 다른 계열로 타자의 기준점을 빼앗습니다.", triggerCondition: "직전 공과 다른 계열", effectText: "계열 전환 시 타구 품질이 낮아집니다.", stackType: "unique", synergyTags: ["배합", "전환"], effects: { categorySwitchSuspicion: 1 } },
+  { id: "R023", rarity: "rare", name: "카운트 운영", type: ["카운트", "제구"], description: "2볼 이후에도 존 끝 승부로 카운트 압박을 뒤집습니다.", triggerCondition: "2볼 이상", effectText: "불리한 카운트 제구와 카운트 회복 성과가 증가합니다.", stackType: "unique", synergyTags: ["카운트", "제구"], effects: { twoBallStrikeReduce: 1 } },
+  { id: "R024", rarity: "rare", name: "위기 병살 유도", type: ["위기관리", "땅볼"], description: "주자가 있을 때 낮은 공으로 병살 루트를 설계합니다.", triggerCondition: "1루 주자 + 낮은 공", effectText: "위기 병살 확률과 병살 성과가 증가합니다.", stackType: "unique", synergyTags: ["병살", "낮은 코스"], effects: { pressureDoublePlay: 1 } }
 ];
 
 MP.dugoutChoiceCatalog = [
@@ -948,7 +960,11 @@ MP.hiddenTendencies = [
   { id: "twoStrike", label: "인내형", approach: "보호", foul: 0.1 },
   { id: "walkHunter", label: "안구형", approach: "신중", chase: -0.08 },
   { id: "slugger", label: "응징형", approach: "적극", power: 8 },
-  { id: "reactive", label: "즉응형", approach: "균형", pattern: 0.12 }
+  { id: "reactive", label: "즉응형", approach: "균형", pattern: 0.12 },
+  { id: "scoringImpatient", label: "득점권 조급", approach: "적극", scoringChase: 0.1 },
+  { id: "threeBallWait", label: "3볼 대기", approach: "신중", threeBallTake: 0.12 },
+  { id: "offspeedPatient", label: "변화구 참음", approach: "신중", offspeedChase: -0.12 },
+  { id: "insideGuard", label: "몸쪽 경계", approach: "신중", insideAware: 0.12 }
 ];
 
 MP.memoryGrades = [

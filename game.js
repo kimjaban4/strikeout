@@ -312,6 +312,10 @@ const rewardCardCatalog = [
   { id: "C012", rarity: "common", name: "첫 이닝 흐름 잡기", type: ["심리전"], description: "스테이지 초반에는 배합을 넓게 가져가며 타자를 흔듭니다.", triggerCondition: "각 스테이지 1이닝", effectText: "각 스테이지 첫 이닝에는 반복 흐름이 조금 덜 읽힙니다.", stackType: "unique", synergyTags: ["운영"], effects: { firstInningSuspicionMult: 0.9 } },
   { id: "C013", rarity: "common", name: "이닝 미션 집중", type: ["보상 강화"], description: "이닝 미션을 달성하면 다음 선택지가 넓어집니다.", triggerCondition: "이닝 미션 성공", effectText: "이닝 미션 성공 시 보상 선택지가 증가합니다.", stackType: "limited", maxStack: 2, synergyTags: ["미션"], effects: { missionChoiceBonus: 1 } },
   { id: "C014", rarity: "common", name: "기본기 다지기", type: ["구종 강화"], description: "모든 구종의 손끝 감각이 조금 안정됩니다.", triggerCondition: "항상 적용", effectText: "모든 구종 제구가 조금 증가합니다.", stackType: "stackable", maxStack: 3, synergyTags: ["기본기"], effects: { allControl: 2 } },
+  { id: "C016", rarity: "common", name: "초구 설계", type: ["초구", "심리전"], description: "타석 첫 공으로 의식이나 카운트 주도권을 잡습니다.", triggerCondition: "타자별 첫 투구", effectText: "초구 제구와 초구 설계 성과가 좋아집니다.", stackType: "stackable", maxStack: 2, synergyTags: ["초구", "운영"], effects: { firstPitchControl: 3, firstPitchPlan: 1 } },
+  { id: "C017", rarity: "common", name: "타이밍 체크", type: ["분석", "심리전"], description: "앞/뒤 타이밍 반응을 보고 다음 공의 속도차를 살립니다.", triggerCondition: "타이밍 반응 후 다른 계열", effectText: "타이밍을 읽은 뒤 다른 흐름으로 흔들기 쉽습니다.", stackType: "stackable", maxStack: 2, synergyTags: ["타이밍", "완급"], effects: { timingCounter: 1 } },
+  { id: "C018", rarity: "common", name: "존 끝 감각", type: ["카운트", "코스 운영"], description: "볼카운트가 불리해도 존 끝과 낮은 코스로 버팁니다.", triggerCondition: "2볼 이상 존 끝 선택", effectText: "불리한 카운트의 존 끝 제구가 좋아집니다.", stackType: "stackable", maxStack: 2, synergyTags: ["카운트", "코스"], effects: { behindEdgeControl: 3 } },
+  { id: "C019", rarity: "common", name: "반응 관찰", type: ["분석", "보상 강화"], description: "버리는 공과 보여주는 공의 반응을 최종 카드 성과로 회수합니다.", triggerCondition: "반응 확인용 볼", effectText: "타자 반응 관찰 성과가 더 안정적으로 쌓입니다.", stackType: "stackable", maxStack: 2, synergyTags: ["분석", "볼 의도"], effects: { readBallBonus: 1 } },
   { id: "R001", rarity: "rare", name: "완급으로 흔들기", type: ["심리전", "구종 운영"], description: "빠른 공 뒤에 느린 공을 섞어 타자의 기준 타이밍을 무너뜨립니다.", triggerCondition: "직구 이후 느린 구종", effectText: "직구 이후 느린 구종으로 타이밍을 빼앗습니다.", stackType: "unique", synergyTags: ["완급"], effects: { slowAfterFastSuspicion: -8 } },
   { id: "R002", rarity: "rare", name: "결정구 미끼", type: ["심리전", "구종 운영"], description: "유리한 카운트에서 변화구를 미끼로 써 배트를 끌어냅니다.", triggerCondition: "0-2, 1-2, 2-2 변화구", effectText: "유리 카운트 변화구 헛스윙 확률이 증가합니다.", stackType: "limited", maxStack: 2, synergyTags: ["유인구"], effects: { aheadBreakingWhiff: 0.12 } },
   { id: "R003", rarity: "rare", name: "득점권 호흡", type: ["위기관리"], description: "주자가 득점권에 있어도 손끝과 호흡을 유지합니다.", triggerCondition: "주자 2루 또는 3루", effectText: "득점권 제구가 증가합니다.", stackType: "unique", synergyTags: ["득점권"], effects: { scoringControl: 10 } },
@@ -334,9 +338,17 @@ const rewardCardCatalog = [
   { id: "K006", rarity: "core", name: "클러치 에이스", type: ["위기관리"], description: "득점권에서도 호흡을 유지해 손끝과 제구가 흔들리지 않습니다.", triggerCondition: "주자 2루 또는 3루", effectText: "득점권 멘탈과 제구가 상승합니다.", stackType: "unique", synergyTags: ["득점권"], effects: { scoringControl: 5, scoringQuality: 4 } },
   { id: "K007", rarity: "core", name: "배합 배신", type: ["심리전", "구종 운영"], description: "앞선 두 공과 다른 흐름으로 타자의 기다림을 끊습니다.", triggerCondition: "직전 2구와 다른 계열", effectText: "직전 2구와 다른 계열로 타자의 기다림을 흔듭니다.", stackType: "unique", synergyTags: ["배합"], effects: { patternBreaker: 1 } },
   { id: "K008", rarity: "core", name: "결승구 설계", type: ["구종 운영", "보상 강화"], description: "2스트라이크 이후 삼진을 잡을수록 보상 흐름이 좋아집니다.", triggerCondition: "2스트 이후 삼진", effectText: "2스트 이후 삼진 시 희귀 카드 선택지가 추가됩니다.", stackType: "unique", synergyTags: ["삼진", "보상"], effects: { twoStrikeGuaranteedRare: 1 } },
+  { id: "K009", rarity: "core", name: "배합 설계자", type: ["심리전", "볼 의도"], description: "보여준 공과 버린 공의 의미를 다음 결과까지 이어갑니다.", triggerCondition: "볼 의도 후 결과", effectText: "볼 설계 후 범타·삼진 성과가 크게 좋아집니다.", stackType: "unique", synergyTags: ["배합", "볼 의도"], effects: { ballIntentDesign: 1 } },
+  { id: "K010", rarity: "core", name: "정면승부형", type: ["초구", "제구"], description: "첫 공부터 스트라이크를 꽂아 타자의 선택지를 좁힙니다.", triggerCondition: "초구 스트라이크", effectText: "초구 스트라이크 제구와 타구 억제가 좋아집니다.", stackType: "unique", synergyTags: ["초구", "스트라이크"], effects: { firstStrikeDirect: 1 } },
+  { id: "K011", rarity: "core", name: "타이밍 지배", type: ["완급", "심리전"], description: "빠름과 느림의 기준점을 빼앗아 타자의 컨택 질을 낮춥니다.", triggerCondition: "다른 계열 연계", effectText: "속도차와 계열 전환으로 타이밍을 지배합니다.", stackType: "unique", synergyTags: ["완급", "타이밍"], effects: { timingDominance: 1 } },
+  { id: "K012", rarity: "core", name: "승부 설계자", type: ["보상 강화", "심리전"], description: "정타 위험이나 좋은 볼을 다음 결과로 회수해 보상 등급을 밀어 올립니다.", triggerCondition: "위험 반응 후 범타·삼진", effectText: "연계 성과 점수가 크게 증가합니다.", stackType: "unique", synergyTags: ["보상", "연계"], effects: { foulPlanReward: 1 } },
   { id: "R018", rarity: "rare", name: "불리한 카운트 수습", type: ["위기 관리"], description: "2볼 이상에서 다음 1타석의 제구 불안을 줄입니다.", triggerCondition: "2볼 이상", effectText: "2볼 이상 제구 불안 감소", stackType: "unique", synergyTags: ["카운트", "제구"], effects: { fullCountControlBonus: 4, fullCountWalkReduce: 1 } },
   { id: "R019", rarity: "rare", name: "약점 노출 유도", type: ["타자 분석"], description: "다음 스테이지 첫 3타자의 공략 보조태그 발견 확률이 올라갑니다.", triggerCondition: "다음 스테이지 첫 3타자", effectText: "초반 타자 약점 발견률 증가", stackType: "unique", synergyTags: ["분석", "공략"], effects: { candidateNextFirstWeakness: 3 } },
-  { id: "R020", rarity: "rare", name: "반복 패턴 절단", type: ["심리전"], description: "직전 2구와 다른 계열이나 높이를 고르면 반복 간파 위험이 줄어듭니다.", triggerCondition: "직전 2구와 다른 선택", effectText: "반복 간파 위험 감소", stackType: "unique", synergyTags: ["반복", "배합"], effects: { patternBreaker: 1 } }
+  { id: "R020", rarity: "rare", name: "반복 패턴 절단", type: ["심리전"], description: "직전 2구와 다른 계열이나 높이를 고르면 반복 간파 위험이 줄어듭니다.", triggerCondition: "직전 2구와 다른 선택", effectText: "반복 간파 위험 감소", stackType: "unique", synergyTags: ["반복", "배합"], effects: { patternBreaker: 1 } },
+  { id: "R021", rarity: "rare", name: "몸쪽 각인", type: ["코스 운영", "심리전"], description: "몸쪽 의식을 심은 뒤 반대쪽 승부를 더 선명하게 살립니다.", triggerCondition: "몸쪽 후 바깥쪽", effectText: "몸쪽 각인 후 바깥쪽 제구와 약타 유도가 좋아집니다.", stackType: "unique", synergyTags: ["몸쪽", "바깥쪽"], effects: { insideImpressionOutside: 1 } },
+  { id: "R022", rarity: "rare", name: "배합 복선", type: ["구종 운영", "심리전"], description: "앞선 공과 다른 계열로 타자의 기준점을 빼앗습니다.", triggerCondition: "직전 공과 다른 계열", effectText: "계열 전환 시 타구 품질이 낮아집니다.", stackType: "unique", synergyTags: ["배합", "전환"], effects: { categorySwitchSuspicion: 1 } },
+  { id: "R023", rarity: "rare", name: "카운트 운영", type: ["카운트", "제구"], description: "2볼 이후에도 존 끝 승부로 카운트 압박을 뒤집습니다.", triggerCondition: "2볼 이상", effectText: "불리한 카운트 제구와 카운트 회복 성과가 증가합니다.", stackType: "unique", synergyTags: ["카운트", "제구"], effects: { twoBallStrikeReduce: 1 } },
+  { id: "R024", rarity: "rare", name: "위기 병살 유도", type: ["위기관리", "땅볼"], description: "주자가 있을 때 낮은 공으로 병살 루트를 설계합니다.", triggerCondition: "1루 주자 + 낮은 공", effectText: "위기 병살 확률과 병살 성과가 증가합니다.", stackType: "unique", synergyTags: ["병살", "낮은 코스"], effects: { pressureDoublePlay: 1 } }
 ];
 
 const dugoutChoiceCatalog = [
@@ -944,7 +956,11 @@ const hiddenTendencies = [
   { id: "twoStrike", label: "인내형", approach: "보호", foul: 0.1 },
   { id: "walkHunter", label: "안구형", approach: "신중", chase: -0.08 },
   { id: "slugger", label: "응징형", approach: "적극", power: 8 },
-  { id: "reactive", label: "즉응형", approach: "균형", pattern: 0.12 }
+  { id: "reactive", label: "즉응형", approach: "균형", pattern: 0.12 },
+  { id: "scoringImpatient", label: "득점권 조급", approach: "적극", scoringChase: 0.1 },
+  { id: "threeBallWait", label: "3볼 대기", approach: "신중", threeBallTake: 0.12 },
+  { id: "offspeedPatient", label: "변화구 참음", approach: "신중", offspeedChase: -0.12 },
+  { id: "insideGuard", label: "몸쪽 경계", approach: "신중", insideAware: 0.12 }
 ];
 
 const memoryGrades = [
@@ -1108,6 +1124,8 @@ const state = {
   dugoutPending: false,
   dugoutBeforeAtBat: false,
   dugoutAdvanceBatterOnConfirm: false,
+  dugoutAfterContinue: "",
+  stageBreakDugoutDone: false,
   pendingDugoutAdvance: null,
   activeDugoutEffects: [],
   pendingRunComplete: false,
@@ -2008,15 +2026,24 @@ function rewardCardControlBonus(pitch, aimed, intent) {
   const stack = (id) => cardStackCount(id);
   const previousPitch = state.atBat?.choiceHistory?.[state.atBat.choiceHistory.length - 1];
   const impression = state.atBat?.batterMind?.lastImpression;
+  const side = locationSideFromRowCol(aimed.row, aimed.col);
+  const height = locationHeightFromRowCol(aimed.row);
+  const firstPitch = currentAtBatPitchCount() <= 1;
   if (hasRewardCard("C014")) bonus += stack("C014") * 2;
   if (pitch.id === "four" && hasRewardCard("C001")) bonus += stack("C001") * 5;
   if ((state.atBat?.pitchHistory?.length || 0) <= 1 && hasRewardCard("C007")) bonus += stack("C007") * 5;
+  if (firstPitch && hasRewardCard("C016")) bonus += stack("C016") * 3;
+  if (firstPitch && intent === "strike" && hasRewardCard("K010")) bonus += 4;
   if (state.balls >= 3 && hasRewardCard("C008")) bonus += stack("C008") * 5;
+  if (state.balls >= 2 && side !== "center" && hasRewardCard("C018")) bonus += stack("C018") * 3;
   if (state.balls >= 2 && hasRewardCard("R018")) bonus += 4;
+  if (state.balls >= 2 && hasRewardCard("R023")) bonus += 4;
   if (aimed.row >= 2 && hasRewardCard("C009")) bonus += stack("C009") * 4;
+  if (height === "low" && state.bases[0] && hasRewardCard("R024")) bonus += 4;
   if (state.balls === 3 && state.strikes === 2 && hasRewardCard("R012")) bonus += 10;
   if (previousPitch?.pitchId === pitch.id && hasRewardCard("R005")) bonus += 2;
   if (impression && hasRewardCard("K004")) bonus += 2;
+  if (impression?.id === "inside_fast" && side === "outside" && hasRewardCard("R021")) bonus += 4;
   if (state.bases[1] || state.bases[2]) {
     if (hasRewardCard("R003")) bonus += 10;
     if (hasRewardCard("K006")) bonus += 5;
@@ -2048,8 +2075,19 @@ function rewardCardPitchEffect(pitch, location, plannedCourse, pattern, batter) 
   const isBreaking = pitch.category === "breaking" || pitch.category === "offspeed";
   const hasScoringRunner = state.bases[1] || state.bases[2];
   const isSameReleaseTarget = previousCategory === "fast" && ["change", "splitter", "cutter"].includes(pitch.id);
+  const firstPitch = currentAtBatPitchCount() <= 1;
 
   if (pitch.id === "two" && location.inZone && hasRewardCard("C002")) effect.doublePlayBonus += stack("C002") * 0.05;
+  if (firstPitch && hasRewardCard("C016")) {
+    effect.quality += stack("C016") * 2;
+    effect.contactQuality -= stack("C016") * 2;
+    effect.label = "초구 설계";
+  }
+  if (firstPitch && location.inZone && hasRewardCard("K010")) {
+    effect.quality += 3;
+    effect.contactQuality -= 4;
+    effect.label = "정면승부";
+  }
   if (pitch.id === "change" && previousCategory === "fast" && hasRewardCard("C005")) {
     effect.quality += stack("C005") * 4;
     effect.contact -= stack("C005") * 0.025;
@@ -2070,11 +2108,39 @@ function rewardCardPitchEffect(pitch, location, plannedCourse, pattern, batter) 
   }
   if (side === "inside" && location.inZone && hasRewardCard("C010")) effect.contactQuality -= stack("C010") * 5;
   if (previousCategory === "fast" && isBreaking && hasRewardCard("R001")) effect.contactQuality -= 4;
+  if (previousCategory && previousCategory !== pitch.category && hasRewardCard("C017")) {
+    effect.contactQuality -= stack("C017") * 2;
+    effect.label = "타이밍 체크";
+  }
+  if (previousCategory && previousCategory !== pitch.category && hasRewardCard("R022")) {
+    effect.contactQuality -= 4;
+    effect.label = "배합 복선";
+  }
+  if (previousCategory && previousCategory !== pitch.category && hasRewardCard("K011")) {
+    effect.contact -= 0.03;
+    effect.contactQuality -= 6;
+    effect.label = "타이밍 지배";
+  }
+  if (state.balls >= 2 && side !== "center" && hasRewardCard("C018")) effect.contactQuality -= stack("C018") * 2;
   if (isBreaking && state.strikes >= 2 && hasRewardCard("R002")) {
     effect.swing += stack("R002") * 0.12;
     effect.contact -= stack("R002") * 0.08;
   }
   if (side === "outside" && hasRewardCard("R010") && state.lastPitchPattern?.side === "inside") effect.quality += 4;
+  if (side === "outside" && impression?.id === "inside_fast" && hasRewardCard("R021")) {
+    effect.quality += 3;
+    effect.contactQuality -= 5;
+    effect.label = "몸쪽 각인";
+  }
+  if (pattern?.ballIntent && hasRewardCard("K009")) {
+    effect.contactQuality -= pattern.ballIntent === "show" || pattern.ballIntent === "waste" ? 2 : 1;
+    effect.label = "배합 설계";
+  }
+  if (height === "low" && state.bases[0] && hasRewardCard("R024")) {
+    effect.doublePlayBonus += 0.06;
+    effect.contactQuality -= 3;
+    effect.label = "위기 병살";
+  }
   if (previousHeight === "high" && height === "low" && isBreaking && hasRewardCard("R015")) {
     effect.swing += 0.05;
     effect.contact -= 0.05;
@@ -2434,6 +2500,7 @@ function createInningStats(inning = 1) {
     weaknessOuts: 0,
     weaknessChoices: 0,
     weaknessPitchSuccesses: 0,
+    performanceBest: {},
     scoringPositionRuns: 0,
     highlightSuccesses: 0,
     suspicionEnd: 0,
@@ -2465,6 +2532,9 @@ function createStageRunState(stageIndex = 0) {
     inningStats: {},
     rewardBoost: { choiceBonus: 0, rareBonus: 0, coreBonus: 0, guaranteedRare: 0, coreChoiceBonus: 0, absorbed: 0, performanceScore: 0 },
     stagePerformanceEvents: [],
+    performanceCaps: {},
+    performanceBests: {},
+    pendingPerformanceLink: null,
     reactionCounts: {},
     recentReactions: [],
     rival: {
@@ -3240,6 +3310,10 @@ function pickHiddenTendency(stats, isBoss) {
     if (tendency.id === "walkHunter") weight += stats.선구 / 70;
     if (tendency.id === "slugger") weight += stats.파워 / 65;
     if (tendency.id === "reactive") weight += stats.예측 / 80;
+    if (tendency.id === "scoringImpatient") weight += stats.파워 / 90;
+    if (tendency.id === "threeBallWait") weight += stats.선구 / 65;
+    if (tendency.id === "offspeedPatient") weight += stats.선구 / 70;
+    if (tendency.id === "insideGuard") weight += stats.예측 / 75;
     if (isBoss) weight += 0.5;
     return { ...tendency, weight };
   });
@@ -3415,22 +3489,44 @@ function countKey() {
   return `${state.balls}-${state.strikes}`;
 }
 
+function performanceCapKey(event, key) {
+  if (event?.capKey) return event.capKey;
+  if (event?.capScope === "inning") return `inning:${state.inning}:${key}`;
+  if (event?.capScope === "atBat") return `atbat:${state.inning}:${state.batterIndex}:${key}`;
+  if (event?.capScope === "rival") return `rival:${currentBatter()?.name || state.batterIndex}:${key}`;
+  return key;
+}
+
 function absorbCardPerformance(rareBonus = 0.03, coreBonus = 0, event = null) {
   const run = ensureStageRunState();
   const boost = run.rewardBoost;
-  boost.absorbed = (boost.absorbed || 0) + 1;
-  boost.rareBonus += rareBonus;
-  boost.coreBonus += coreBonus;
+  let entry = null;
   if (event?.label && event.score > 0) {
     const key = event.key || event.label;
-    const used = run.stagePerformanceEvents || [];
-    if (event.limit && used.filter((item) => item.key === key).length >= event.limit) return;
-    const entry = {
+    const capKey = performanceCapKey(event, key);
+    const caps = run.performanceCaps || {};
+    const used = caps[capKey] || 0;
+    if (event.limit && used >= event.limit) return;
+    if (event.bestOnly) {
+      const bests = run.performanceBests || {};
+      const bestScore = bests[capKey] || 0;
+      if (bestScore >= event.score) return;
+      run.performanceBests = { ...bests, [capKey]: event.score };
+    }
+    entry = {
       key,
+      capKey,
       label: event.label,
       score: event.score,
       source: event.source || ""
     };
+    run.performanceCaps = { ...caps, [capKey]: used + 1 };
+  }
+  boost.absorbed = (boost.absorbed || 0) + 1;
+  boost.rareBonus += rareBonus;
+  boost.coreBonus += coreBonus;
+  if (entry) {
+    const used = run.stagePerformanceEvents || [];
     run.stagePerformanceEvents = [...used, entry].slice(-12);
     boost.performanceScore = (boost.performanceScore || 0) + event.score;
   }
@@ -3440,30 +3536,33 @@ function pitchPerformanceEvent(result) {
   if (!result?.displayReaction) return null;
   const reaction = result.displayReaction;
   const source = result.result || "";
-  const base = { source, limit: 4 };
+  const base = { source, limit: 4, capScope: "inning" };
 
   if (result.result === "swingingStrike") {
-    if (/유인구에 끌려나왔습니다|완전히 속았습니다/.test(reaction)) return { ...base, key: `whiff:${reaction}`, label: reaction.replace("습니다", ""), score: 2 };
-    if (/스윙이 빨랐습니다|스윙이 늦었습니다/.test(reaction)) return { ...base, key: `whiff:${reaction}`, label: reaction.replace("습니다", ""), score: 1 };
-    return { ...base, key: "whiff:normal", label: "헛스윙 유도", score: 1 };
+    if (/유인구에 끌려나왔습니다|완전히 속았습니다/.test(reaction)) return { ...base, key: `whiff:${reaction}`, capKey: `inning:${state.inning}:whiff`, label: reaction.replace("습니다", ""), score: 2 };
+    if (/스윙이 빨랐습니다|스윙이 늦었습니다/.test(reaction)) return { ...base, key: `whiff:${reaction}`, capKey: `inning:${state.inning}:timingWhiff`, label: reaction.replace("습니다", ""), score: 1 };
+    return { ...base, key: "whiff:normal", capKey: `inning:${state.inning}:whiff`, label: "헛스윙 유도", score: 1 };
   }
 
   if (result.result === "foul" && !/정타에 가까웠습니다/.test(reaction)) {
-    return { ...base, key: `foul:${reaction}`, label: reaction.replace("습니다", ""), score: 1, limit: 3 };
+    return { ...base, key: `foul:${reaction}`, capKey: `inning:${state.inning}:foul`, label: reaction.replace("습니다", ""), score: 1, limit: 3 };
   }
 
   if (result.result === "ball") {
-    if (/몸쪽을 의식했습니다/.test(reaction)) return { ...base, key: "ball:inside", label: "몸쪽 각인", score: 2, limit: 3 };
-    if (/눈높이가 올라갔습니다|바깥쪽을 의식했습니다|타자의 반응을 확인했습니다/.test(reaction)) return { ...base, key: `ball:${reaction}`, label: reaction.replace("습니다", ""), score: 1, limit: 3 };
+    const ballCap = `atbat:${state.inning}:${state.batterIndex}:ballRead`;
+    if (/몸쪽을 의식했습니다/.test(reaction)) return { ...base, key: "ball:inside", capKey: ballCap, label: "몸쪽 각인", score: 2, limit: 1 };
+    if (/눈높이가 올라갔습니다|바깥쪽을 의식했습니다|타자의 반응을 확인했습니다/.test(reaction)) return { ...base, key: `ball:${reaction}`, capKey: ballCap, label: reaction.replace("습니다", ""), score: 1, limit: 1 };
     return null;
   }
 
   if (result.result === "doublePlay") {
-    return { ...base, key: hasScoringPositionFromKey(result.runnersBefore) ? "doublePlay:pressure" : "doublePlay:normal", label: hasScoringPositionFromKey(result.runnersBefore) ? "위기 병살" : "병살 유도", score: hasScoringPositionFromKey(result.runnersBefore) ? 4 : 3, limit: 3 };
+    const pressure = hasScoringPositionFromKey(result.runnersBefore);
+    const cardBonus = hasRewardCard("R024") ? 1 : 0;
+    return { ...base, key: pressure ? "doublePlay:pressure" : "doublePlay:normal", capKey: `inning:${state.inning}:doublePlay`, label: pressure ? "위기 병살" : "병살 유도", score: (pressure ? 4 : 3) + cardBonus, limit: 2 };
   }
 
   if (result.result === "inPlayOut") {
-    if (/먹힌 타구|급하게|배트 중심|약한 땅볼/.test(reaction)) return { ...base, key: `out:${reaction}`, label: reaction.replace("습니다", ""), score: /먹힌 타구|급하게/.test(reaction) ? 2 : 1, limit: 4 };
+    if (/먹힌 타구|급하게|배트 중심|약한 땅볼/.test(reaction)) return { ...base, key: `out:${reaction}`, capKey: `inning:${state.inning}:weakOut`, label: reaction.replace("습니다", ""), score: /먹힌 타구|급하게/.test(reaction) ? 2 : 1, limit: 4 };
   }
 
   return null;
@@ -3476,9 +3575,56 @@ function countPerformanceEvent(result) {
   if (balls < 2) return null;
   if (count === "3-2") {
     const strikeout = result.result === "swingingStrike" || result.result === "calledStrike";
-    return { key: "count:fullOut", label: strikeout ? "풀카운트 삼진" : "풀카운트 제압", score: strikeout ? 3 : 2, source: "카운트 운영", limit: 3 };
+    return { key: "count:fullOut", label: strikeout ? "풀카운트 삼진" : "풀카운트 제압", score: strikeout ? 3 : 2, source: "카운트 운영", limit: 3, capScope: "inning" };
   }
-  return { key: "count:recovery", label: "불리한 카운트 회복", score: 1, source: "카운트 운영", limit: 4 };
+  return { key: "count:recovery", label: "불리한 카운트 회복", score: hasRewardCard("R023") ? 2 : 1, source: "카운트 운영", limit: 3, capScope: "inning" };
+}
+
+function recordLinkedPerformance(result, event) {
+  const run = ensureStageRunState();
+  const batterKey = `${state.inning}:${state.batterIndex}`;
+  const link = run.pendingPerformanceLink;
+  if (link && link.batterKey === batterKey && isOutResult(result)) {
+    const isStrikeout = result.result === "swingingStrike" || result.result === "calledStrike";
+    const coreBonus = hasRewardCard("K009") || hasRewardCard("K012") ? 1 : 0;
+    const label =
+      link.kind === "solidFoul"
+        ? isStrikeout
+          ? "정타 위험 뒤 삼진"
+          : "정타 위험 회수"
+        : isStrikeout
+          ? "설계 볼 뒤 삼진"
+          : "설계 볼 회수";
+    const score = (link.kind === "solidFoul" ? 3 : 2) + coreBonus;
+    absorbCardPerformance(0.015, hasRewardCard("K012") ? 0.005 : 0, {
+      key: `link:${link.kind}`,
+      capKey: `atbat:${batterKey}:link`,
+      label,
+      score,
+      source: link.label || "연계 성과",
+      limit: 1
+    });
+    run.pendingPerformanceLink = null;
+    return;
+  }
+  if (link && result?.result !== "ball" && result?.result !== "foul") run.pendingPerformanceLink = null;
+  if (result?.result === "ball" && event) {
+    run.pendingPerformanceLink = { kind: "goodBall", batterKey, label: event.label };
+    if (hasRewardCard("C019")) {
+      absorbCardPerformance(0.01, 0, {
+        key: "read:ball",
+        capKey: `atbat:${batterKey}:readBall`,
+        label: "반응 관찰",
+        score: 1,
+        source: "반응 관찰",
+        limit: 1
+      });
+    }
+    return;
+  }
+  if (result?.result === "foul" && /정타에 가까웠습니다/.test(result.displayReaction || "")) {
+    run.pendingPerformanceLink = { kind: "solidFoul", batterKey, label: "정타 위험" };
+  }
 }
 
 function recordPitchPerformance(result) {
@@ -3486,6 +3632,7 @@ function recordPitchPerformance(result) {
   if (event) absorbCardPerformance(0.01, 0, event);
   const countEvent = countPerformanceEvent(result);
   if (countEvent) absorbCardPerformance(0.01, 0, countEvent);
+  recordLinkedPerformance(result, event);
   const previous = result?.previousPattern;
   const current = result?.pattern;
   if (!previous || !current || !isOutResult(result)) return;
@@ -3493,6 +3640,16 @@ function recordPitchPerformance(result) {
   const changed = previous.pitchId !== current.pitchId && (previous.category !== current.category || previous.side !== current.side || previous.height !== current.height);
   if (brokePattern && changed) {
     absorbCardPerformance(0.015, 0, { key: "pattern:breakOut", label: result.result === "doublePlay" ? "반복 끊고 병살" : result.result === "swingingStrike" || result.result === "calledStrike" ? "반복 끊고 삼진" : "반복 위험 회피", score: result.result === "doublePlay" ? 4 : result.result === "swingingStrike" || result.result === "calledStrike" ? 3 : 1, source: "반복 대응", limit: 3 });
+  }
+  if (result?.batter?.isRival || result?.batter?.isBoss) {
+    absorbCardPerformance(0.01, 0.005, {
+      key: "rival:out",
+      capKey: `rival:${result.batter.name}:bestOut`,
+      label: result.result === "doublePlay" ? "위험 타자 병살" : "위험 타자 제압",
+      score: result.result === "doublePlay" ? 4 : 2,
+      source: "라이벌 승부",
+      bestOnly: true
+    });
   }
 }
 
@@ -5218,6 +5375,8 @@ function startGame() {
   state.dugoutPending = false;
   state.dugoutBeforeAtBat = false;
   state.dugoutAdvanceBatterOnConfirm = false;
+  state.dugoutAfterContinue = "";
+  state.stageBreakDugoutDone = false;
   state.pendingDugoutAdvance = null;
   state.activeDugoutEffects = [];
   state.pendingRunComplete = false;
@@ -5316,6 +5475,8 @@ function beginGameWithPitcher(pitcher) {
   state.dugoutPending = false;
   state.dugoutBeforeAtBat = false;
   state.dugoutAdvanceBatterOnConfirm = false;
+  state.dugoutAfterContinue = "";
+  state.stageBreakDugoutDone = false;
   state.pendingDugoutAdvance = null;
   state.activeDugoutEffects = [];
   state.pendingRunComplete = false;
@@ -5360,6 +5521,8 @@ function beginGameWithPitcher(pitcher) {
   state.dugoutPending = false;
   state.dugoutBeforeAtBat = false;
   state.dugoutAdvanceBatterOnConfirm = false;
+  state.dugoutAfterContinue = "";
+  state.stageBreakDugoutDone = false;
   state.pendingDugoutAdvance = null;
   state.pendingDugoutChoices = [];
   render();
@@ -5416,7 +5579,23 @@ function startAtBat() {
   state.waitingNextBatter = false;
   els.nextBatterButton.hidden = true;
   recordMobileBatterStart(currentBatter());
+  recordBatterTransitionLog(currentBatter(), isFirstBatterOfInning);
   hideTiming();
+}
+
+function recordBatterTransitionLog(batter, isFirstBatterOfInning) {
+  if (!batter || state.pitchCount <= 0) return;
+  if (batter.isBoss) {
+    addLog("보스 타자", `${batter.slot}번 ${batter.name}. 같은 패턴은 바로 위험해집니다.`);
+    return;
+  }
+  if (batter.isRival) {
+    addLog("라이벌 등장", `${batter.slot}번 ${batter.name}. 이전 승부 흐름을 기억합니다.`);
+    return;
+  }
+  if (!isFirstBatterOfInning || state.lastAtBatMemory) {
+    addLog("타자 교체", `${batter.slot}번 ${batter.name}. 초구 반응과 숨은 성향을 다시 확인해야 합니다.`);
+  }
 }
 
 function currentBatter() {
@@ -6134,6 +6313,26 @@ function mindGameEffect(pitch, batter, plannedCourse, pattern, location) {
     else if (isInsideMistake(location)) effect.contactQuality += 6;
   }
   if (batter.tendency?.id === "reactive" && (pattern?.suspicion || 0) >= 50) effect.contact += 0.08;
+  if (batter.tendency?.id === "scoringImpatient" && (state.bases[1] || state.bases[2])) {
+    effect.swing += 0.08;
+    effect.chase += 0.08;
+    effect.contactQuality -= location.inZone ? 2 : 5;
+  }
+  if (batter.tendency?.id === "threeBallWait" && state.balls === 3) {
+    if (!location.inZone) effect.chase -= 0.12;
+    else effect.contact += 0.03;
+  }
+  if (batter.tendency?.id === "offspeedPatient" && (pitch.category === "breaking" || pitch.category === "offspeed") && !location.inZone) {
+    effect.chase -= 0.12;
+    effect.contact += 0.03;
+  }
+  if (batter.tendency?.id === "insideGuard" && locationSideFromRowCol(location.row, location.col) === "inside") {
+    if (!location.inZone) effect.chase -= 0.08;
+    else {
+      effect.swing -= 0.03;
+      effect.contactQuality -= 2;
+    }
+  }
 
   const rivalPattern = rivalPsychPatterns[batter?.rivalPatternId];
   if (rivalPattern?.id === "leadoffProbe") {
@@ -7343,6 +7542,9 @@ function queueTransitionBanner(text, tone = "inning", duration = 1600) {
 }
 
 function advanceStage(themeId = state.stageThemeId) {
+  const carriedDugoutEffects = (state.activeDugoutEffects || [])
+    .filter((entry) => entry.nextStage)
+    .map((entry) => ({ ...entry, nextStage: false, expiresInning: 1 }));
   state.stageIndex += 1;
   state.stageThemeId = themeId || state.stageThemeId;
   state.stageJustAdvanced = true;
@@ -7365,13 +7567,15 @@ function advanceStage(themeId = state.stageThemeId) {
   state.currentAtBatMeta = null;
   state.pendingDugoutChoices = [];
   state.dugoutPending = false;
-  state.activeDugoutEffects = [];
+  state.activeDugoutEffects = carriedDugoutEffects;
   state.lastStageResult = null;
   assignStageRival();
   beginInningTracking(1);
   state.dugoutPending = false;
   state.dugoutBeforeAtBat = false;
   state.dugoutAdvanceBatterOnConfirm = false;
+  state.dugoutAfterContinue = "";
+  state.stageBreakDugoutDone = false;
   state.pendingDugoutAdvance = null;
   state.pendingDugoutChoices = [];
   const themeName = MP.getStageTheme?.(state.stageThemeId)?.name || "";
@@ -7415,6 +7619,7 @@ function addOut(count = 1) {
             ? MP.rollThemeChoices(state.stageIndex + 1, state.pitcher)
             : [];
           state.awaitingThemeSelection = true;
+          state.stageBreakDugoutDone = false;
           state.inning = currentStageInnings();
           addLog("스테이지 클리어", `${currentStageInnings()}이닝을 막았습니다. ${stageResultStarLabel(state.lastStageResult.stars)} 보상을 정산합니다.`);
         }
@@ -7625,6 +7830,120 @@ const DUGOUT_READ_EVENTS = [
         effects: { repeatSuspicionMult: 1.18, firstBatterSuspicion: 10 }
       }
     ]
+  },
+  {
+    id: "analysis_report",
+    title: "분석 자료 도착",
+    desc: "전력분석팀이 다음 타자의 반응 자료를 급히 넘겼습니다. 어떤 단서를 먼저 믿을까요?",
+    choices: [
+      {
+        label: "초구 반응 자료를 우선한다",
+        correct: true,
+        resultText: "초구 반응 자료가 맞았습니다.\n다음 첫 타자 약점 후보 확보",
+        effects: { candidateNextFirstWeakness: 2, reactionCheckBoost: 0.25 }
+      },
+      {
+        label: "이전 타석 장타 기록만 본다",
+        correct: false,
+        resultText: "자료 해석이 좁았습니다.\n다음 타자 의심 증가",
+        effects: { firstBatterSuspicion: 7, singleRisk: 0.06 }
+      }
+    ]
+  },
+  {
+    id: "rival_taunt",
+    title: "라이벌 도발",
+    desc: "덕아웃 앞에서 위험 타자가 다음 승부를 노골적으로 기다리고 있습니다. 대응 방향을 정해야 합니다.",
+    choices: [
+      {
+        label: "정면승부보다 코스 전환을 건다",
+        correct: true,
+        resultText: "도발에 말려들지 않았습니다.\n위험 타자 보상 성과 상승",
+        effects: { rivalCoreChoiceBonus: 1, repeatSuspicionMult: 0.9 }
+      },
+      {
+        label: "강한 공으로 바로 응징한다",
+        correct: false,
+        resultText: "타자가 그 공을 기다리고 있었습니다.\n정타 위험 증가",
+        effects: { rivalRisk: 1, singleRisk: 0.1 }
+      }
+    ]
+  },
+  {
+    id: "crowd_pressure",
+    title: "관중 압박",
+    desc: "관중 소리가 커지며 마운드 루틴이 흔들립니다. 호흡을 어떻게 되찾을까요?",
+    choices: [
+      {
+        label: "긴 호흡으로 낮은 코스를 고정한다",
+        correct: true,
+        resultText: "루틴이 안정됐습니다.\n낮은 코스와 압박 상황 제구 상승",
+        effects: { breakingQuality: 3, firstStrikePressure: 1 }
+      },
+      {
+        label: "템포를 올려 빨리 승부한다",
+        correct: false,
+        resultText: "템포가 급해졌습니다.\n초구 정타 위험 증가",
+        effects: { firstBatterSuspicion: 8, singleRisk: 0.08 }
+      }
+    ]
+  },
+  {
+    id: "low_zone_touch",
+    title: "낮은 공 감각",
+    desc: "불펜 코치가 낮은 공의 손끝 감각이 살아났다고 전합니다. 다음 이닝 운영을 고릅니다.",
+    choices: [
+      {
+        label: "낮게 눌러 땅볼 루트를 만든다",
+        correct: true,
+        resultText: "낮은 공 감각이 맞았습니다.\n병살과 약한 타구 루트 상승",
+        effects: { breakingQuality: 4, longHitGuard: 1 }
+      },
+      {
+        label: "높은 공으로 헛스윙만 노린다",
+        correct: false,
+        resultText: "낮은 감각을 살리지 못했습니다.\n반복 의심 증가",
+        effects: { repeatSuspicionMult: 1.12, firstBatterSuspicion: 5 }
+      }
+    ]
+  },
+  {
+    id: "manager_order",
+    title: "감독 지시",
+    desc: "감독이 다음 이닝 첫 타자를 절대 쉽게 내보내지 말라고 지시합니다. 어느 쪽으로 받아들일까요?",
+    choices: [
+      {
+        label: "첫 스트라이크만 확실히 잡는다",
+        correct: true,
+        resultText: "지시가 명확했습니다.\n초구 스트라이크 압박 상승",
+        effects: { firstStrikePressure: 2, missionChoiceBonus: 1 }
+      },
+      {
+        label: "볼넷만 피하려고 가운데로 넣는다",
+        correct: false,
+        resultText: "너무 안전하게 들어갔습니다.\n약한 안타 위험 증가",
+        effects: { singleRisk: 0.12, firstBatterSuspicion: 6 }
+      }
+    ]
+  },
+  {
+    id: "bad_report",
+    title: "타자 분석 오류",
+    desc: "방금 들어온 분석 자료가 이전 반응과 어긋납니다. 어떤 판단을 믿을지 골라야 합니다.",
+    choices: [
+      {
+        label: "직전 반응을 기준으로 수정한다",
+        correct: true,
+        resultText: "오류를 바로잡았습니다.\n반복 간파 위험 감소",
+        effects: { suspicionMult: 0.92, repeatSuspicionMult: 0.84 }
+      },
+      {
+        label: "자료를 그대로 밀어붙인다",
+        correct: false,
+        resultText: "잘못된 자료에 끌려갔습니다.\n다음 타자 의심 증가",
+        effects: { firstBatterSuspicion: 9, repeatSuspicionMult: 1.14 }
+      }
+    ]
   }
 ];
 
@@ -7639,12 +7958,13 @@ function dugoutEventHint(event) {
   return `관찰: ${match.count} ${match.result} · ${match.reaction}`;
 }
 
-function generateDugoutReadEventChoices() {
+function generateDugoutReadEventChoices(options = {}) {
   const signalTotal = Object.values(ensureStageRunState().reactionCounts || {}).reduce((sum, value) => sum + value, 0);
-  if (signalTotal < 3 || Math.random() > DUGOUT_EVENT_CHANCE) return [];
+  const force = !!options.force;
+  if (!force && (signalTotal < 3 || Math.random() > DUGOUT_EVENT_CHANCE)) return [];
   const weighted = DUGOUT_READ_EVENTS.map((event) => ({
     event,
-    weight: Math.max(0, reactionCount(event.signal))
+    weight: event.signal ? Math.max(0, reactionCount(event.signal)) : 1
   })).filter((entry) => entry.weight > 0);
   const selected = weightedPick(weighted)?.event || pick(DUGOUT_READ_EVENTS);
   if (!selected) return [];
@@ -7708,6 +8028,11 @@ function dugoutEffectSummary(effects = {}, correct = false) {
   if (effects.slowAfterFastBoost) lines.push(`느린 공 연계 보너스 +${Math.round(effects.slowAfterFastBoost * 100)}%`);
   if (effects.impressionBonus) lines.push(`직전 인상 활용 +${Math.round(effects.impressionBonus * 100)}%`);
   if (effects.courseReadBoost) lines.push(`코스 읽기 보너스 +${Math.round(effects.courseReadBoost * 100)}%`);
+  if (effects.reactionCheckBoost) lines.push(`반응 분석 +${Math.round(effects.reactionCheckBoost * 100)}%`);
+  if (effects.candidateNextFirstWeakness) lines.push(`약점 후보 +${effects.candidateNextFirstWeakness}`);
+  if (effects.missionChoiceBonus) lines.push(`미션 보상 선택지 +${effects.missionChoiceBonus}`);
+  if (effects.rivalCoreChoiceBonus) lines.push(`위험 타자 보상 흐름 +${effects.rivalCoreChoiceBonus}`);
+  if (effects.longHitGuard) lines.push("장타 억제 수비 적용");
   if (effects.repeatSuspicionMult && effects.repeatSuspicionMult < 1) lines.push(`반복 의심 ${Math.round((1 - effects.repeatSuspicionMult) * 100)}% 감소`);
   if (effects.suspicionMult && effects.suspicionMult < 1) lines.push(`전체 의심 ${Math.round((1 - effects.suspicionMult) * 100)}% 감소`);
   if (effects.repeatSuspicionMult && effects.repeatSuspicionMult > 1) lines.push(`반복 의심 ${Math.round((effects.repeatSuspicionMult - 1) * 100)}% 증가`);
@@ -7717,8 +8042,29 @@ function dugoutEffectSummary(effects = {}, correct = false) {
   return lines;
 }
 
-function generateDugoutChoices() {
-  return generateDugoutReadEventChoices();
+function generateDugoutChoices(options = {}) {
+  return generateDugoutReadEventChoices(options);
+}
+
+function prepareStageBreakDugout() {
+  if (!state.awaitingThemeSelection || state.stageBreakDugoutDone || state.gameOver) return false;
+  const choices = generateDugoutChoices({ force: true });
+  if (!choices.length) return false;
+  state.pendingDugoutChoices = choices;
+  state.dugoutPending = true;
+  state.dugoutBeforeAtBat = false;
+  state.dugoutAdvanceBatterOnConfirm = false;
+  state.dugoutAfterContinue = "themeSelect";
+  state.stageBreakDugoutDone = true;
+  return true;
+}
+
+function openStageBreakDugoutOrThemeSelect() {
+  if (prepareStageBreakDugout()) {
+    openDugoutChoiceOverlay();
+    return;
+  }
+  openThemeSelectOverlay();
 }
 
 function renderDugoutChoices() {
@@ -7916,6 +8262,7 @@ function openDugoutChoiceOverlay() {
 
 function applyDugoutChoice(choice) {
   if (!choice) return;
+  const afterThemeSelect = state.dugoutAfterContinue === "themeSelect";
   const multiplier = cardEffectMultiplier();
   const effects = applyDugoutRarityToEffects(choice.effects || {}, choice.rarity);
   const ratioEffectKeys = new Set(["burdenControl", "suspicionMult", "repeatSuspicionMult"]);
@@ -7950,7 +8297,8 @@ function applyDugoutChoice(choice) {
       title: choice.title,
       effects,
       rarity: choice.rarity || "common",
-      expiresInning: state.inning
+      expiresInning: afterThemeSelect ? 1 : state.inning,
+      nextStage: afterThemeSelect
     }
   ];
   const rarityNote = choice.rarity === "rare" ? " · 희귀 강화 적용" : "";
@@ -7971,7 +8319,7 @@ function applyDugoutChoice(choice) {
   }
 }
 
-function showDugoutChoiceResult(result) {
+function showDugoutChoiceResult(result, continueLabel = "다음 타자") {
   if (!els.dugoutOverlay || !result) return false;
   hideEventBanner();
   if (els.dugoutTitle) els.dugoutTitle.textContent = result.title;
@@ -7986,7 +8334,7 @@ function showDugoutChoiceResult(result) {
           ${lines.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}
         </div>
         <p>선택 성과가 최종 카드 보상 등급에 흡수됩니다.</p>
-        <button class="dugout-continue-button" type="button" data-dugout-continue>다음 타자</button>
+        <button class="dugout-continue-button" type="button" data-dugout-continue>${escapeHtml(continueLabel)}</button>
       </div>
     `;
   }
@@ -8019,13 +8367,15 @@ function confirmDugoutChoice(index) {
   if (!choice || state.gameOver) return;
   const startsInning = !!state.dugoutBeforeAtBat;
   const advanceBatter = !!state.dugoutAdvanceBatterOnConfirm;
+  const after = state.dugoutAfterContinue || "";
   const result = applyDugoutChoice(choice);
   state.dugoutPending = false;
   state.dugoutBeforeAtBat = false;
   state.dugoutAdvanceBatterOnConfirm = false;
+  state.dugoutAfterContinue = "";
   state.pendingDugoutChoices = [];
-  state.pendingDugoutAdvance = { startsInning, advanceBatter };
-  if (showDugoutChoiceResult(result)) {
+  state.pendingDugoutAdvance = { startsInning, advanceBatter, after };
+  if (showDugoutChoiceResult(result, after === "themeSelect" ? "테마 선택" : "다음 타자")) {
     syncScreenPhase();
     return;
   }
@@ -8035,6 +8385,20 @@ function confirmDugoutChoice(index) {
 function continueDugoutChoiceResult() {
   const advance = state.pendingDugoutAdvance;
   state.pendingDugoutAdvance = null;
+  if (advance?.after === "themeSelect") {
+    if (els.dugoutOverlay) {
+      if (MP.dugoutRevealTimer) {
+        window.clearTimeout(MP.dugoutRevealTimer);
+        MP.dugoutRevealTimer = null;
+      }
+      resetChoiceRevealAnimation(els.dugoutOverlay, ".dugout-choice-card, .dugout-result-card");
+      els.dugoutOverlay.hidden = true;
+      els.dugoutOverlay.classList.remove("is-revealing", "is-revealed");
+    }
+    state.waitingNextBatter = false;
+    openThemeSelectOverlay();
+    return;
+  }
   finishDugoutChoice(!!advance?.startsInning, !!advance?.advanceBatter);
 }
 
@@ -8444,6 +8808,10 @@ function openRewardDraft(reason, result, kind = "normal") {
     state.rewardPending = false;
     state.rewardKind = "normal";
     state.rewardUpgradeTokens = [];
+    if (state.awaitingThemeSelection) {
+      openStageBreakDugoutOrThemeSelect();
+      return;
+    }
     if (state.dugoutPending) {
       openDugoutChoiceOverlay();
       return;
@@ -8582,7 +8950,7 @@ function applyReward(index) {
       return;
     }
     if (state.awaitingThemeSelection) {
-      openThemeSelectOverlay();
+      openStageBreakDugoutOrThemeSelect();
       return;
     }
   }
@@ -8594,7 +8962,7 @@ function applyReward(index) {
       return;
     }
     if (state.awaitingThemeSelection) {
-      openThemeSelectOverlay();
+      openStageBreakDugoutOrThemeSelect();
       return;
     }
   }
@@ -8607,7 +8975,7 @@ function applyReward(index) {
     return;
   }
   if (state.awaitingThemeSelection) {
-    openThemeSelectOverlay();
+    openStageBreakDugoutOrThemeSelect();
     return;
   }
   if (state.dugoutPending) {
