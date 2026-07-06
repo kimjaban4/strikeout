@@ -116,7 +116,7 @@ MP.stageConfigs = [
     missions: [
       { id: "s1_i1_first_strike", inning: 1, title: "초구 스트라이크 1회 이상", type: "firstPitchStrikesAtLeast", threshold: 1 },
       { id: "s1_i2_no_walk", inning: 2, title: "볼넷 없이 이닝 종료", type: "noWalk" },
-      { id: "s1_i3_low_suspicion", inning: 3, title: "배합 간파도 60% 이하 유지", type: "suspicionEndBelow", threshold: 60 }
+      { id: "s1_i3_low_suspicion", inning: 3, title: "간파도 60% 이하 유지", type: "suspicionEndBelow", threshold: 60 }
     ],
     rival: {
       name: "주시온",
@@ -134,15 +134,13 @@ MP.stageConfigs = [
     clearRuns: 4,
     stableRuns: 2,
     perfectRuns: 1,
-    perfectExtras: ["같은 구종 3연속 사용 없음", "배합 간파도 평균 55% 이하"],
+    perfectExtras: ["같은 구종 3연속 사용 없음", "간파도 평균 55% 이하"],
     themeText: "같은 공과 같은 코스를 빠르게 기억합니다. 성공한 패턴도 반복하면 바로 읽힙니다.",
     starNames: ["분석타선 돌파", "패턴 관리 성공", "노림수 역이용 경기"],
     missions: [
       { id: "s2_i1_first_strike", inning: 1, title: "초구 스트라이크 2회 이상", type: "firstPitchStrikesAtLeast", threshold: 2 },
       { id: "s2_i2_no_three_pitch", inning: 2, title: "같은 구종 3연속 금지", type: "maxPitchStreakBelow", threshold: 3 },
-      { id: "s2_i3_weakness_choice", inning: 3, title: "공략 보조태그 찌르기 1회", type: "weaknessChoiceAtLeast", threshold: 1 },
-      { id: "s2_i4_no_center_long", inning: 4, title: "중심 타선 장타 금지", type: "noCenterLongHit" },
-      { id: "s2_i5_low_suspicion", inning: 5, title: "배합 간파도 70% 이하 유지", type: "suspicionEndBelow", threshold: 70 }
+      { id: "s2_i3_weakness_choice", inning: 3, title: "약점 태그 찌르기 1회", type: "weaknessChoiceAtLeast", threshold: 1 }
     ],
     rival: {
       name: "한도윤",
@@ -160,17 +158,13 @@ MP.stageConfigs = [
     clearRuns: 5,
     stableRuns: 3,
     perfectRuns: 2,
-    perfectExtras: ["라이벌 장타 허용 없음", "배합 간파도 평균 60% 이하"],
+    perfectExtras: ["라이벌 장타 허용 없음", "간파도 평균 60% 이하"],
     themeText: "강한 타자들이 실투와 반복을 놓치지 않습니다. 인상을 심고, 다음 공에서 배신해야 합니다.",
     starNames: ["최종전 생존", "우승권 운영", "완벽한 마운드 지배"],
     missions: [
       { id: "s3_i1_no_center_long", inning: 1, title: "중심 타선 장타 금지", type: "noCenterLongHit" },
       { id: "s3_i2_no_walk", inning: 2, title: "볼넷 없이 이닝 종료", type: "noWalk" },
-      { id: "s3_i3_no_scoring_run", inning: 3, title: "득점권 상황 실점 금지", type: "noScoringPositionRun" },
-      { id: "s3_i4_no_center_long", inning: 4, title: "중심 타선 장타 금지", type: "noCenterLongHit" },
-      { id: "s3_i5_highlight_success", inning: 5, title: "하이라이트 승부 성공", type: "highlightSuccessAtLeast", threshold: 1 },
-      { id: "s3_i6_weakness_choice", inning: 6, title: "공략 보조태그 선택 2회", type: "weaknessChoiceAtLeast", threshold: 2 },
-      { id: "s3_i7_scoreless", inning: 7, title: "최종 이닝 무실점", type: "scorelessInning" }
+      { id: "s3_i3_no_scoring_run", inning: 3, title: "득점권 상황 실점 금지", type: "noScoringPositionRun" }
     ],
     rival: {
       name: "강태오",
@@ -326,11 +320,11 @@ MP.rewardCardCatalog = [
   { id: "R004", rarity: "rare", name: "코스 흐름 끊기", type: ["코스 운영", "심리전"], description: "같은 코스가 이어져도 포수 사인으로 타자의 기다림을 한 번 늦춥니다.", triggerCondition: "같은 코스 2회 연속", effectText: "같은 코스 반복을 타자가 바로 기다리지 못합니다.", stackType: "unique", synergyTags: ["코스"], effects: { sameCourseShield: 1 } },
   { id: "R005", rarity: "rare", name: "같은 공 재요구", type: ["심리전"], description: "같은 구종을 다시 요구해도 포수 사인으로 타자의 기다림을 한 박자 늦춥니다.", triggerCondition: "같은 구종 반복", effectText: "같은 구종 반복이 조금 덜 읽힙니다.", stackType: "unique", synergyTags: ["반복", "포수"], effects: { repeatSuspicionMult: 0.7 } },
   { id: "R006", rarity: "rare", name: "포수의 첫 수", type: ["덕아웃", "심리전"], description: "이닝 첫 타자를 상대로 포수가 안전한 흐름을 먼저 잡아줍니다.", triggerCondition: "이닝 첫 타자", effectText: "이닝 첫 타자가 배합을 바로 좁히지 못합니다.", stackType: "unique", synergyTags: ["포수"], effects: { inningFirstBatterSuspicion: -10 } },
-  { id: "R009", rarity: "rare", name: "공략 보조태그 활용", type: ["타자 분석", "심리전"], description: "공개된 공략 보조태그에 맞춰 승부에 성공하면 타자가 쉽게 배합을 좁히지 못합니다.", triggerCondition: "공략 보조태그 활용 성공", effectText: "공략 승부 성공 후 다음 같은 흐름을 숨깁니다.", stackType: "unique", synergyTags: ["공략 보조태그"], effects: { weaknessSuccessSuspicion: -10 } },
+  { id: "R009", rarity: "rare", name: "약점 태그 활용", type: ["타자 분석", "심리전"], description: "공개된 약점 태그에 맞춰 승부에 성공하면 타자가 쉽게 배합을 좁히지 못합니다.", triggerCondition: "약점 태그 활용 성공", effectText: "약점 승부 성공 후 다음 같은 흐름을 숨깁니다.", stackType: "unique", synergyTags: ["약점 태그"], effects: { weaknessSuccessSuspicion: -10 } },
   { id: "R010", rarity: "rare", name: "몸쪽으로 문 열기", type: ["코스 운영", "심리전"], description: "몸쪽을 성공시킨 뒤 바깥쪽을 열어 타자의 시야를 흔듭니다.", triggerCondition: "몸쪽 성공 후 바깥쪽", effectText: "몸쪽 성공 후 다음 바깥쪽 성공률이 증가합니다.", stackType: "unique", synergyTags: ["몸쪽", "바깥쪽"], effects: { outsideAfterInsideControl: 7 } },
   { id: "R011", rarity: "rare", name: "바깥쪽 의식 후 낙차", type: ["코스 운영"], description: "바깥쪽을 계속 보여준 뒤 낮은 변화구로 배트를 끌어냅니다.", triggerCondition: "바깥쪽 성공 누적 후 낮은 변화구", effectText: "바깥쪽 성공 누적 후 낮은 변화구가 강해집니다.", stackType: "unique", synergyTags: ["바깥쪽", "변화구"], effects: { outsideSetupLowBreaking: 0.1 } },
   { id: "R012", rarity: "rare", name: "풀카운트 호흡", type: ["위기관리"], description: "풀카운트에서 넣으러 가는 공도 끝까지 존 끝에 붙입니다.", triggerCondition: "3볼 2스트라이크", effectText: "풀카운트 제구가 오르고 같은 흐름이 덜 읽힙니다.", stackType: "unique", synergyTags: ["풀카운트"], effects: { fullCountControl: 10, fullCountSuspicion: -5 } },
-  { id: "R013", rarity: "rare", name: "위기 승부 집중", type: ["위기관리", "보상 강화"], description: "하이라이트 승부를 이기면 팀 분위기와 보상 흐름이 좋아집니다.", triggerCondition: "하이라이트 성공", effectText: "하이라이트 성공 시 보상 선택지가 증가합니다.", stackType: "unique", synergyTags: ["하이라이트"], effects: { highlightChoiceBonus: 1 } },
+  { id: "R013", rarity: "rare", name: "위기 승부 집중", type: ["위기관리", "보상 강화"], description: "하이라이트 승부를 이기면 팀 분위기와 카드 등급이 좋아집니다.", triggerCondition: "하이라이트 성공", effectText: "하이라이트 성공 시 보상 선택지가 증가합니다.", stackType: "unique", synergyTags: ["하이라이트"], effects: { highlightChoiceBonus: 1 } },
   { id: "R015", rarity: "rare", name: "시선 높이 함정", type: ["심리전", "코스 운영"], description: "높은 빠른 공으로 눈높이를 올린 뒤 낮은 변화구로 배트를 끌어냅니다.", triggerCondition: "높은 빠른 공 이후 낮은 변화구", effectText: "높은 공 뒤 낮은 변화구가 더 살아납니다.", stackType: "unique", synergyTags: ["하이존", "낮은 코스"], effects: { heightTrap: 1 } },
   { id: "R016", rarity: "rare", name: "반응 데이터 축적", type: ["타자 분석", "심리전"], description: "초구 반응 데이터를 쌓아 타자가 어느 계열에 맞춰 움직이는지 더 빨리 좁힙니다.", triggerCondition: "타자별 첫 투구", effectText: "초구 반응 데이터로 다음 승부의 읽기가 좋아집니다.", stackType: "unique", synergyTags: ["분석", "초구"], effects: { reactionCheck: 1 } },
   { id: "R017", rarity: "rare", name: "파울 분석", type: ["타자 분석", "심리전"], description: "파울 타이밍을 보고 타자의 기준점을 더 정확히 읽습니다.", triggerCondition: "파울 발생", effectText: "파울 이후 다음 배합 판단이 좋아집니다.", stackType: "unique", synergyTags: ["분석", "파울"], effects: { foulAnalysis: 1 } },
@@ -338,16 +332,16 @@ MP.rewardCardCatalog = [
   { id: "K002", rarity: "core", name: "노림수 역이용", type: ["심리전"], description: "타자가 기다리기 시작한 순간, 오히려 그 기다림을 흔듭니다.", triggerCondition: "간파도 60% 이상", effectText: "타자가 기다리는 순간 헛스윙을 끌어내기 쉽습니다.", stackType: "unique", synergyTags: ["심리전"], effects: { highSuspicionWhiff: 0.12 } },
   { id: "K003", rarity: "core", name: "부담 건 승부", type: ["심리전", "위험 감수"], description: "피로도가 쌓인 구종을 과감하게 성공시키면 분위기를 되찾지만 실패 리스크가 큽니다.", triggerCondition: "부담 50 이상 구종", effectText: "부담 높은 구종 성공 시 타자의 기다림을 끊습니다.", stackType: "unique", synergyTags: ["위험"], effects: { burdenGamble: 1 } },
   { id: "K004", rarity: "core", name: "포수의 다음 수", type: ["덕아웃", "심리전"], description: "포수와 미리 맞춘 작전으로 직전 공의 의식을 다음 공까지 더 선명하게 이어갑니다.", triggerCondition: "덕아웃 선택 / 이전 공 활용", effectText: "덕아웃 효과와 이전 공 활용이 강화됩니다.", stackType: "unique", synergyTags: ["덕아웃", "포수"], effects: { dugoutEffectMult: 1.3, catcherNextMove: 1 } },
-  { id: "K005", rarity: "core", name: "분석 역이용", type: ["타자 분석", "심리전"], description: "공개된 공략 보조태그와 일치하는 투구에 성공하면 다음 승부가 더 쉬워집니다.", triggerCondition: "공략 보조태그 활용 성공", effectText: "다음 투구 성공률이 증가합니다.", stackType: "unique", synergyTags: ["공략 보조태그"], effects: { weaknessNextPitchControl: 7 } },
+  { id: "K005", rarity: "core", name: "분석 역이용", type: ["타자 분석", "심리전"], description: "공개된 약점 태그와 일치하는 투구에 성공하면 다음 승부가 더 쉬워집니다.", triggerCondition: "약점 태그 활용 성공", effectText: "다음 투구 성공률이 증가합니다.", stackType: "unique", synergyTags: ["약점 태그"], effects: { weaknessNextPitchControl: 7 } },
   { id: "K006", rarity: "core", name: "클러치 에이스", type: ["위기관리"], description: "득점권에서도 호흡을 유지해 손끝과 제구가 흔들리지 않습니다.", triggerCondition: "주자 2루 또는 3루", effectText: "득점권 멘탈과 제구가 상승합니다.", stackType: "unique", synergyTags: ["득점권"], effects: { scoringControl: 5, scoringQuality: 4 } },
   { id: "K007", rarity: "core", name: "배합 배신", type: ["심리전", "구종 운영"], description: "앞선 두 공과 다른 흐름으로 타자의 기다림을 끊습니다.", triggerCondition: "직전 2구와 다른 계열", effectText: "직전 2구와 다른 계열로 타자의 기다림을 흔듭니다.", stackType: "unique", synergyTags: ["배합"], effects: { patternBreaker: 1 } },
-  { id: "K008", rarity: "core", name: "결승구 설계", type: ["구종 운영", "보상 강화"], description: "2스트라이크 이후 삼진을 잡을수록 보상 흐름이 좋아집니다.", triggerCondition: "2스트 이후 삼진", effectText: "2스트 이후 삼진 시 희귀 카드 선택지가 추가됩니다.", stackType: "unique", synergyTags: ["삼진", "보상"], effects: { twoStrikeGuaranteedRare: 1 } },
+  { id: "K008", rarity: "core", name: "결승구 설계", type: ["구종 운영", "보상 강화"], description: "2스트라이크 이후 삼진을 잡을수록 카드 등급이 좋아집니다.", triggerCondition: "2스트 이후 삼진", effectText: "2스트 이후 삼진 시 희귀 카드 선택지가 추가됩니다.", stackType: "unique", synergyTags: ["삼진", "보상"], effects: { twoStrikeGuaranteedRare: 1 } },
   { id: "K009", rarity: "core", name: "배합 설계자", type: ["심리전", "볼 의도"], description: "보여준 공과 버린 공의 의미를 다음 결과까지 이어갑니다.", triggerCondition: "볼 의도 후 결과", effectText: "볼 설계 후 범타·삼진 성과가 크게 좋아집니다.", stackType: "unique", synergyTags: ["배합", "볼 의도"], effects: { ballIntentDesign: 1 } },
   { id: "K010", rarity: "core", name: "정면승부형", type: ["초구", "제구"], description: "첫 공부터 스트라이크를 꽂아 타자의 선택지를 좁힙니다.", triggerCondition: "초구 스트라이크", effectText: "초구 스트라이크 제구와 타구 억제가 좋아집니다.", stackType: "unique", synergyTags: ["초구", "스트라이크"], effects: { firstStrikeDirect: 1 } },
   { id: "K011", rarity: "core", name: "타이밍 지배", type: ["완급", "심리전"], description: "빠름과 느림의 기준점을 빼앗아 타자의 컨택 질을 낮춥니다.", triggerCondition: "다른 계열 연계", effectText: "속도차와 계열 전환으로 타이밍을 지배합니다.", stackType: "unique", synergyTags: ["완급", "타이밍"], effects: { timingDominance: 1 } },
   { id: "K012", rarity: "core", name: "승부 설계자", type: ["보상 강화", "심리전"], description: "정타 위험이나 좋은 볼을 다음 결과로 회수해 보상 등급을 밀어 올립니다.", triggerCondition: "위험 반응 후 범타·삼진", effectText: "연계 성과 점수가 크게 증가합니다.", stackType: "unique", synergyTags: ["보상", "연계"], effects: { foulPlanReward: 1 } },
   { id: "R018", rarity: "rare", name: "불리한 카운트 수습", type: ["위기 관리"], description: "2볼 이상에서 다음 1타석의 제구 불안을 줄입니다.", triggerCondition: "2볼 이상", effectText: "2볼 이상 제구 불안 감소", stackType: "unique", synergyTags: ["카운트", "제구"], effects: { fullCountControlBonus: 4, fullCountWalkReduce: 1 } },
-  { id: "R019", rarity: "rare", name: "약점 노출 유도", type: ["타자 분석"], description: "다음 스테이지 첫 3타자의 공략 보조태그 발견 확률이 올라갑니다.", triggerCondition: "다음 스테이지 첫 3타자", effectText: "초반 타자 약점 발견률 증가", stackType: "unique", synergyTags: ["분석", "공략"], effects: { candidateNextFirstWeakness: 3 } },
+  { id: "R019", rarity: "rare", name: "약점 노출 유도", type: ["타자 분석"], description: "다음 스테이지 첫 3타자의 약점 태그 발견 확률이 올라갑니다.", triggerCondition: "다음 스테이지 첫 3타자", effectText: "초반 타자 약점 발견률 증가", stackType: "unique", synergyTags: ["분석", "공략"], effects: { candidateNextFirstWeakness: 3 } },
   { id: "R020", rarity: "rare", name: "반복 패턴 절단", type: ["심리전"], description: "직전 2구와 다른 계열이나 높이를 고르면 반복 간파 위험이 줄어듭니다.", triggerCondition: "직전 2구와 다른 선택", effectText: "반복 간파 위험 감소", stackType: "unique", synergyTags: ["반복", "배합"], effects: { patternBreaker: 1 } },
   { id: "R021", rarity: "rare", name: "몸쪽 각인", type: ["코스 운영", "심리전"], description: "몸쪽 의식을 심은 뒤 반대쪽 승부를 더 선명하게 살립니다.", triggerCondition: "몸쪽 후 바깥쪽", effectText: "몸쪽 각인 후 바깥쪽 제구와 약타 유도가 좋아집니다.", stackType: "unique", synergyTags: ["몸쪽", "바깥쪽"], effects: { insideImpressionOutside: 1 } },
   { id: "R022", rarity: "rare", name: "배합 복선", type: ["구종 운영", "심리전"], description: "앞선 공과 다른 계열로 타자의 기준점을 빼앗습니다.", triggerCondition: "직전 공과 다른 계열", effectText: "계열 전환 시 타구 품질이 낮아집니다.", stackType: "unique", synergyTags: ["배합", "전환"], effects: { categorySwitchSuspicion: 1 } },
@@ -361,12 +355,12 @@ MP.dugoutChoiceCatalog = [
   { id: "fastball_reset", category: "안정형", title: "빠른 공 재정비", desc: "다음 이닝 포심, 투심, 커터를 존 끝에 붙이기 쉽고 초구 압박이 살아납니다.", effects: { fastControl: 5, firstStrikePressure: 1 } },
   { id: "catcher_lead", category: "안정형", title: "포수 리드 강화", desc: "다음 이닝 포수 사인으로 직전 공의 의식을 더 오래 살리고, 반복 패턴을 조금 숨깁니다.", effects: { suspicionMult: 0.88, impressionBonus: 0.12, samePitchCall: 1 } },
   { id: "breath_reset", category: "안정형", title: "첫 타자 호흡 정리", desc: "이닝 첫 타자를 상대로 급하게 들어가지 않습니다. 첫 승부에서 타자가 배합을 바로 좁히지 못합니다.", effects: { firstBatterSuspicion: -10 } },
-  { id: "batter_analysis", category: "분석형", title: "반응 데이터 축적", desc: "다음 이닝 첫 타자의 공략 보조태그 후보를 2개 확인하고 초구 반응 데이터를 더 잘 읽습니다.", effects: { candidateNextFirstWeakness: 2, reactionCheckBoost: 0.35 } },
-  { id: "rival_analysis", category: "분석형", title: "라이벌 사전 분석", desc: "라이벌 타자의 공략 보조태그 1개를 공개합니다.", effects: { revealRivalWeakness: 1 } },
+  { id: "batter_analysis", category: "분석형", title: "반응 데이터 축적", desc: "다음 이닝 첫 타자의 약점 태그 후보를 2개 확인하고 초구 반응 데이터를 더 잘 읽습니다.", effects: { candidateNextFirstWeakness: 2, reactionCheckBoost: 0.35 } },
+  { id: "rival_analysis", category: "분석형", title: "라이벌 사전 분석", desc: "라이벌 타자의 약점 태그 1개를 공개합니다.", effects: { revealRivalWeakness: 1 } },
   { id: "course_analysis", category: "분석형", title: "코스 반응 분석", desc: "다음 이닝 첫 타자의 코스 단서 후보를 2개 확인하고 파울 코스를 더 잘 읽습니다.", effects: { candidateCourseWeakness: 2, courseReadBoost: 0.3 } },
   { id: "deep_outfield", category: "안정형", title: "외야 깊게 수비", desc: "다음 이닝 장타를 줄이는 대신 약한 안타 위험은 조금 늘어납니다.", effects: { longHitGuard: 1, singleRisk: 0.1 } },
-  { id: "perfect_challenge", category: "도박형", title: "완벽 이닝 도전", desc: "무실점이면 희귀 보상 흐름이 열리고, 실점하면 다음 타자가 같은 흐름을 더 빨리 기다립니다.", effects: { scorelessGuaranteedRare: 1, scorelessRiskSuspicion: 15 } },
-  { id: "aggressive_call", category: "도박형", title: "선제 압박 운영", desc: "이닝 미션을 달성하면 보상 흐름이 넓어집니다. 초구 스트라이크는 강해지지만, 초구 볼은 바로 읽힙니다.", effects: { missionChoiceBonus: 1, firstBatterSuspicion: 8, firstStrikePressure: 1, firstStrikeRiskSuspicion: 8 } },
+  { id: "perfect_challenge", category: "도박형", title: "완벽 이닝 도전", desc: "무실점이면 희귀 카드가 열리고, 실점하면 다음 타자가 같은 흐름을 더 빨리 기다립니다.", effects: { scorelessGuaranteedRare: 1, scorelessRiskSuspicion: 15 } },
+  { id: "aggressive_call", category: "도박형", title: "선제 압박 운영", desc: "이닝 미션을 달성하면 보상 카드가 넓어집니다. 초구 스트라이크는 강해지지만, 초구 볼은 바로 읽힙니다.", effects: { missionChoiceBonus: 1, firstBatterSuspicion: 8, firstStrikePressure: 1, firstStrikeRiskSuspicion: 8 } },
   { id: "rival_duel_call", category: "특수형", title: "라이벌 정면승부 선언", desc: "위험 타자를 장타 없이 막으면 핵심 보상이 열리고, 장타를 맞으면 등급이 흔들립니다.", effects: { rivalCoreChoiceBonus: 1, rivalRisk: 1 }, requiresNextInningThreat: true }
 ];
 

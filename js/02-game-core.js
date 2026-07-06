@@ -66,11 +66,11 @@ const tutorialSteps = {
   },
   inningMission: {
     title: "튜토리얼 · 이닝 미션",
-    text: "이닝마다 추가 과제가 있습니다. 성공하면 다음 이닝 첫 타자 공략 보조태그 1개가 공개됩니다."
+    text: "이닝마다 추가 미션이 있습니다. 성공하면 다음 이닝 첫 타자 약점 태그 1개가 공개됩니다."
   },
   weakness: {
-    title: "튜토리얼 · 공략 보조태그",
-    text: "공략 보조태그는 강한 힌트지만 정답은 아닙니다. 계속 찌르면 타자가 적응합니다."
+    title: "튜토리얼 · 약점 태그",
+    text: "약점 태그는 강한 힌트지만 정답은 아닙니다. 계속 찌르면 타자가 적응합니다."
   },
   dugout: {
     title: "튜토리얼 · 덕아웃 작전",
@@ -1308,28 +1308,28 @@ function randomFirstInningMission(stageIndex = state.stageIndex) {
   return pick([
     { id: `${prefix}_first_strike`, inning: 1, title: "초구 스트라이크 1회 이상", type: "firstPitchStrikesAtLeast", threshold: 1 },
     { id: `${prefix}_no_walk`, inning: 1, title: "볼넷 없이 이닝 종료", type: "noWalk" },
-    { id: `${prefix}_low_suspicion`, inning: 1, title: "배합 간파도 낮게 유지", type: "suspicionEndBelow", threshold: 65 },
+    { id: `${prefix}_low_suspicion`, inning: 1, title: "간파도 낮게 유지", type: "suspicionEndBelow", threshold: 65 },
     { id: `${prefix}_no_three_pitch`, inning: 1, title: "같은 구종 3연속 금지", type: "maxPitchStreakBelow", threshold: 3 }
   ]);
 }
 
 function missionActionText(mission) {
-  if (!mission) return "이번 이닝에는 추가 과제가 없습니다.";
+  if (!mission) return "이번 이닝에는 추가 미션이 없습니다.";
   switch (mission.type) {
     case "noFirstBatterOnBase":
       return "첫 타자를 내보내지 마세요";
     case "noWalk":
       return "볼넷 없이 이닝을 끝내세요";
     case "suspicionEndBelow":
-      return `배합 간파도를 ${mission.threshold}% 이하로 유지하세요`;
+      return `간파도를 ${mission.threshold}% 이하로 유지하세요`;
     case "firstPitchStrikesAtLeast":
       return `초구 스트라이크를 ${mission.threshold}번 이상 잡으세요`;
     case "maxPitchStreakBelow":
       return `같은 구종을 ${mission.threshold}번 연속 보여주지 마세요`;
     case "weaknessOutsAtLeast":
-      return `현재 타자의 공략 보조태그에 맞는 공으로 범타를 ${mission.threshold}번 만드세요`;
+      return `현재 타자의 약점 태그에 맞는 공으로 범타를 ${mission.threshold}번 만드세요`;
     case "weaknessChoiceAtLeast":
-      return `현재 타자의 공략 보조태그에 맞는 구종이나 코스를 ${mission.threshold}번 선택하세요`;
+      return `현재 타자의 약점 태그에 맞는 구종이나 코스를 ${mission.threshold}번 선택하세요`;
     case "noCenterLongHit":
       return "중심 타선에게 장타를 맞지 마세요";
     case "noScoringPositionRun":
@@ -1353,8 +1353,8 @@ function missionDisplayName(mission) {
     suspicionEndBelow: "간파 억제",
     firstPitchStrikesAtLeast: "초구 선점",
     maxPitchStreakBelow: "배합 흔들기",
-    weaknessOutsAtLeast: "공략 보조태그 활용",
-    weaknessChoiceAtLeast: "공략 보조태그 활용",
+    weaknessOutsAtLeast: "약점 태그 활용",
+    weaknessChoiceAtLeast: "약점 태그 활용",
     noCenterLongHit: "중심 타선 봉쇄",
     noScoringPositionRun: "득점권 위기관리",
     highlightSuccessAtLeast: "하이라이트 승부",
@@ -1378,9 +1378,9 @@ function missionConditionText(mission) {
     case "maxPitchStreakBelow":
       return `같은 구종 ${mission.threshold}연속 금지`;
     case "weaknessOutsAtLeast":
-      return `공략 보조태그로 범타 ${mission.threshold}회`;
+      return `약점 태그로 범타 ${mission.threshold}회`;
     case "weaknessChoiceAtLeast":
-      return `공략 보조태그에 맞는 선택 ${mission.threshold}회`;
+      return `약점 태그에 맞는 선택 ${mission.threshold}회`;
     case "noCenterLongHit":
       return "중심 타선 장타 허용 금지";
     case "noScoringPositionRun":
@@ -1397,7 +1397,7 @@ function missionConditionText(mission) {
 }
 
 function missionRewardText() {
-  return "성공 시 다음 이닝 첫 타자 공략 보조태그 1개 공개";
+  return "성공: 다음 첫 타자 약점 태그 공개";
 }
 
 function rivalActionText(config = stageConfig()) {
@@ -1692,7 +1692,7 @@ function revealBatterWeakness(batter, options = {}) {
   const tagId = pick(hidden);
   batter.revealedWeaknessTagIds = [...new Set([...(batter.revealedWeaknessTagIds || []), tagId])];
   const tag = batterWeaknessById(tagId);
-  const label = options.label || "공략 보조태그 공개";
+  const label = options.label || "약점 태그 공개";
   addLog(label, `${batter.name}: ${tag?.name || tagId}`);
   showTutorialStep("weakness");
   showEventBanner("다음타자\n약점공개", "reward", GAME_TIMING.weaknessBanner);
@@ -1729,13 +1729,13 @@ function currentStageRival() {
 
 function revealRivalWeakness(options = {}) {
   const rival = currentStageRival();
-  const label = options.label || "라이벌 공략 보조태그 공개";
+  const label = options.label || "라이벌 약점 태그 공개";
   if (!rival) {
     addLog(label, "라이벌 타자를 찾지 못했습니다.");
     return null;
   }
   const tag = revealBatterWeakness(rival, { ...options, label });
-  if (!tag) addLog(label, `${rival.name}: 남은 공략 보조태그가 없습니다.`);
+  if (!tag) addLog(label, `${rival.name}: 남은 약점 태그가 없습니다.`);
   return tag;
 }
 
@@ -1762,7 +1762,7 @@ function revealUpcomingBatterWeakness(options = {}) {
     const revealed = new Set(batter?.revealedWeaknessTagIds || []);
     const hasHidden = (batter?.weaknessTags || []).some((tagId) => !revealed.has(tagId));
     if (!hasHidden) continue;
-    return revealBatterWeakness(batter, { ...options, label: "다음 타자 약점태그 공개" });
+    return revealBatterWeakness(batter, { ...options, label: "다음 타자 약점 태그 공개" });
   }
   return null;
 }
@@ -1799,7 +1799,7 @@ function ensureMissionWeaknessTargetForCurrentBatter() {
   const stats = currentInningTracking();
   if (stats.missionWeaknessRevealDone) return;
   const batter = currentBatter();
-  if (!batterHasRevealedWeakness(batter)) revealBatterWeakness(batter, { label: "공략 보조태그 공개" });
+  if (!batterHasRevealedWeakness(batter)) revealBatterWeakness(batter, { label: "약점 태그 공개" });
   stats.missionWeaknessRevealDone = true;
 }
 
@@ -1909,7 +1909,7 @@ function missionDetailText(mission, stats) {
     case "maxPitchStreakBelow":
       return `같은 구종 ${mission.threshold}연속 금지|현재 최대 ${stats?.maxPitchStreak || 0}연속`;
     case "weaknessChoiceAtLeast":
-      return `공략 보조태그에 맞는 구종이나 코스 선택|현재 ${stats?.weaknessChoices || 0}/${mission.threshold}`;
+      return `약점 태그에 맞는 구종이나 코스 선택|현재 ${stats?.weaknessChoices || 0}/${mission.threshold}`;
     default:
       return missionActionText(mission);
   }
@@ -1942,11 +1942,11 @@ function finalizeInningMission(inningNumber) {
     if (hasRewardCard("C013")) run.rewardBoost.choiceBonus += cardStackCount("C013");
     if (dugoutEffectValue("missionChoiceBonus")) run.rewardBoost.choiceBonus += dugoutEffectValue("missionChoiceBonus");
     const revealed = revealUpcomingBatterWeakness();
-    addLog("이닝 미션 성공", `${missionActionText(mission)}${revealed ? " · 다음 이닝 첫 타자 공략 보조태그 1개 공개" : ""}`);
+    addLog("이닝 미션 성공", `${missionActionText(mission)}${revealed ? " · 다음 이닝 첫 타자 약점 태그 1개 공개" : ""}`);
   } else {
     if (state.stageIndex === 1 && state.atBat) state.atBat.suspicion = clamp((state.atBat.suspicion || 0) + 5, 0, 100);
     if (state.stageIndex === 2) state.nextBatterSuspicionBonus += 10;
-    addLog("이닝 미션 실패", `${missionActionText(mission)} · 다음 이닝은 공략 보조태그 없이 시작합니다.`);
+    addLog("이닝 미션 실패", `${missionActionText(mission)} · 다음 이닝은 약점 태그 없이 시작합니다.`);
   }
   activeDugoutEffectEntries().forEach((entry) => {
     if (entry.expiresInning !== inningNumber) return;
@@ -5914,7 +5914,7 @@ function recordPrePitchStageProgress(result, plannedCourse, pattern) {
     if (result.weaknessFeedback !== "공략 성공") showEventBanner("약점 공략 성공", "reward", 900);
     result.weaknessFeedback = "공략 성공";
     if (state.atBat) state.atBat.suspicion = clamp((state.atBat.suspicion || 0) - 8, 0, 100);
-    if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "공략 보조태그 활용", "공략 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
+    if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "약점 태그 활용", "약점 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
     if (hasRewardCard("K005")) state.nextPitchControlBonus += 7;
   }
   if (isOutResult(result)) {
@@ -5985,7 +5985,7 @@ function recordHighlightResult(result, runsScored) {
     run.rewardBoost.coreBonus += 0.05;
     absorbCardPerformance(0.025, 0.01, { key: "highlight", label: "위기 승부 제압", score: 4, source: "하이라이트", limit: 3 });
     if (result.batter?.isRival) revealBatterWeakness(result.batter);
-    addLog("하이라이트 승부 성공", "위기 승부를 이겨냈습니다. 보상 흐름이 좋아집니다.");
+    addLog("하이라이트 승부 성공", "위기 승부를 이겨냈습니다. 카드 등급이 좋아집니다.");
   } else {
     run.highlight.failures += 1;
     run.highlight.lastText = "하이라이트 실패";
@@ -6037,20 +6037,20 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
       stats.weaknessPitchSuccesses += 1;
       if (result.weaknessFeedback !== "공략 성공") showEventBanner("약점 공략 성공", "reward", 900);
       result.weaknessFeedback = "공략 성공";
-      absorbCardPerformance(0.02, 0, { key: "weakness", label: "공략 보조태그 적중", score: 2, source: "공략", limit: 4 });
-      if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "공략 보조태그 활용", "공략 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
+      absorbCardPerformance(0.02, 0, { key: "weakness", label: "약점 태그 적중", score: 2, source: "공략", limit: 4 });
+      if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "약점 태그 활용", "약점 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
       if (hasRewardCard("K005")) state.nextPitchControlBonus += 7;
     }
   }
   if (result.result === "doublePlay") absorbCardPerformance(0.03, 0.005, { key: "doublePlay", label: "병살 유도", score: 4, source: "병살", limit: 3 });
   if ((result.result === "calledStrike" || result.result === "swingingStrike") && state.strikes >= 3 && hasRewardCard("K008")) {
     run.rewardBoost.guaranteedRare += 1;
-    addCardTriggerLog("결승구 설계", "2스트 이후 삼진으로 희귀 보상 흐름이 열렸습니다.");
+    addCardTriggerLog("결승구 설계", "2스트 이후 삼진으로 희귀 카드가 열렸습니다.");
   }
   if ((result.result === "calledStrike" || result.result === "swingingStrike") && state.strikes >= 3 && result.batter?.isBoss) {
     run.rewardBoost.guaranteedRare += 1;
     absorbCardPerformance(0, 0.005, { key: "bossStrikeout", label: "보스 삼진 제압", score: 4, source: "보스", limit: 2 });
-    addLog("보스 제압 성과 흡수", "보스 타자를 삼진으로 잡은 성과가 카드 보상 흐름에 흡수되었습니다.");
+    addLog("보스 제압 성과 흡수", "보스 타자를 삼진으로 잡은 성과가 카드 등급에 흡수되었습니다.");
   }
   if (result.outLabel === "GROUND OUT!" && hasRewardCard("K001")) {
     state.nextBatterSuspicionBonus -= 10;
@@ -6468,235 +6468,605 @@ function dugoutChoiceCanAppear(choice) {
 }
 
 const DUGOUT_EVENT_CHANCE = 0.6;
+const DUGOUT_WEIRD_EVENT_CHANCE = 0.08;
 
-const DUGOUT_READ_EVENTS = [
+const DUGOUT_EVENTS = [
   {
-    id: "read_fast_late",
-    signal: "fastLate",
-    title: "코치의 한마디",
-    desc: "방망이가 빠른 공을 따라오지 못했습니다. 첫 타자, 어디서 밀까요?",
+    id: "analysis_report",
+    pool: "base",
+    category: "분석",
+    strength: "일반",
+    performanceScore: 2,
+    title: "전력분석 메모",
+    desc: "전력분석원이 다음 이닝 첫 타자 자료를 건넵니다. 초구 반응 쪽에 굵은 표시가 있습니다.",
     choices: [
       {
-        label: "빠른 공으로 존을 먼저 먹는다",
+        label: "초구 반응 자료를 믿는다",
         correct: true,
-        resultText: "좋습니다. 배트가 늦습니다.\n초구 스트라이크 압박 상승",
-        effects: { fastControl: 6, firstStrikePressure: 1 }
+        resultText: "메모가 맞았습니다.\n첫 타자 약점 단서가 열립니다.",
+        effects: { candidateNextFirstWeakness: 2, reactionCheckBoost: 0.25 }
       },
       {
-        label: "느린 공부터 빼본다",
+        label: "장타 기록만 보고 들어간다",
         correct: false,
-        resultText: "타자가 기다렸습니다.\n초구 정타 위험 증가",
+        resultText: "기록에 끌려갔습니다.\n현재 반응을 놓쳐 간파도가 오릅니다.",
         effects: { firstBatterSuspicion: 8, singleRisk: 0.08 }
       }
     ]
   },
   {
-    id: "read_swing_early",
-    signal: "swingEarly",
-    title: "타이밍이 앞섭니다",
-    desc: "방망이가 먼저 나왔습니다. 속도를 빼면 더 흔들 수 있습니다.",
+    id: "rival_plan",
+    pool: "base",
+    category: "작전",
+    strength: "도박",
+    performanceScore: 4,
+    title: "라이벌 전담 플랜",
+    desc: "위험 타자가 다음 이닝에 들어옵니다. 벤치가 정면승부를 피하자는 사인을 냅니다.",
     choices: [
       {
-        label: "변화구로 타이밍을 뺀다",
+        label: "코스 전환으로 묶는다",
         correct: true,
-        resultText: "타이밍 뺐습니다.\n변화구 제구 상승",
-        effects: { breakingQuality: 5, slowAfterFastBoost: 0.12 }
-      },
-      {
-        label: "빠른 공을 한 번 더 믿는다",
-        correct: false,
-        resultText: "타자가 빠른 공을 기다렸습니다.\n강속구 정타 위험 증가",
-        effects: { firstBatterSuspicion: 6, singleRisk: 0.1 }
-      }
-    ]
-  },
-  {
-    id: "read_inside_mark",
-    signal: "insideAware",
-    title: "몸쪽이 먹혔습니다",
-    desc: "타자가 홈플레이트에서 한 발 물러났습니다. 다음 코스를 고릅니다.",
-    choices: [
-      {
-        label: "바깥쪽으로 문을 연다",
-        correct: true,
-        resultText: "바깥쪽 열렸습니다.\n범타 루트 상승",
-        effects: { impressionBonus: 0.14, courseReadBoost: 0.25 }
-      },
-      {
-        label: "몸쪽을 한 번 더 찌른다",
-        correct: false,
-        resultText: "타자가 안쪽을 기다립니다.\n반복 의심 증가",
-        effects: { repeatSuspicionMult: 1.12, firstBatterSuspicion: 5 }
-      }
-    ]
-  },
-  {
-    id: "read_hard_contact",
-    signal: "hardContactRisk",
-    title: "정타 경고",
-    desc: "방금 공은 읽혔습니다. 같은 흐름은 위험합니다.",
-    choices: [
-      {
-        label: "구종이나 높이를 바꾼다",
-        correct: true,
-        resultText: "흐름 끊었습니다.\n반복 간파 감소",
-        effects: { repeatSuspicionMult: 0.82, suspicionMult: 0.92 }
-      },
-      {
-        label: "성공했던 흐름을 유지한다",
-        correct: false,
-        resultText: "타자가 같은 공을 기다립니다.\n반복 패턴 의심 증가",
-        effects: { repeatSuspicionMult: 1.18, firstBatterSuspicion: 10 }
-      }
-    ]
-  },
-  {
-    id: "analysis_report",
-    title: "분석 자료 도착",
-    desc: "전력분석팀이 급히 넘긴 메모입니다. 첫 단서만 믿고 들어갑니다.",
-    choices: [
-      {
-        label: "초구 반응 자료를 우선한다",
-        correct: true,
-        resultText: "초구 메모 적중.\n첫 타자 약점 후보 확보",
-        effects: { candidateNextFirstWeakness: 2, reactionCheckBoost: 0.25 }
-      },
-      {
-        label: "이전 타석 장타 기록만 본다",
-        correct: false,
-        resultText: "장타 기록에 끌렸습니다.\n다음 타자 의심 증가",
-        effects: { firstBatterSuspicion: 7, singleRisk: 0.06 }
-      }
-    ]
-  },
-  {
-    id: "rival_taunt",
-    title: "라이벌 도발",
-    desc: "위험 타자가 배트를 돌리며 기다립니다. 정면승부만 피하면 됩니다.",
-    choices: [
-      {
-        label: "정면승부보다 코스 전환을 건다",
-        correct: true,
-        resultText: "말려들지 않았습니다.\n위험 타자 성과 상승",
+        resultText: "말려들지 않았습니다.\n위험 타자 보상이 크게 오릅니다.",
         effects: { rivalCoreChoiceBonus: 1, repeatSuspicionMult: 0.9 }
       },
       {
-        label: "강한 공으로 바로 응징한다",
+        label: "가장 강한 공으로 붙는다",
         correct: false,
-        resultText: "타자가 그 공만 봤습니다.\n정타 위험 증가",
-        effects: { rivalRisk: 1, singleRisk: 0.1 }
+        resultText: "타자가 그 공만 기다립니다.\n장타 위험이 크게 오릅니다.",
+        effects: { rivalRisk: 1, singleRisk: 0.14 }
       }
     ]
   },
   {
     id: "crowd_pressure",
-    title: "관중 압박",
-    desc: "소리가 커졌습니다. 포수가 낮게, 천천히 사인을 냅니다.",
+    pool: "base",
+    category: "멘탈",
+    strength: "일반",
+    performanceScore: 2,
+    title: "마운드가 시끄럽습니다",
+    desc: "관중 소리가 커지고 투수 템포가 빨라집니다. 포수가 천천히 가자는 사인을 냅니다.",
     choices: [
       {
-        label: "긴 호흡으로 낮은 코스를 고정한다",
+        label: "호흡을 늦추고 낮게 시작한다",
         correct: true,
-        resultText: "호흡 돌아왔습니다.\n낮은 코스 제구 상승",
+        resultText: "호흡이 돌아왔습니다.\n낮은 코스와 초구 압박이 살아납니다.",
         effects: { breakingQuality: 3, firstStrikePressure: 1 }
       },
       {
-        label: "템포를 올려 빨리 승부한다",
+        label: "바로 던져 흐름을 끊는다",
         correct: false,
-        resultText: "템포가 급했습니다.\n초구 정타 위험 증가",
+        resultText: "몸이 먼저 열립니다.\n공이 가운데로 몰릴 위험이 오릅니다.",
         effects: { firstBatterSuspicion: 8, singleRisk: 0.08 }
       }
     ]
   },
   {
-    id: "low_zone_touch",
-    title: "낮은 공 감각",
-    desc: "불펜 쪽에서 낮은 공 사인이 옵니다. 땅볼을 노릴 타이밍입니다.",
-    choices: [
-      {
-        label: "낮게 눌러 땅볼 루트를 만든다",
-        correct: true,
-        resultText: "낮게 눌렀습니다.\n병살 루트 상승",
-        effects: { breakingQuality: 4, longHitGuard: 1 }
-      },
-      {
-        label: "높은 공으로 헛스윙만 노린다",
-        correct: false,
-        resultText: "높게 몰렸습니다.\n반복 의심 증가",
-        effects: { repeatSuspicionMult: 1.12, firstBatterSuspicion: 5 }
-      }
-    ]
-  },
-  {
     id: "manager_order",
-    title: "감독 지시",
-    desc: "감독이 손가락 하나를 듭니다. 첫 스트라이크부터 잡으라는 뜻입니다.",
+    pool: "base",
+    category: "감독",
+    strength: "강함",
+    performanceScore: 3,
+    title: "감독의 첫 공 사인",
+    desc: "감독이 손가락 하나를 듭니다. 다음 이닝은 첫 스트라이크부터 잡으라는 뜻입니다.",
     choices: [
       {
-        label: "첫 스트라이크만 확실히 잡는다",
+        label: "첫 공부터 존 끝을 찌른다",
         correct: true,
-        resultText: "첫 스트라이크 확보.\n초구 압박 상승",
+        resultText: "카운트를 먼저 잡습니다.\n미션 보상이 한 장 늘어납니다.",
         effects: { firstStrikePressure: 2, missionChoiceBonus: 1 }
       },
       {
-        label: "볼넷만 피하려고 가운데로 넣는다",
+        label: "볼넷만 피하려고 가운데 넣는다",
         correct: false,
-        resultText: "가운데로 몰렸습니다.\n안타 위험 증가",
+        resultText: "가운데로 몰립니다.\n안타 위험이 크게 오릅니다.",
         effects: { singleRisk: 0.12, firstBatterSuspicion: 6 }
       }
     ]
   },
   {
     id: "bad_report",
-    title: "타자 분석 오류",
-    desc: "새 자료가 직전 반응과 다릅니다. 현장에서 본 쪽이 더 믿을 만합니다.",
+    pool: "base",
+    category: "분석",
+    strength: "일반",
+    performanceScore: 2,
+    title: "자료가 틀렸습니다",
+    desc: "새 자료가 직전 경기 영상과 맞지 않습니다. 코치가 현장 판단을 묻습니다.",
     choices: [
       {
-        label: "직전 반응을 기준으로 수정한다",
+        label: "현장 반응을 기준으로 고친다",
         correct: true,
-        resultText: "수정 사인 적중.\n반복 간파 감소",
+        resultText: "수정이 맞았습니다.\n반복 노림을 크게 지웁니다.",
         effects: { suspicionMult: 0.92, repeatSuspicionMult: 0.84 }
       },
       {
         label: "자료를 그대로 밀어붙인다",
         correct: false,
-        resultText: "낡은 자료였습니다.\n다음 타자 의심 증가",
+        resultText: "낡은 자료였습니다.\n다음 타자가 쉽게 좁힙니다.",
         effects: { firstBatterSuspicion: 9, repeatSuspicionMult: 1.14 }
+      }
+    ]
+  },
+  {
+    id: "ump_low_zone",
+    pool: "base",
+    category: "심판",
+    strength: "일반",
+    performanceScore: 2,
+    title: "주심의 낮은 존",
+    desc: "오늘 주심은 무릎 아래를 후하게 봅니다. 포수가 미트를 낮게 붙입니다.",
+    choices: [
+      {
+        label: "낮은 코너를 계속 찌른다",
+        correct: true,
+        resultText: "주심 손이 올라갑니다.\n낮은 코스 제구와 성과 흡수가 오릅니다.",
+        effects: { breakingQuality: 4, courseReadBoost: 0.25 }
+      },
+      {
+        label: "높은 공으로 존을 확인한다",
+        correct: false,
+        resultText: "높은 공은 잡아주지 않습니다.\n볼 카운트 부담이 커집니다.",
+        effects: { firstBatterSuspicion: 7, singleRisk: 0.06 }
+      }
+    ]
+  },
+  {
+    id: "open_stance",
+    pool: "base",
+    category: "분석",
+    strength: "일반",
+    performanceScore: 2,
+    title: "열린 발",
+    desc: "전력분석 영상에서 다음 타자의 열린 스탠스가 반복됩니다. 바깥쪽을 먼저 보는 자세입니다.",
+    choices: [
+      {
+        label: "몸쪽 빠른 공으로 세운다",
+        correct: true,
+        resultText: "타자가 몸을 뺍니다.\n바깥쪽 승부가 크게 열립니다.",
+        effects: { fastControl: 5, impressionBonus: 0.14 }
+      },
+      {
+        label: "바깥쪽 변화구부터 던진다",
+        correct: false,
+        resultText: "기다리던 방향입니다.\n배트가 따라와 정타 위험이 오릅니다.",
+        effects: { firstBatterSuspicion: 8, singleRisk: 0.1 }
+      }
+    ]
+  },
+  {
+    id: "helmet_delay",
+    pool: "base",
+    category: "템포",
+    strength: "안전",
+    performanceScore: 1,
+    title: "시간을 끄는 타자",
+    desc: "스카우팅 노트에 다음 타자는 타석 준비가 긴 편이라고 적혀 있습니다.",
+    choices: [
+      {
+        label: "바로 템포를 올린다",
+        correct: true,
+        resultText: "준비가 늦습니다.\n초구 압박과 성과 흡수가 오릅니다.",
+        effects: { firstStrikePressure: 1, suspicionMult: 0.94 }
+      },
+      {
+        label: "같이 시간을 끌어준다",
+        correct: false,
+        resultText: "타자가 숨을 고릅니다.\n타이밍이 안정됩니다.",
+        effects: { firstBatterSuspicion: 5 }
+      }
+    ]
+  },
+  {
+    id: "rosin_grip",
+    pool: "base",
+    category: "컨디션",
+    strength: "안전",
+    performanceScore: 1,
+    title: "손끝 점검",
+    desc: "투수가 덕아웃에서 손끝을 계속 만집니다. 변화구 제구가 흔들릴 수 있습니다.",
+    choices: [
+      {
+        label: "제구 쉬운 구종으로 시작한다",
+        correct: true,
+        resultText: "손끝이 안정됩니다.\n제구 부담이 줄어듭니다.",
+        effects: { burdenControl: 0.85, fastControl: 3 }
+      },
+      {
+        label: "낙차 큰 공부터 던진다",
+        correct: false,
+        resultText: "손에서 빠집니다.\n볼 카운트 부담이 커집니다.",
+        effects: { firstBatterSuspicion: 6 }
+      }
+    ]
+  },
+  {
+    id: "infield_in",
+    pool: "base",
+    category: "수비",
+    strength: "강함",
+    performanceScore: 3,
+    title: "내야 한 발 전진",
+    desc: "내야 코치가 수비 위치를 앞으로 당깁니다. 약한 땅볼이면 바로 승부가 납니다.",
+    choices: [
+      {
+        label: "낮은 공으로 굴린다",
+        correct: true,
+        resultText: "땅볼 루트가 열립니다.\n병살과 범타 보상이 크게 오릅니다.",
+        effects: { breakingQuality: 4, longHitGuard: 1 }
+      },
+      {
+        label: "높은 공으로 뜬공을 노린다",
+        correct: false,
+        resultText: "공이 떠오릅니다.\n외야 쪽으로 뻗습니다.",
+        effects: { singleRisk: 0.12, firstBatterSuspicion: 6 }
+      }
+    ]
+  },
+  {
+    id: "runner_lead",
+    pool: "base",
+    category: "주자",
+    strength: "강함",
+    performanceScore: 3,
+    title: "주자 견제 플랜",
+    desc: "다음 이닝 선두 타자가 출루하면 리드를 크게 잡는 팀입니다. 벤치가 견제 사인을 냅니다.",
+    choices: [
+      {
+        label: "견제 후 변화구",
+        correct: true,
+        resultText: "주자가 묶입니다.\n타자 타이밍도 늦습니다.",
+        effects: { breakingQuality: 4, slowAfterFastBoost: 0.12 }
+      },
+      {
+        label: "바로 빠른 공 승부",
+        correct: false,
+        resultText: "주자가 스타트를 봅니다.\n타자도 늦지 않습니다.",
+        effects: { firstBatterSuspicion: 8, singleRisk: 0.08 }
+      }
+    ]
+  },
+  {
+    id: "catcher_block",
+    pool: "base",
+    category: "포수",
+    strength: "강함",
+    performanceScore: 3,
+    title: "블로킹 합의",
+    desc: "포수가 낮은 공은 몸으로 막겠다고 말합니다. 떨어지는 공을 쓸 준비가 됐습니다.",
+    choices: [
+      {
+        label: "낮은 유인구를 믿는다",
+        correct: true,
+        resultText: "포수가 막아냈고 배트가 따라 나옵니다.\n결정구 보상이 크게 오릅니다.",
+        effects: { breakingQuality: 5, slowAfterFastBoost: 0.12 }
+      },
+      {
+        label: "안전하게 존 안에 넣는다",
+        correct: false,
+        resultText: "타자가 기다리던 공입니다.\n강하게 맞습니다.",
+        effects: { singleRisk: 0.12, firstBatterSuspicion: 7 }
+      }
+    ]
+  },
+  {
+    id: "bench_meeting",
+    pool: "base",
+    category: "벤치",
+    strength: "일반",
+    performanceScore: 2,
+    title: "짧은 벤치 미팅",
+    desc: "코치와 포수가 짧게 말을 맞춥니다. 다음 타자는 첫 공을 자주 노립니다.",
+    choices: [
+      {
+        label: "첫 공부터 존 끝",
+        correct: true,
+        resultText: "타자가 치려다 멈춥니다.\n카운트와 미션 보상이 열립니다.",
+        effects: { firstStrikePressure: 1, missionChoiceBonus: 1 }
+      },
+      {
+        label: "첫 공을 버린다",
+        correct: false,
+        resultText: "타자가 편하게 봅니다.\n다음 공 간파도가 오릅니다.",
+        effects: { firstBatterSuspicion: 8 }
+      }
+    ]
+  },
+  {
+    id: "batting_order_turn",
+    pool: "base",
+    category: "타순",
+    strength: "강함",
+    performanceScore: 3,
+    title: "타순 두 바퀴째",
+    desc: "상대 타선이 투수 공을 한 번씩 봤습니다. 같은 시작은 쉽게 읽힙니다.",
+    choices: [
+      {
+        label: "첫 공 패턴을 바꾼다",
+        correct: true,
+        resultText: "타순 두 바퀴째를 넘깁니다.\n반복 노림이 크게 줄어듭니다.",
+        effects: { repeatSuspicionMult: 0.82, suspicionMult: 0.92 }
+      },
+      {
+        label: "앞 이닝과 같은 시작",
+        correct: false,
+        resultText: "기다리던 그림입니다.\n간파도가 크게 오릅니다.",
+        effects: { repeatSuspicionMult: 1.18, firstBatterSuspicion: 10 }
+      }
+    ]
+  },
+  {
+    id: "cleanup_warning",
+    pool: "base",
+    category: "수비",
+    strength: "강함",
+    performanceScore: 3,
+    title: "중심타선 경고",
+    desc: "다음 이닝은 3-4-5번으로 이어집니다. 벤치가 장타만 피하자고 못 박습니다.",
+    choices: [
+      {
+        label: "낮게 눌러 장타를 지운다",
+        correct: true,
+        resultText: "큰 타구를 막습니다.\n외야 깊게 배치 보상이 붙습니다.",
+        effects: { longHitGuard: 1, breakingQuality: 4 }
+      },
+      {
+        label: "헛스윙만 노리고 높게 간다",
+        correct: false,
+        resultText: "실투가 뜹니다.\n장타 위험이 크게 오릅니다.",
+        effects: { singleRisk: 0.14, firstBatterSuspicion: 7 }
+      }
+    ]
+  },
+  {
+    id: "pinch_hitter_note",
+    pool: "base",
+    category: "분석",
+    strength: "일반",
+    performanceScore: 2,
+    title: "대타 준비",
+    desc: "상대 벤치가 대타 가능성을 열어 둡니다. 좌우 상성보다 초구 반응이 중요합니다.",
+    choices: [
+      {
+        label: "초구 반응을 먼저 본다",
+        correct: true,
+        resultText: "대타의 첫 반응을 잡습니다.\n약점 단서가 열립니다.",
+        effects: { candidateNextFirstWeakness: 2, reactionCheckBoost: 0.25 }
+      },
+      {
+        label: "상성만 보고 밀어붙인다",
+        correct: false,
+        resultText: "대타가 준비한 공입니다.\n정타 위험이 오릅니다.",
+        effects: { singleRisk: 0.1, firstBatterSuspicion: 6 }
+      }
+    ]
+  },
+  {
+    id: "outfield_deep",
+    pool: "base",
+    category: "수비",
+    strength: "일반",
+    performanceScore: 2,
+    title: "외야 뒤로",
+    desc: "외야 코치가 깊게 서라는 사인을 냅니다. 장타를 막는 대신 짧은 안타는 열립니다.",
+    choices: [
+      {
+        label: "장타를 지우는 수비로 간다",
+        correct: true,
+        resultText: "큰 타구를 막습니다.\n장타 위험이 내려갑니다.",
+        effects: { longHitGuard: 1, singleRisk: 0.06 }
+      },
+      {
+        label: "평소 위치를 유지한다",
+        correct: false,
+        resultText: "머리 위 타구가 나올 위험이 커집니다.",
+        effects: { singleRisk: 0.1 }
+      }
+    ]
+  },
+  {
+    id: "wind_to_right",
+    pool: "base",
+    category: "구장",
+    strength: "강함",
+    performanceScore: 3,
+    title: "우측으로 부는 바람",
+    desc: "바람이 우측 담장 쪽으로 붑니다. 뜬공이 평소보다 더 뻗습니다.",
+    choices: [
+      {
+        label: "낮은 공으로 뜬공을 줄인다",
+        correct: true,
+        resultText: "뜬공을 줄였습니다.\n장타 억제가 붙습니다.",
+        effects: { longHitGuard: 1, breakingQuality: 4 }
+      },
+      {
+        label: "높은 공으로 힘을 겨룬다",
+        correct: false,
+        resultText: "바람을 탑니다.\n장타 위험이 크게 오릅니다.",
+        effects: { singleRisk: 0.14, firstBatterSuspicion: 6 }
+      }
+    ]
+  },
+  {
+    id: "pitch_count_limit",
+    pool: "base",
+    category: "관리",
+    strength: "일반",
+    performanceScore: 2,
+    title: "투구 수 관리",
+    desc: "투구 수가 빠르게 늘고 있습니다. 이번 이닝은 긴 승부를 줄여야 합니다.",
+    choices: [
+      {
+        label: "초구 스트라이크로 짧게 간다",
+        correct: true,
+        resultText: "승부가 짧아집니다.\n제구 부담이 줄고 성과 흡수가 오릅니다.",
+        effects: { firstStrikePressure: 1, burdenControl: 0.88 }
+      },
+      {
+        label: "유인구를 길게 쓴다",
+        correct: false,
+        resultText: "승부가 늘어집니다.\n피로와 간파도가 같이 오릅니다.",
+        effects: { firstBatterSuspicion: 8, repeatSuspicionMult: 1.12 }
+      }
+    ]
+  },
+  {
+    id: "defense_signal",
+    pool: "base",
+    category: "수비",
+    strength: "안전",
+    performanceScore: 1,
+    title: "수비 사인 교체",
+    desc: "내야와 외야 사인이 엇갈렸습니다. 벤치가 한 번에 정리하자고 합니다.",
+    choices: [
+      {
+        label: "땅볼 수비로 통일한다",
+        correct: true,
+        resultText: "수비가 맞춰 섭니다.\n범타 보상이 오릅니다.",
+        effects: { longHitGuard: 1, suspicionMult: 0.95 }
+      },
+      {
+        label: "각자 판단에 맡긴다",
+        correct: false,
+        resultText: "수비 위치가 늦습니다.\n안타 위험이 오릅니다.",
+        effects: { singleRisk: 0.08 }
+      }
+    ]
+  },
+  {
+    id: "lucky_tape",
+    pool: "weird",
+    category: "돌발",
+    strength: "도박",
+    performanceScore: 4,
+    title: "행운의 테이프",
+    desc: "불펜 포수가 글러브에 붙은 낡은 테이프를 보여줍니다. 어제부터 이걸 붙인 공은 이상하게 낮게 깔렸다고 합니다.",
+    choices: [
+      {
+        label: "그냥 믿고 낮게 간다",
+        correct: true,
+        resultText: "이상하게 먹힙니다.\n낮은 코스 성과 흡수가 크게 오릅니다.",
+        effects: { breakingQuality: 5, longHitGuard: 1 }
+      },
+      {
+        label: "미신은 치우고 평소대로 간다",
+        correct: false,
+        resultText: "평소대로는 맞지만, 오늘의 이상한 흐름을 놓칩니다.\n성과 흡수는 없습니다.",
+        effects: { suspicionMult: 1.06 }
+      }
+    ]
+  },
+  {
+    id: "wrong_coach_sign",
+    pool: "weird",
+    category: "돌발",
+    strength: "도박",
+    performanceScore: 4,
+    title: "헷갈린 사인",
+    desc: "3루 코치가 엉뚱한 방향으로 사인을 냅니다. 그런데 포수가 뭔가 알아들은 표정입니다.",
+    choices: [
+      {
+        label: "포수 눈치를 믿는다",
+        correct: true,
+        resultText: "이상한 사인이 통했습니다.\n타자가 완전히 늦습니다.",
+        effects: { slowAfterFastBoost: 0.16, firstStrikePressure: 1 }
+      },
+      {
+        label: "코치에게 다시 확인한다",
+        correct: false,
+        resultText: "확인하는 사이 상대도 눈치챕니다.\n간파도가 오릅니다.",
+        effects: { firstBatterSuspicion: 10 }
+      }
+    ]
+  },
+  {
+    id: "spicy_noodle",
+    pool: "weird",
+    category: "돌발",
+    strength: "일반",
+    performanceScore: 2,
+    title: "불펜 간식 소동",
+    desc: "불펜에서 매운 간식 냄새가 올라옵니다. 투수가 갑자기 정신이 번쩍 든다고 합니다.",
+    choices: [
+      {
+        label: "그 기세로 초구부터 간다",
+        correct: true,
+        resultText: "집중력이 확 올라옵니다.\n초구 압박과 성과 흡수가 오릅니다.",
+        effects: { firstStrikePressure: 2 }
+      },
+      {
+        label: "물부터 마시고 진정한다",
+        correct: false,
+        resultText: "진정은 했지만 템포가 식습니다.\n초구 간파가 오릅니다.",
+        effects: { firstBatterSuspicion: 8 }
+      }
+    ]
+  },
+  {
+    id: "mascot_stare",
+    pool: "weird",
+    category: "돌발",
+    strength: "도박",
+    performanceScore: 4,
+    title: "마스코트의 눈빛",
+    desc: "마스코트가 덕아웃 앞에서 아무 말 없이 포수를 바라봅니다. 포수가 고개를 끄덕입니다.",
+    choices: [
+      {
+        label: "저 눈빛을 사인으로 쓴다",
+        correct: true,
+        resultText: "말도 안 되게 타이밍을 뺐습니다.\n완급 연결이 크게 오릅니다.",
+        effects: { slowAfterFastBoost: 0.18, breakingQuality: 4 }
+      },
+      {
+        label: "무시하고 정상 작전으로 간다",
+        correct: false,
+        resultText: "정상적이지만 변수는 사라집니다.\n성과 흡수는 작습니다.",
+        effects: { suspicionMult: 0.98 }
+      }
+    ]
+  },
+  {
+    id: "bullpen_coin",
+    pool: "weird",
+    category: "돌발",
+    strength: "도박",
+    performanceScore: 4,
+    title: "불펜 동전",
+    desc: "불펜 코치가 동전을 튕깁니다. 앞면이면 빠른 공, 뒷면이면 변화구라고 합니다. 다들 말리는데 투수는 웃고 있습니다.",
+    choices: [
+      {
+        label: "동전 운에 맡긴다",
+        correct: true,
+        resultText: "운이 붙었습니다.\n이번 이닝 성과 흡수가 크게 오릅니다.",
+        effects: { firstStrikePressure: 1, slowAfterFastBoost: 0.12, fastControl: 4 }
+      },
+      {
+        label: "작전표대로 간다",
+        correct: false,
+        resultText: "안전합니다.\n대신 큰 보상은 없습니다.",
+        effects: { suspicionMult: 0.98 }
       }
     ]
   }
 ];
 
-function reactionCount(tag) {
-  return ensureStageRunState().reactionCounts?.[tag] || 0;
-}
-
-function dugoutEventHint(event) {
-  const recent = ensureStageRunState().recentReactions || [];
-  const match = recent.find((item) => item.tag === event.signal) || recent[0];
-  if (!match) return "";
-  return `관찰: ${match.count} ${match.result} · ${match.reaction}`;
-}
-
 function generateDugoutReadEventChoices(options = {}) {
-  const signalTotal = Object.values(ensureStageRunState().reactionCounts || {}).reduce((sum, value) => sum + value, 0);
   const force = !!options.force;
-  if (!force && (signalTotal < 3 || Math.random() > DUGOUT_EVENT_CHANCE)) return [];
-  const weighted = DUGOUT_READ_EVENTS.map((event) => ({
-    event,
-    weight: event.signal ? Math.max(0, reactionCount(event.signal)) : 1
-  })).filter((entry) => entry.weight > 0);
-  const selected = weightedPick(weighted)?.event || pick(DUGOUT_READ_EVENTS);
+  if (!force && Math.random() > DUGOUT_EVENT_CHANCE) return [];
+  const poolName = Math.random() < DUGOUT_WEIRD_EVENT_CHANCE ? "weird" : "base";
+  const pool = DUGOUT_EVENTS.filter((event) => event.pool === poolName);
+  const selected = pick(pool.length ? pool : DUGOUT_EVENTS);
   if (!selected) return [];
-  const hint = dugoutEventHint(selected);
   return selected.choices.map((choice, index) => ({
     id: `${selected.id}_${index}`,
     dugoutEventId: selected.id,
-    category: "판단",
+    category: selected.category || "벤치",
     title: choice.label,
-    desc: hint ? `${selected.desc}\n${hint}` : selected.desc,
-    hint,
+    desc: selected.desc,
+    hint: "",
     resultText: choice.resultText,
     correct: !!choice.correct,
+    strength: selected.strength || "일반",
+    pool: selected.pool || "base",
+    performanceScore: choice.correct ? selected.performanceScore || 2 : 0,
     effects: choice.effects || {},
     rarity: "common"
   }));
@@ -6739,30 +7109,45 @@ function applyDugoutRarityToEffects(effects = {}, rarity = "common") {
   return boosted;
 }
 
-function dugoutEffectSummary(effects = {}, correct = false) {
+function dugoutEffectSummary(effects = {}, correct = false, performanceScore = 2) {
   const lines = [];
   if (effects.fastControl) lines.push(`강속구 제구 +${effects.fastControl}`);
   if (effects.breakingQuality) lines.push(`변화구 제구 +${effects.breakingQuality}`);
-  if (effects.firstStrikePressure) lines.push(`초구 스트라이크 압박 +${effects.firstStrikePressure}`);
-  if (effects.slowAfterFastBoost) lines.push(`느린 공 연계 보너스 +${Math.round(effects.slowAfterFastBoost * 100)}%`);
-  if (effects.impressionBonus) lines.push(`직전 공 기억 +${Math.round(effects.impressionBonus * 100)}%`);
+  if (effects.burdenControl && effects.burdenControl < 1) lines.push(`제구 부담 -${Math.round((1 - effects.burdenControl) * 100)}%`);
+  if (effects.firstStrikePressure) lines.push(`초구 압박 +${effects.firstStrikePressure}`);
+  if (effects.slowAfterFastBoost) lines.push(`완급 연결 +${Math.round(effects.slowAfterFastBoost * 100)}%`);
+  if (effects.impressionBonus) lines.push(`직전 공 각인 +${Math.round(effects.impressionBonus * 100)}%`);
   if (effects.courseReadBoost) lines.push(`코스 읽기 +${Math.round(effects.courseReadBoost * 100)}%`);
-  if (effects.reactionCheckBoost) lines.push(`반응 분석 +${Math.round(effects.reactionCheckBoost * 100)}%`);
-  if (effects.candidateNextFirstWeakness) lines.push(`약점 후보 +${effects.candidateNextFirstWeakness}`);
-  if (effects.missionChoiceBonus) lines.push(`미션 보상 선택지 +${effects.missionChoiceBonus}`);
-  if (effects.rivalCoreChoiceBonus) lines.push(`위험 타자 보상 흐름 +${effects.rivalCoreChoiceBonus}`);
-  if (effects.longHitGuard) lines.push("장타 억제 수비 적용");
-  if (effects.repeatSuspicionMult && effects.repeatSuspicionMult < 1) lines.push(`반복 의심 ${Math.round((1 - effects.repeatSuspicionMult) * 100)}% 감소`);
-  if (effects.suspicionMult && effects.suspicionMult < 1) lines.push(`전체 의심 ${Math.round((1 - effects.suspicionMult) * 100)}% 감소`);
-  if (effects.repeatSuspicionMult && effects.repeatSuspicionMult > 1) lines.push(`반복 의심 ${Math.round((effects.repeatSuspicionMult - 1) * 100)}% 증가`);
-  if (effects.firstBatterSuspicion) lines.push(`다음 타자 의심 +${effects.firstBatterSuspicion}`);
+  if (effects.reactionCheckBoost) lines.push(`반응 메모 +${Math.round(effects.reactionCheckBoost * 100)}%`);
+  if (effects.candidateNextFirstWeakness) lines.push(`약점 단서 +${effects.candidateNextFirstWeakness}`);
+  if (effects.missionChoiceBonus) lines.push(`미션 보상 +${effects.missionChoiceBonus}장`);
+  if (effects.rivalCoreChoiceBonus) lines.push(`위험 타자 보상 +${effects.rivalCoreChoiceBonus}장`);
+  if (effects.longHitGuard) lines.push("외야 깊게 배치");
+  if (effects.repeatSuspicionMult && effects.repeatSuspicionMult < 1) lines.push(`반복 노림 -${Math.round((1 - effects.repeatSuspicionMult) * 100)}%`);
+  if (effects.suspicionMult && effects.suspicionMult < 1) lines.push(`간파도 -${Math.round((1 - effects.suspicionMult) * 100)}%`);
+  if (effects.repeatSuspicionMult && effects.repeatSuspicionMult > 1) lines.push(`반복 노림 +${Math.round((effects.repeatSuspicionMult - 1) * 100)}%`);
+  if (effects.suspicionMult && effects.suspicionMult > 1) lines.push(`간파도 +${Math.round((effects.suspicionMult - 1) * 100)}%`);
+  if (effects.firstBatterSuspicion) lines.push(`다음 타자 간파 +${effects.firstBatterSuspicion}`);
   if (effects.singleRisk) lines.push(`정타 위험 +${Math.round(effects.singleRisk * 100)}%`);
-  if (correct) lines.push("보상 성과 +2");
+  if (correct) lines.push(`성과 흡수 +${performanceScore}`);
+  else if (performanceScore === 0) lines.push("흡수 없음");
   return lines;
 }
 
 function generateDugoutChoices(options = {}) {
   return generateDugoutReadEventChoices(options);
+}
+
+function dugoutEventCatalog() {
+  return DUGOUT_EVENTS.map((event) => ({
+    id: event.id,
+    pool: event.pool,
+    category: event.category,
+    strength: event.strength,
+    title: event.title,
+    desc: event.desc,
+    choiceCount: event.choices?.length || 0
+  }));
 }
 
 function prepareStageStartDugout() {
@@ -6787,7 +7172,7 @@ function renderDugoutChoices() {
           <span class="dugout-choice-category">${escapeHtml(choice.category)}</span>
           ${choice.rarity === "rare" ? '<span class="dugout-choice-rarity">희귀 · 효과 +35%</span>' : ""}
           <strong>${escapeHtml(choice.title)}</strong>
-          <p>${escapeHtml(choice.dugoutEventId ? choice.hint || "선택 후 판단 결과가 공개됩니다." : choice.desc)}${choice.dugoutEventId ? "" : choice.rarity === "rare" ? " 희귀 등급은 수치·단서가 한 단계 강화됩니다." : ""}</p>
+          <p>${escapeHtml(choice.desc || choice.hint || "선택 후 판단 결과가 공개됩니다.")}${choice.dugoutEventId ? "" : choice.rarity === "rare" ? " 희귀 등급은 수치·단서가 한 단계 강화됩니다." : ""}</p>
         </button>
       `
     )
@@ -6961,7 +7346,7 @@ function openDugoutChoiceOverlay() {
   if (els.dugoutTitle) els.dugoutTitle.textContent = eventChoice ? "덕아웃 판단" : `${state.inning}이닝 덕아웃 선택`;
   if (els.dugoutReason) {
     const mission = currentMission();
-    const missionText = mission ? missionActionText(mission) : "추가 과제 없음";
+    const missionText = mission ? missionActionText(mission) : "추가 미션 없음";
     els.dugoutReason.textContent = eventChoice?.desc || `이번 과제: ${missionText}. 벤치 사인을 고릅니다.`;
   }
   renderDugoutChoices();
@@ -7016,8 +7401,9 @@ function applyDugoutChoice(choice) {
   state.mobileDugoutCue = choice.title;
   if (choice.dugoutEventId) {
     const resultHtml = escapeHtml(choice.resultText || choice.title).replaceAll("\n", "<br>");
-    if (choice.correct) absorbCardPerformance(0.025, 0.005, { key: "dugoutRead", label: "덕아웃 판단", score: 2, source: "덕아웃", limit: 3 });
-    const effectLines = dugoutEffectSummary(effects, choice.correct);
+    const performanceScore = choice.correct ? choice.performanceScore || 2 : 0;
+    if (choice.correct) absorbCardPerformance(0.025, 0.005, { key: "dugoutRead", label: "덕아웃 판단", score: performanceScore, source: "덕아웃", limit: 4 });
+    const effectLines = dugoutEffectSummary(effects, choice.correct, performanceScore);
     const hintHtml = choice.hint ? `<p class="log-muted">${escapeHtml(choice.hint)}</p>` : "";
     const effectHtml = effectLines.length ? `<p class="log-muted">효과: ${effectLines.map(escapeHtml).join(" · ")}</p>` : "";
     addLog("덕아웃 판단", `<p>${resultHtml}</p>${hintHtml}${effectHtml}<p class="log-muted">선택: ${escapeHtml(choice.title)}</p>`);
@@ -7119,10 +7505,10 @@ function continueDugoutChoiceResult() {
 }
 
 function rewardReasonText(reason) {
-  if (/병살|DOUBLE PLAY/i.test(reason)) return "병살로 위기를 지웠습니다. 보상 3장 중 하나를 선택합니다.";
-  if (/보스|위험|하이라이트/.test(reason)) return "위험한 승부를 막았습니다. 강한 보상 3장이 열렸습니다.";
-  if (/삼진|2스트|STRIKE OUT/i.test(reason)) return "삼진으로 분위기를 가져왔습니다. 보상 3장 중 하나를 선택합니다.";
-  return "승부 보상 3장이 열렸습니다.";
+  if (/병살|DOUBLE PLAY/i.test(reason)) return "병살로 위기를 지웠습니다. 카드 3장 중 하나를 고릅니다.";
+  if (/보스|위험|하이라이트/.test(reason)) return "위험한 승부를 막았습니다. 강한 카드 3장이 열렸습니다.";
+  if (/삼진|2스트|STRIKE OUT/i.test(reason)) return "삼진으로 분위기를 가져왔습니다. 카드 3장 중 하나를 고릅니다.";
+  return "카드 3장이 열렸습니다.";
 }
 
 function rewardDraftTitle(reason, kind) {
@@ -7140,12 +7526,12 @@ function stagePerformanceEventsForReward() {
 }
 
 function stagePerformanceGrade(score = 0) {
-  if (score >= 19) return "Core 후보 개방";
-  if (score >= 15) return "Rare 2장 보장";
-  if (score >= 11) return "Rare 2장 후보";
-  if (score >= 7) return "Rare 1장 보장";
-  if (score >= 4) return "Rare 후보 개방";
-  return "Common 보상";
+  if (score >= 19) return "핵심 후보 개방";
+  if (score >= 15) return "희귀 2장 보장";
+  if (score >= 11) return "희귀 2장 후보";
+  if (score >= 7) return "희귀 1장 보장";
+  if (score >= 4) return "희귀 후보 개방";
+  return "일반 보상";
 }
 
 function renderStagePerformanceAbsorbList(kind) {
@@ -7789,7 +8175,7 @@ function rewardUpgradeTokensHtml(index) {
   return `
     <div class="reward-card-upgrade-tokens" aria-hidden="true">
       <span class="reward-card-upgrade-badge">${from && to ? `${escapeHtml(from)} → ${escapeHtml(to)}` : "등급 상승"}</span>
-      <span class="reward-card-upgrade-text">${to === "핵심" ? "진화 개방" : "등급 상승"}</span>
+      <span class="reward-card-upgrade-text">${to === "핵심" ? "성과로 진화 개방" : "성과로 등급 상승"}</span>
     </div>
   `;
 }
@@ -8359,7 +8745,7 @@ function renderRunStatusCard() {
   els.runStatusCard.hidden = false;
   if (els.runStageName) els.runStageName.textContent = `STAGE ${currentStageNumber()} · ${config.name}`;
   if (els.runMissionText) {
-    els.runMissionText.textContent = mission ? `이번 이닝 미션: ${missionText} · ${missionStatus}` : "이번 이닝에는 추가 과제가 없습니다";
+    els.runMissionText.textContent = mission ? `이번 이닝 미션: ${missionText} · ${missionStatus}` : "이번 이닝에는 추가 미션이 없습니다";
   }
   if (els.runRivalText) {
     const rivalState = ensureStageRunState().rival;
@@ -8473,7 +8859,7 @@ function render() {
   const stageTarget = currentStageInnings();
   els.inningText.textContent = `${Math.min(state.inning, stageTarget)} / ${stageTarget}`;
   els.runsText.textContent = state.runs;
-  if (els.targetText) els.targetText.textContent = `${currentStageRunLimit()}실점 시 종료`;
+  if (els.targetText) els.targetText.textContent = `실점 제한 ${currentStageRunLimit()}`;
   renderCountIndicator(els.ballsText, state.balls, 3, "Balls");
   renderCountIndicator(els.strikesText, state.strikes, 2, "Strikes");
   renderCountIndicator(els.outsText, state.outs, 2, "Outs");
@@ -8843,7 +9229,7 @@ function renderMobileDuelRead() {
   els.mobileDuelReadFlow.textContent = mobileCatcherLine();
   els.mobileDuelReadPitch.textContent = mobileNextActionLine();
   const riskLabel = els.mobileDuelReadRisk.closest("span");
-  if (riskLabel?.firstChild) riskLabel.firstChild.textContent = "간파 ";
+  if (riskLabel?.firstChild) riskLabel.firstChild.textContent = "간파도 ";
   els.mobileDuelReadRisk.textContent = mobileSuspicionTone();
 }
 
@@ -9096,7 +9482,7 @@ function renderMobileRecentLog() {
       suspicionCard.dataset.mobileSuspicion = "true";
       card.parentElement?.insertBefore(suspicionCard, card);
     }
-    suspicionCard.innerHTML = `<span>의심도</span><strong>${suspicionValue}%</strong><i><u style="width:${suspicionValue}%"></u></i>`;
+    suspicionCard.innerHTML = `<span>간파도</span><strong>${suspicionValue}%</strong><i><u style="width:${suspicionValue}%"></u></i>`;
   }
   if (!shouldShow) {
     els.mobileRecentLog.innerHTML = '<p class="mobile-recent-log-empty">아직 투구 기록 없음</p>';
@@ -9160,12 +9546,12 @@ function renderMobileInfoPanel() {
   if (mobilePanelMode === "suspicion") {
     const suspicion = Math.round(clamp(state.atBat?.suspicion || 0, 0, 100));
     const tone = suspicion >= 70 ? "높음" : suspicion >= 45 ? "주의" : "낮음";
-    els.mobileInfoPanelTitle.textContent = "타자 의심도";
+    els.mobileInfoPanelTitle.textContent = "간파도";
     els.mobileInfoPanelBody.innerHTML = `<div class="mobile-suspicion-detail">
       <strong>${suspicion}% · ${tone}</strong>
       <p>타자가 투구 패턴을 어느 정도 좁혀가고 있는지 보여줍니다.</p>
       <p>같은 구종, 같은 코스, 같은 높이를 반복하면 더 빨리 올라갑니다.</p>
-      <p>다른 계열이나 다른 높이로 흐름을 바꾸면 의심도를 낮추거나 상승을 늦출 수 있습니다.</p>
+      <p>다른 계열이나 다른 높이로 흐름을 바꾸면 간파도를 낮추거나 상승을 늦출 수 있습니다.</p>
     </div>`;
     return;
   }
@@ -9206,7 +9592,7 @@ function renderMobileGameUi() {
   }
   els.mobileInningText.textContent = `${Math.min(state.inning, currentStageInnings())} / ${currentStageInnings()}`;
   els.mobileRunsText.textContent = state.runs;
-  els.mobileTargetText.textContent = `${currentStageRunLimit()}실점 시 종료`;
+  els.mobileTargetText.textContent = `실점 제한 ${currentStageRunLimit()}`;
   renderMobileCountDots(els.mobileBallsDots, state.balls, 3);
   renderMobileCountDots(els.mobileStrikesDots, state.strikes, 2);
   renderMobileCountDots(els.mobileOutsDots, state.outs, 2);
@@ -9237,7 +9623,7 @@ function renderMobileGameUi() {
   renderMobileRecentLog();
   renderMobilePlayerDetail();
   els.mobileRecommendConfidence.textContent = "힌트";
-  els.mobileRecommendTitle.textContent = "포수 한마디";
+  els.mobileRecommendTitle.textContent = "포수 콜";
   els.mobileRecommendText.textContent = catcherSign.text;
   if (mobilePanelMode) renderMobileInfoPanel();
 }
@@ -10139,7 +10525,7 @@ function showStageThemeOverlay(stageNumber, innings, themeId = state.stageThemeI
   `;
   els.stageSubtitle.innerHTML = `
     <strong class="stage-rule-innings">${innings || currentStageInnings()}이닝</strong>
-    <span class="stage-rule-limit">목표 ${currentStageRunLimit()}실점 시 경기 종료</span>
+    <span class="stage-rule-limit">실점 제한 ${currentStageRunLimit()}</span>
   `;
   if (els.stageThemePanel && theme) {
     els.stageThemePanel.hidden = false;
@@ -10592,6 +10978,7 @@ MP.debug = {
   generateSupportTagUpgradeChoices,
   generateCoreEvolutionChoices,
   generateDugoutChoices,
+  dugoutEventCatalog,
   calculateStageResult,
   currentMission,
   checkStageRunLimit,

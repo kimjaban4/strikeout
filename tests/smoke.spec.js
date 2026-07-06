@@ -44,6 +44,25 @@ test("boots to title and pitcher select", async ({ page }) => {
   await expect(page.locator(".pitcher-choice-card")).toHaveCount(3);
 });
 
+test("stage missions stay inside playable innings", async ({ page }) => {
+  await page.goto("/");
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    return [0, 1, 2].map((stageIndex) => {
+      const config = MP.debug.stageConfig(stageIndex);
+      return {
+        name: config.name,
+        innings: config.innings,
+        missionInnings: config.missions.map((mission) => mission.inning)
+      };
+    });
+  });
+
+  for (const stage of result) {
+    expect(stage.missionInnings.every((inning) => inning >= 1 && inning <= stage.innings)).toBe(true);
+  }
+});
+
 test("uses mobile shell as the main game screen on wide and narrow viewports", async ({ page }) => {
   for (const viewport of [
     { width: 390, height: 844 },
@@ -97,7 +116,7 @@ test("mobile throw records a log entry", async ({ page }) => {
   await expect(page.locator(".mobile-suspicion-card")).toBeVisible();
   await page.locator(".mobile-suspicion-card").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
-  await expect(page.locator("#mobileInfoPanelTitle")).toHaveText("타자 의심도");
+  await expect(page.locator("#mobileInfoPanelTitle")).toHaveText("간파도");
   await page.locator("#mobileInfoPanelClose").click();
   await chooseMobilePitchAndZone(page);
 
@@ -286,9 +305,36 @@ test("dugout choice reveals applied effect before advancing", async ({ page }) =
   await expect(page.locator("#dugoutTitle")).toContainText(/판단/);
   await expect(page.locator(".dugout-result-card")).not.toContainText(/판단 적중|판단 빗나감/);
   await expect(page.locator(".dugout-result-card")).toContainText(/강속구 제구/);
-  await expect(page.locator(".dugout-result-card")).toContainText(/보상 성과/);
+  await expect(page.locator(".dugout-result-card")).toContainText(/성과 흡수/);
   await page.locator("[data-dugout-continue]").click();
   await expect(page.locator("#dugoutOverlay")).toBeHidden();
+});
+
+test("dugout event pool uses 20 baseball plans and 5 weird events", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const events = MP.debug.dugoutEventCatalog();
+    const choices = MP.debug.generateDugoutChoices({ force: true });
+    return {
+      total: events.length,
+      weird: events.filter((event) => event.pool === "weird").length,
+      hasOldLiveRead: events.some((event) => ["read_fast_late", "read_swing_early", "read_hard_contact"].includes(event.id)),
+      choiceCount: choices.length,
+      choiceEventId: choices[0]?.dugoutEventId || "",
+      choiceTitle: choices[0]?.title || "",
+      choiceDesc: choices[0]?.desc || ""
+    };
+  });
+
+  expect(result.total).toBe(25);
+  expect(result.weird).toBe(5);
+  expect(result.hasOldLiveRead).toBe(false);
+  expect(result.choiceCount).toBe(2);
+  expect(result.choiceEventId).toBeTruthy();
+  expect(result.choiceTitle).toBeTruthy();
+  expect(result.choiceDesc).not.toContain("관찰:");
 });
 
 test("stage clear reward cards appear after inning transition overlay", async ({ page }) => {
