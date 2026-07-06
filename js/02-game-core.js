@@ -6553,18 +6553,18 @@ const DUGOUT_READ_EVENTS = [
   {
     id: "analysis_report",
     title: "분석 자료 도착",
-    desc: "전력분석팀이 다음 타자의 반응 자료를 급히 넘겼습니다. 어떤 단서를 먼저 믿을까요?",
+    desc: "전력분석팀이 급히 넘긴 메모입니다. 첫 단서만 믿고 들어갑니다.",
     choices: [
       {
         label: "초구 반응 자료를 우선한다",
         correct: true,
-        resultText: "초구 반응 자료가 맞았습니다.\n다음 첫 타자 약점 후보 확보",
+        resultText: "초구 메모 적중.\n첫 타자 약점 후보 확보",
         effects: { candidateNextFirstWeakness: 2, reactionCheckBoost: 0.25 }
       },
       {
         label: "이전 타석 장타 기록만 본다",
         correct: false,
-        resultText: "자료 해석이 좁았습니다.\n다음 타자 의심 증가",
+        resultText: "장타 기록에 끌렸습니다.\n다음 타자 의심 증가",
         effects: { firstBatterSuspicion: 7, singleRisk: 0.06 }
       }
     ]
@@ -6572,18 +6572,18 @@ const DUGOUT_READ_EVENTS = [
   {
     id: "rival_taunt",
     title: "라이벌 도발",
-    desc: "덕아웃 앞에서 위험 타자가 다음 승부를 노골적으로 기다리고 있습니다. 대응 방향을 정해야 합니다.",
+    desc: "위험 타자가 배트를 돌리며 기다립니다. 정면승부만 피하면 됩니다.",
     choices: [
       {
         label: "정면승부보다 코스 전환을 건다",
         correct: true,
-        resultText: "도발에 말려들지 않았습니다.\n위험 타자 보상 성과 상승",
+        resultText: "말려들지 않았습니다.\n위험 타자 성과 상승",
         effects: { rivalCoreChoiceBonus: 1, repeatSuspicionMult: 0.9 }
       },
       {
         label: "강한 공으로 바로 응징한다",
         correct: false,
-        resultText: "타자가 그 공을 기다리고 있었습니다.\n정타 위험 증가",
+        resultText: "타자가 그 공만 봤습니다.\n정타 위험 증가",
         effects: { rivalRisk: 1, singleRisk: 0.1 }
       }
     ]
@@ -6591,18 +6591,18 @@ const DUGOUT_READ_EVENTS = [
   {
     id: "crowd_pressure",
     title: "관중 압박",
-    desc: "관중 소리가 커지며 마운드 루틴이 흔들립니다. 호흡을 어떻게 되찾을까요?",
+    desc: "소리가 커졌습니다. 포수가 낮게, 천천히 사인을 냅니다.",
     choices: [
       {
         label: "긴 호흡으로 낮은 코스를 고정한다",
         correct: true,
-        resultText: "루틴이 안정됐습니다.\n낮은 코스와 압박 상황 제구 상승",
+        resultText: "호흡 돌아왔습니다.\n낮은 코스 제구 상승",
         effects: { breakingQuality: 3, firstStrikePressure: 1 }
       },
       {
         label: "템포를 올려 빨리 승부한다",
         correct: false,
-        resultText: "템포가 급해졌습니다.\n초구 정타 위험 증가",
+        resultText: "템포가 급했습니다.\n초구 정타 위험 증가",
         effects: { firstBatterSuspicion: 8, singleRisk: 0.08 }
       }
     ]
@@ -6610,18 +6610,18 @@ const DUGOUT_READ_EVENTS = [
   {
     id: "low_zone_touch",
     title: "낮은 공 감각",
-    desc: "불펜 코치가 낮은 공의 손끝 감각이 살아났다고 전합니다. 다음 이닝 운영을 고릅니다.",
+    desc: "불펜 쪽에서 낮은 공 사인이 옵니다. 땅볼을 노릴 타이밍입니다.",
     choices: [
       {
         label: "낮게 눌러 땅볼 루트를 만든다",
         correct: true,
-        resultText: "낮은 공 감각이 맞았습니다.\n병살과 약한 타구 루트 상승",
+        resultText: "낮게 눌렀습니다.\n병살 루트 상승",
         effects: { breakingQuality: 4, longHitGuard: 1 }
       },
       {
         label: "높은 공으로 헛스윙만 노린다",
         correct: false,
-        resultText: "낮은 감각을 살리지 못했습니다.\n반복 의심 증가",
+        resultText: "높게 몰렸습니다.\n반복 의심 증가",
         effects: { repeatSuspicionMult: 1.12, firstBatterSuspicion: 5 }
       }
     ]
@@ -6629,18 +6629,18 @@ const DUGOUT_READ_EVENTS = [
   {
     id: "manager_order",
     title: "감독 지시",
-    desc: "감독이 다음 이닝 첫 타자를 절대 쉽게 내보내지 말라고 지시합니다. 어느 쪽으로 받아들일까요?",
+    desc: "감독이 손가락 하나를 듭니다. 첫 스트라이크부터 잡으라는 뜻입니다.",
     choices: [
       {
         label: "첫 스트라이크만 확실히 잡는다",
         correct: true,
-        resultText: "지시가 명확했습니다.\n초구 스트라이크 압박 상승",
+        resultText: "첫 스트라이크 확보.\n초구 압박 상승",
         effects: { firstStrikePressure: 2, missionChoiceBonus: 1 }
       },
       {
         label: "볼넷만 피하려고 가운데로 넣는다",
         correct: false,
-        resultText: "너무 안전하게 들어갔습니다.\n약한 안타 위험 증가",
+        resultText: "가운데로 몰렸습니다.\n안타 위험 증가",
         effects: { singleRisk: 0.12, firstBatterSuspicion: 6 }
       }
     ]
@@ -6648,18 +6648,18 @@ const DUGOUT_READ_EVENTS = [
   {
     id: "bad_report",
     title: "타자 분석 오류",
-    desc: "방금 들어온 분석 자료가 이전 반응과 어긋납니다. 어떤 판단을 믿을지 골라야 합니다.",
+    desc: "새 자료가 직전 반응과 다릅니다. 현장에서 본 쪽이 더 믿을 만합니다.",
     choices: [
       {
         label: "직전 반응을 기준으로 수정한다",
         correct: true,
-        resultText: "오류를 바로잡았습니다.\n반복 간파 위험 감소",
+        resultText: "수정 사인 적중.\n반복 간파 감소",
         effects: { suspicionMult: 0.92, repeatSuspicionMult: 0.84 }
       },
       {
         label: "자료를 그대로 밀어붙인다",
         correct: false,
-        resultText: "잘못된 자료에 끌려갔습니다.\n다음 타자 의심 증가",
+        resultText: "낡은 자료였습니다.\n다음 타자 의심 증가",
         effects: { firstBatterSuspicion: 9, repeatSuspicionMult: 1.14 }
       }
     ]
@@ -6961,8 +6961,8 @@ function openDugoutChoiceOverlay() {
   if (els.dugoutTitle) els.dugoutTitle.textContent = eventChoice ? "덕아웃 판단" : `${state.inning}이닝 덕아웃 선택`;
   if (els.dugoutReason) {
     const mission = currentMission();
-    const missionText = mission ? missionActionText(mission) : "이번 이닝에는 추가 과제가 없습니다";
-    els.dugoutReason.textContent = eventChoice?.desc || `이번 과제: ${missionText} · 이번 이닝을 어떤 흐름으로 풀지 고르세요.`;
+    const missionText = mission ? missionActionText(mission) : "추가 과제 없음";
+    els.dugoutReason.textContent = eventChoice?.desc || `이번 과제: ${missionText}. 벤치 사인을 고릅니다.`;
   }
   renderDugoutChoices();
   els.dugoutOverlay.hidden = false;
@@ -7026,7 +7026,7 @@ function applyDugoutChoice(choice) {
   } else {
     addLog("덕아웃 선택", `${choice.title}${rarityNote} · ${choice.desc}`);
     showEventBanner(`이닝 작전\n${choice.title}`, "reward", 1200);
-    return { title: "덕아웃 작전 적용", resultText: choice.title, effectLines: dugoutEffectSummary(effects, true) };
+    return { title: "덕아웃 작전", resultText: choice.title, effectLines: dugoutEffectSummary(effects, true) };
   }
 }
 
@@ -7034,11 +7034,11 @@ function showDugoutChoiceResult(result, continueLabel = "다음 타자") {
   if (!els.dugoutOverlay || !result) return false;
   hideEventBanner();
   if (els.dugoutTitle) els.dugoutTitle.textContent = result.title;
-  if (els.dugoutReason) els.dugoutReason.textContent = "작전 적용 완료. 다음 승부에 바로 반영됩니다.";
+  if (els.dugoutReason) els.dugoutReason.textContent = "사인 전달 완료. 다음 타자부터 갑니다.";
   if (els.dugoutChoiceList) {
     const lines = result.effectLines?.length ? result.effectLines : ["추가 효과 없음"];
-    const resultLines = String(result.resultText || result.title || "작전 적용").split("\n").filter(Boolean);
-    const resultTitle = resultLines[0] || "작전 적용";
+    const resultLines = String(result.resultText || result.title || "사인 전달").split("\n").filter(Boolean);
+    const resultTitle = resultLines[0] || "사인 전달";
     const resultSub = resultLines.slice(1).join(" · ");
     els.dugoutChoiceList.innerHTML = `
       <div class="dugout-result-card">
@@ -7048,7 +7048,7 @@ function showDugoutChoiceResult(result, continueLabel = "다음 타자") {
         <div class="dugout-result-effects">
           ${lines.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}
         </div>
-        <p class="dugout-result-footnote">좋은 판단은 스테이지 카드 보상에 반영됩니다.</p>
+        <p class="dugout-result-footnote">좋은 사인은 스테이지 보상까지 따라갑니다.</p>
         <button class="dugout-continue-button" type="button" data-dugout-continue>${escapeHtml(continueLabel)}</button>
       </div>
     `;
@@ -7119,10 +7119,10 @@ function continueDugoutChoiceResult() {
 }
 
 function rewardReasonText(reason) {
-  if (/병살|DOUBLE PLAY/i.test(reason)) return "병살로 위기를 지웠습니다. 투수 성장 선택지 3개 중 하나를 고르세요.";
-  if (/보스|위험|하이라이트/.test(reason)) return "위험한 승부를 막아냈습니다. 강한 성장 선택지 3개 중 하나를 고르세요.";
-  if (/삼진|2스트|STRIKE OUT/i.test(reason)) return "삼진으로 흐름을 가져왔습니다. 투수 성장 선택지 3개 중 하나를 고르세요.";
-  return "승부를 끝낸 보상입니다. 투수 성장 선택지 3개 중 하나를 고르세요.";
+  if (/병살|DOUBLE PLAY/i.test(reason)) return "병살로 위기를 지웠습니다. 보상 3장 중 하나를 선택합니다.";
+  if (/보스|위험|하이라이트/.test(reason)) return "위험한 승부를 막았습니다. 강한 보상 3장이 열렸습니다.";
+  if (/삼진|2스트|STRIKE OUT/i.test(reason)) return "삼진으로 분위기를 가져왔습니다. 보상 3장 중 하나를 선택합니다.";
+  return "승부 보상 3장이 열렸습니다.";
 }
 
 function rewardDraftTitle(reason, kind) {
@@ -7173,8 +7173,8 @@ function stageCardRewardReasonText() {
   const rival = result.rivalGoalMet ? "라이벌 과제 달성" : "라이벌 과제 미달성";
   const lines = [`${result.stageName} · ${result.starLabel}`, rival];
   if (result.highlightSuccesses) lines.push(`하이라이트 ${result.highlightSuccesses}회 성공`);
-  if (result.rewardBoost?.absorbed) lines.push("좋은 승부가 카드 후보를 끌어올렸습니다.");
-  lines.push("스테이지 카드 3개 중 하나를 고르세요.");
+  if (result.rewardBoost?.absorbed) lines.push("좋은 승부가 카드 등급을 끌어올렸습니다.");
+  lines.push("스테이지 카드 3장 중 하나를 선택합니다.");
   return lines.join("\n");
 }
 
@@ -7860,9 +7860,9 @@ function rewardUnifiedOperation(reward) {
   if (reward.type === "tag") return "투수 보조태그에 추가";
   if (reward.type === "supportUpgrade") return "보유 태그 효과 상승";
   if (reward.type === "rewardCard") return "조건을 만족하면 자동 발동";
-  if (reward.type === "newPitch") return "새 구종 선택지 확보";
-  if (reward.type === "pitchUpgrade") return reward.reason ? `${reward.reason} 흐름을 이어서 구종 숙련도를 올립니다.` : "활약한 구종을 더 안정적으로 운용합니다.";
-  return reward.desc || "투수 성장에 반영";
+  if (reward.type === "newPitch") return "새 구종 확보";
+  if (reward.type === "pitchUpgrade") return reward.reason ? `${reward.reason} 감각을 이어갑니다.` : "방금 쓴 구종을 더 믿을 수 있습니다.";
+  return reward.desc || "투수 성장";
 }
 
 function rewardShouldShowCondition(reward) {
@@ -9010,39 +9010,39 @@ function mobilePitchDetailText(result, note = "") {
   const zone = mobilePitchZoneLabel(result.location);
   const weaknessText =
     result.weaknessFeedback === "공략 성공"
-      ? " 공개된 약점 흐름과 맞아 타자의 대응이 늦었습니다."
+      ? " 약점 공략 성공."
       : result.weaknessFeedback === "공략 시도"
-        ? " 공략 보조태그에 맞춘 선택이었고, 결과와 함께 다음 반응을 확인해야 합니다."
+        ? " 약점 공략 시도."
         : "";
-  if (result.result === "ball") return `${zone} ${pitchName}을 타자가 기다렸습니다. 존 밖 공을 골라내며 승부를 길게 가져갑니다.${weaknessText}`;
-  if (result.result === "calledStrike") return `${zone} ${pitchName}이 존에 들어왔고 타자가 지켜봤습니다. 같은 코스 반복은 다음 공에 읽힐 수 있습니다.${weaknessText}`;
+  if (result.result === "ball") return `${zone} ${pitchName}. 타자가 골라냈습니다. 존 밖 공은 더 아낍니다.${weaknessText}`;
+  if (result.result === "calledStrike") return `${zone} ${pitchName}. 지켜보기만 했습니다. 같은 코스 반복은 조심합니다.${weaknessText}`;
   if (result.result === "swingingStrike") {
     const side = mobilePitchTimingSide(result);
     const next =
       side === "early"
-        ? "다음 공은 느린 공이나 낮은 코스로 타이밍을 더 뺏을 수 있습니다."
+        ? "느린 공이나 낮은 코스로 더 뺄 만합니다."
         : side === "late"
-          ? "빠른 공으로 밀어붙이거나 높은 코스를 활용할 수 있습니다."
-          : "직전 배합이 먹혔지만 같은 패턴 반복은 바로 읽힐 수 있습니다.";
-    return `${zone} ${pitchName}에 배트가 나왔습니다. ${mobilePitchReactionText(result)} ${next}${weaknessText}`;
+          ? "빠른 공이나 높은 코스가 아직 먹힙니다."
+          : "먹힌 배합입니다. 반복만 피합니다.";
+    return `${zone} ${pitchName}. ${mobilePitchReactionText(result)}. ${next}${weaknessText}`;
   }
   if (result.result === "foul") {
     const next =
       result.foulRead?.id === "late"
-        ? "빠른 공은 아직 유효하지만 느린 공은 타이밍을 맞춰줄 수 있습니다."
+        ? "빠른 공은 아직 유효합니다. 느린 공은 조심합니다."
         : result.foulRead?.id === "early"
-          ? "느린 공이나 바깥쪽 승부로 먼저 나온 배트를 더 끌어낼 수 있습니다."
+          ? "느린 공이나 바깥쪽으로 더 끌어냅니다."
           : result.foulRead?.id === "protect"
-            ? "보호 스윙에 가까워 유인구를 한 번 더 쓸 여지가 있습니다."
-            : "같은 계열 반복은 다음 정타 위험을 키웁니다.";
-    return `${zone} ${pitchName}을 파울로 걷어냈습니다. ${mobilePitchReactionText(result)} ${next}${weaknessText}`;
+            ? "보호 스윙입니다. 유인구 한 번 더 가능합니다."
+            : "같은 계열 반복은 위험합니다.";
+    return `${zone} ${pitchName} 파울. ${mobilePitchReactionText(result)}. ${next}${weaknessText}`;
   }
-  if (result.result === "inPlayOut") return `${zone} ${pitchName}을 맞혔지만 정타는 아니었습니다. ${mobilePitchReactionText(result)} 범타 흐름을 유지하려면 높이나 계열을 한 번 바꿔 읽히는 것을 줄이세요.${weaknessText}`;
-  if (result.result === "doublePlay") return `${zone} ${pitchName}으로 땅볼 흐름을 만들었습니다. 주자까지 함께 지우며 승부를 크게 정리했습니다.${weaknessText}`;
-  if (result.result === "single") return `${zone} ${pitchName}에 타자가 배트를 맞혔습니다. 다음 승부는 같은 계열을 피하고 반대 코스나 높이 변화로 기준을 흔드세요.${weaknessText}`;
-  if (result.result === "double") return `${zone} ${pitchName}이 강한 타구로 이어졌습니다. 장타 흐름을 끊기 위해 낮은 코스나 완급 전환이 필요합니다.`;
-  if (result.result === "homerun") return `${zone} ${pitchName}을 완벽하게 맞았습니다. 같은 패턴과 몰린 공은 바로 줄여야 합니다.`;
-  if (result.result === "error") return `${zone} ${pitchName}이 인플레이가 됐고 수비가 처리하지 못했습니다. 타자 반응은 다음 승부 판단에 계속 참고하세요.`;
+  if (result.result === "inPlayOut") return `${zone} ${pitchName}. 정타는 아닙니다. 다음은 높이나 계열을 바꿉니다.${weaknessText}`;
+  if (result.result === "doublePlay") return `${zone} ${pitchName}. 땅볼 유도 성공. 주자까지 지웠습니다.${weaknessText}`;
+  if (result.result === "single") return `${zone} ${pitchName}. 타자가 맞혔습니다. 다음은 반대 코스나 높이 변화입니다.${weaknessText}`;
+  if (result.result === "double") return `${zone} ${pitchName}. 강한 타구입니다. 낮은 코스나 완급으로 끊습니다.`;
+  if (result.result === "homerun") return `${zone} ${pitchName}. 완전히 읽혔습니다. 같은 패턴은 버립니다.`;
+  if (result.result === "error") return `${zone} ${pitchName}. 수비가 놓쳤습니다. 타자 반응만 기억합니다.`;
   return note || "타자 반응을 확인했습니다.";
 }
 
@@ -9771,31 +9771,31 @@ function currentCatcherSign() {
   if ((mind?.confidence || 0) >= 70) {
     return {
       title: `${catcher.label} · 노림수 경계`,
-      text: "타자가 같은 흐름을 기다립니다. 같은 계열 반복보다 배합을 배신하는 선택이 필요합니다."
+      text: "타자가 같은 계열을 기다립니다. 이번 공은 배합을 깹니다."
     };
   }
 
   if (catcher.id === "safe") {
     return {
       title: `${catcher.label} · ${catcher.tone}`,
-      text: suspicion >= 65 ? "타자가 흐름을 읽었습니다. 반대 코스나 다른 계열이 필요합니다." : `${pitchName}를 존 끝에 붙여 큰 타구를 줄이자는 사인입니다.`
+      text: suspicion >= 65 ? "읽혔습니다. 반대 코스나 다른 계열로 갑니다." : `${pitchName}를 존 끝에 붙입니다.`
     };
   }
   if (catcher.id === "attack") {
     return {
       title: `${catcher.label} · ${catcher.tone}`,
-      text: state.strikes >= 2 ? `${pitchName} 결정구로 배트를 끌어내자는 사인입니다. 단, 반복된 결정구는 위험합니다.` : "첫 공으로 카운트를 가져와 다음 선택지를 넓히자는 사인입니다."
+      text: state.strikes >= 2 ? `${pitchName} 결정구. 반복만 피합니다.` : "첫 공부터 스트라이크를 잡습니다."
     };
   }
   if (catcher.id === "analysis") {
     return {
       title: `${catcher.label} · ${catcher.tone}`,
-      text: `타자가 기다릴 가능성이 있는 흐름을 피해 ${pitchName}로 반대로 찌르자는 사인입니다.`
+      text: `타자가 기다리는 반대편. ${pitchName}로 찌릅니다.`
     };
   }
   return {
     title: `${catcher.label} · ${catcher.tone}`,
-    text: state.bases.some(Boolean) ? "주자가 있어도 승부구를 요구합니다. 성공하면 흐름을 끊을 수 있습니다." : `${pitchName}로 과감하게 존을 찌르자는 사인입니다.`
+    text: state.bases.some(Boolean) ? "주자 있어도 승부구입니다." : `${pitchName}로 존을 찌릅니다.`
   };
 }
 
