@@ -286,7 +286,7 @@ test("dugout choice reveals applied effect before advancing", async ({ page }) =
   await expect(page.locator("#dugoutTitle")).toContainText(/판단/);
   await expect(page.locator(".dugout-result-card")).not.toContainText(/판단 적중|판단 빗나감/);
   await expect(page.locator(".dugout-result-card")).toContainText(/강속구 제구/);
-  await expect(page.locator(".dugout-result-card")).toContainText(/최종 카드 보상 성과/);
+  await expect(page.locator(".dugout-result-card")).toContainText(/보상 성과/);
   await page.locator("[data-dugout-continue]").click();
   await expect(page.locator("#dugoutOverlay")).toBeHidden();
 });
@@ -309,7 +309,7 @@ test("stage clear reward cards appear after inning transition overlay", async ({
   await expect(page.locator("#rewardChoiceList .reward-choice-card")).toHaveCount(3);
 });
 
-test("stage reward selection routes through stage-break dugout before theme select", async ({ page }) => {
+test("stage reward selection routes to theme select, then stage-start dugout", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
   await page.evaluate(() => {
@@ -325,14 +325,19 @@ test("stage reward selection routes through stage-break dugout before theme sele
   await expect(page.locator("#rewardOverlay")).toBeVisible({ timeout: 3000 });
   await page.waitForTimeout(1300);
   await page.locator("#rewardChoiceList .reward-choice-card").first().click();
+  await expect(page.locator("#themeSelectOverlay")).toBeVisible({ timeout: 3000 });
+  await page.locator("#themeChoiceList .theme-choice-card").first().click();
+  await expect(page.locator("#stageOverlay")).toBeVisible({ timeout: 3000 });
+  await page.locator("#stageStartButton").click();
   await expect(page.locator("#dugoutOverlay")).toBeVisible({ timeout: 3000 });
   await expect(page.locator("#dugoutTitle")).toContainText("덕아웃 판단");
   await page.waitForTimeout(1300);
   await page.locator("[data-dugout-index='0']").click();
   await expect(page.locator(".dugout-result-card")).toBeVisible();
-  await expect(page.locator("[data-dugout-continue]")).toContainText("테마 선택");
+  await expect(page.locator("[data-dugout-continue]")).toContainText("첫 타자 상대");
   await page.locator("[data-dugout-continue]").click();
-  await expect(page.locator("#themeSelectOverlay")).toBeVisible({ timeout: 3000 });
+  await expect(page.locator("#dugoutOverlay")).toBeHidden();
+  await expect(page.locator("#mobileGameShell")).toBeVisible();
 });
 
 test("natural stage final out opens stage reward cards", async ({ page }) => {
@@ -343,7 +348,7 @@ test("natural stage final out opens stage reward cards", async ({ page }) => {
     MP.state.inning = MP.debug.currentStageInnings();
     MP.state.outs = 2;
     MP.debug.addOut();
-    MP.debug.finishAtBat("GROUND OUT!", "테스트 스테이지 종료");
+    MP.debug.finishAtBat("STRIKE OUT!", "테스트 스테이지 종료", { rewardReason: "삼진" });
   });
   await expect(page.locator("#rewardOverlay")).toBeVisible({ timeout: 3000 });
   await expect(page.locator("#rewardTitle")).toContainText("스테이지 보상");

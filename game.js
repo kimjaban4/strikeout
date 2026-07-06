@@ -285,11 +285,11 @@ const batterWeaknessCatalog = [
   },
   {
     id: "weak_full_count",
-    name: "풀카운트 존끝 흔들림",
+    name: "풀카운트 코너 반응",
     category: "count",
-    description: "3볼 2스트라이크에서 존 끝 스트라이크 승부에 반응이 늦습니다.",
+    description: "3볼 2스트라이크에서 코너 스트라이크 반응이 늦습니다.",
     triggerCondition: "3볼 2스트라이크",
-    effectText: "풀카운트 존 끝 승부에 반응이 늦습니다.",
+    effectText: "풀카운트 코너 승부에 반응이 늦습니다.",
     recommendedPitchTypes: ["four", "two", "slider"],
     recommendedZones: ["edge"],
     effects: { fullCountContact: -0.08, contactQuality: -4 }
@@ -7673,15 +7673,6 @@ function finishAtBat(title, text, options = {}) {
   if (state.pendingRunComplete || state.awaitingThemeSelection) {
     logStageGrowthSummaryOnce();
   }
-  if (options.rewardReason) {
-    state.afterRewardStageOverlay = stageOverlay;
-    clearRewardTimer();
-    rewardTimer = window.setTimeout(() => {
-      rewardTimer = null;
-      openRewardDraft(options.rewardReason, options.result);
-    }, delayAfterInningTransition(transition, GAME_TIMING.rewardAfterOut));
-    return;
-  }
   if (state.pendingRunComplete) {
     clearRewardTimer();
     rewardTimer = window.setTimeout(() => {
@@ -7696,6 +7687,15 @@ function finishAtBat(title, text, options = {}) {
       rewardTimer = null;
       openStageTagReward();
     }, delayAfterInningTransition(transition, 600));
+    return;
+  }
+  if (options.rewardReason) {
+    state.afterRewardStageOverlay = stageOverlay;
+    clearRewardTimer();
+    rewardTimer = window.setTimeout(() => {
+      rewardTimer = null;
+      openRewardDraft(options.rewardReason, options.result);
+    }, delayAfterInningTransition(transition, GAME_TIMING.rewardAfterOut));
     return;
   }
   if (state.dugoutPending) {
@@ -7754,19 +7754,19 @@ const DUGOUT_READ_EVENTS = [
   {
     id: "read_fast_late",
     signal: "fastLate",
-    title: "코치의 빠른 공 사인",
-    desc: "직전 이닝에서 타자들의 배트가 뒤늦게 따라오는 장면이 있었습니다. 다음 이닝 첫 흐름을 어떻게 잡을까요?",
+    title: "코치의 한마디",
+    desc: "방망이가 빠른 공을 따라오지 못했습니다. 첫 타자, 어디서 밀까요?",
     choices: [
       {
-        label: "강속구로 먼저 밀어붙인다",
+        label: "빠른 공으로 존을 먼저 먹는다",
         correct: true,
-        resultText: "코치의 사인이 맞았습니다.\n강속구 구위 상승",
+        resultText: "좋습니다. 배트가 늦습니다.\n초구 스트라이크 압박 상승",
         effects: { fastControl: 6, firstStrikePressure: 1 }
       },
       {
-        label: "느린 공 유인을 늘린다",
+        label: "느린 공부터 빼본다",
         correct: false,
-        resultText: "타자들이 빠른 승부를 기다리고 있었습니다.\n초구 정타 위험 증가",
+        resultText: "타자가 기다렸습니다.\n초구 정타 위험 증가",
         effects: { firstBatterSuspicion: 8, singleRisk: 0.08 }
       }
     ]
@@ -7774,19 +7774,19 @@ const DUGOUT_READ_EVENTS = [
   {
     id: "read_swing_early",
     signal: "swingEarly",
-    title: "손끝 감각 확인",
-    desc: "타자들이 앞에서 배트를 내는 반응이 보였습니다. 다음 이닝에는 어떤 타이밍으로 흔들까요?",
+    title: "타이밍이 앞섭니다",
+    desc: "방망이가 먼저 나왔습니다. 속도를 빼면 더 흔들 수 있습니다.",
     choices: [
       {
-        label: "느린 공과 변화구를 믿는다",
+        label: "변화구로 타이밍을 뺀다",
         correct: true,
-        resultText: "손끝 감각이 살아났습니다.\n변화구 제구 상승",
+        resultText: "타이밍 뺐습니다.\n변화구 제구 상승",
         effects: { breakingQuality: 5, slowAfterFastBoost: 0.12 }
       },
       {
-        label: "강속구 비중을 더 높인다",
+        label: "빠른 공을 한 번 더 믿는다",
         correct: false,
-        resultText: "타자들이 빠른 공을 기다리고 있었습니다.\n강속구 정타 위험 증가",
+        resultText: "타자가 빠른 공을 기다렸습니다.\n강속구 정타 위험 증가",
         effects: { firstBatterSuspicion: 6, singleRisk: 0.1 }
       }
     ]
@@ -7794,19 +7794,19 @@ const DUGOUT_READ_EVENTS = [
   {
     id: "read_inside_mark",
     signal: "insideAware",
-    title: "포수의 몸쪽 사인",
-    desc: "몸쪽 승부 이후 타자들이 플레이트를 의식했습니다. 그 의식을 어떻게 회수할까요?",
+    title: "몸쪽이 먹혔습니다",
+    desc: "타자가 홈플레이트에서 한 발 물러났습니다. 다음 코스를 고릅니다.",
     choices: [
       {
-        label: "바깥쪽 승부로 빼낸다",
+        label: "바깥쪽으로 문을 연다",
         correct: true,
-        resultText: "타자들의 시선을 안쪽에 묶었습니다.\n몸쪽 각인 이후 바깥쪽 범타 확률 증가",
+        resultText: "바깥쪽 열렸습니다.\n범타 루트 상승",
         effects: { impressionBonus: 0.14, courseReadBoost: 0.25 }
       },
       {
         label: "몸쪽을 한 번 더 찌른다",
         correct: false,
-        resultText: "타자들이 몸쪽 반복을 의식했습니다.\n몸쪽 반복 의심 증가",
+        resultText: "타자가 안쪽을 기다립니다.\n반복 의심 증가",
         effects: { repeatSuspicionMult: 1.12, firstBatterSuspicion: 5 }
       }
     ]
@@ -7814,19 +7814,19 @@ const DUGOUT_READ_EVENTS = [
   {
     id: "read_hard_contact",
     signal: "hardContactRisk",
-    title: "반복 승부 경고",
-    desc: "정타에 가까운 반응이나 읽힌 승부가 나왔습니다. 같은 흐름을 이어갈까요?",
+    title: "정타 경고",
+    desc: "방금 공은 읽혔습니다. 같은 흐름은 위험합니다.",
     choices: [
       {
         label: "구종이나 높이를 바꾼다",
         correct: true,
-        resultText: "배합 흐름을 끊었습니다.\n반복 간파 위험 감소",
+        resultText: "흐름 끊었습니다.\n반복 간파 감소",
         effects: { repeatSuspicionMult: 0.82, suspicionMult: 0.92 }
       },
       {
         label: "성공했던 흐름을 유지한다",
         correct: false,
-        resultText: "타자들이 같은 흐름을 기다렸습니다.\n반복 패턴 의심 증가",
+        resultText: "타자가 같은 공을 기다립니다.\n반복 패턴 의심 증가",
         effects: { repeatSuspicionMult: 1.18, firstBatterSuspicion: 10 }
       }
     ]
@@ -8026,8 +8026,8 @@ function dugoutEffectSummary(effects = {}, correct = false) {
   if (effects.breakingQuality) lines.push(`변화구 제구 +${effects.breakingQuality}`);
   if (effects.firstStrikePressure) lines.push(`초구 스트라이크 압박 +${effects.firstStrikePressure}`);
   if (effects.slowAfterFastBoost) lines.push(`느린 공 연계 보너스 +${Math.round(effects.slowAfterFastBoost * 100)}%`);
-  if (effects.impressionBonus) lines.push(`직전 인상 활용 +${Math.round(effects.impressionBonus * 100)}%`);
-  if (effects.courseReadBoost) lines.push(`코스 읽기 보너스 +${Math.round(effects.courseReadBoost * 100)}%`);
+  if (effects.impressionBonus) lines.push(`직전 공 기억 +${Math.round(effects.impressionBonus * 100)}%`);
+  if (effects.courseReadBoost) lines.push(`코스 읽기 +${Math.round(effects.courseReadBoost * 100)}%`);
   if (effects.reactionCheckBoost) lines.push(`반응 분석 +${Math.round(effects.reactionCheckBoost * 100)}%`);
   if (effects.candidateNextFirstWeakness) lines.push(`약점 후보 +${effects.candidateNextFirstWeakness}`);
   if (effects.missionChoiceBonus) lines.push(`미션 보상 선택지 +${effects.missionChoiceBonus}`);
@@ -8038,7 +8038,7 @@ function dugoutEffectSummary(effects = {}, correct = false) {
   if (effects.repeatSuspicionMult && effects.repeatSuspicionMult > 1) lines.push(`반복 의심 ${Math.round((effects.repeatSuspicionMult - 1) * 100)}% 증가`);
   if (effects.firstBatterSuspicion) lines.push(`다음 타자 의심 +${effects.firstBatterSuspicion}`);
   if (effects.singleRisk) lines.push(`정타 위험 +${Math.round(effects.singleRisk * 100)}%`);
-  if (correct) lines.push("최종 카드 보상 성과 +2점");
+  if (correct) lines.push("보상 성과 +2");
   return lines;
 }
 
@@ -8046,25 +8046,17 @@ function generateDugoutChoices(options = {}) {
   return generateDugoutReadEventChoices(options);
 }
 
-function prepareStageBreakDugout() {
-  if (!state.awaitingThemeSelection || state.stageBreakDugoutDone || state.gameOver) return false;
+function prepareStageStartDugout() {
+  if (!state.awaitingStageStart || state.stageBreakDugoutDone || state.gameOver) return false;
   const choices = generateDugoutChoices({ force: true });
   if (!choices.length) return false;
   state.pendingDugoutChoices = choices;
   state.dugoutPending = true;
-  state.dugoutBeforeAtBat = false;
+  state.dugoutBeforeAtBat = true;
   state.dugoutAdvanceBatterOnConfirm = false;
-  state.dugoutAfterContinue = "themeSelect";
+  state.dugoutAfterContinue = "";
   state.stageBreakDugoutDone = true;
   return true;
-}
-
-function openStageBreakDugoutOrThemeSelect() {
-  if (prepareStageBreakDugout()) {
-    openDugoutChoiceOverlay();
-    return;
-  }
-  openThemeSelectOverlay();
 }
 
 function renderDugoutChoices() {
@@ -8323,17 +8315,21 @@ function showDugoutChoiceResult(result, continueLabel = "다음 타자") {
   if (!els.dugoutOverlay || !result) return false;
   hideEventBanner();
   if (els.dugoutTitle) els.dugoutTitle.textContent = result.title;
-  if (els.dugoutReason) els.dugoutReason.textContent = "덕아웃 판단 결과가 이번 이닝 보상 흐름에 반영됩니다.";
+  if (els.dugoutReason) els.dugoutReason.textContent = "작전 적용 완료. 다음 승부에 바로 반영됩니다.";
   if (els.dugoutChoiceList) {
     const lines = result.effectLines?.length ? result.effectLines : ["추가 효과 없음"];
+    const resultLines = String(result.resultText || result.title || "작전 적용").split("\n").filter(Boolean);
+    const resultTitle = resultLines[0] || "작전 적용";
+    const resultSub = resultLines.slice(1).join(" · ");
     els.dugoutChoiceList.innerHTML = `
       <div class="dugout-result-card">
-        <span class="dugout-result-kicker">CHOICE RESULT</span>
-        <strong>${escapeHtml(result.resultText)}</strong>
+        <span class="dugout-result-kicker">작전 결과</span>
+        <strong>${escapeHtml(resultTitle)}</strong>
+        ${resultSub ? `<p class="dugout-result-sub">${escapeHtml(resultSub)}</p>` : ""}
         <div class="dugout-result-effects">
           ${lines.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}
         </div>
-        <p>선택 성과가 최종 카드 보상 등급에 흡수됩니다.</p>
+        <p class="dugout-result-footnote">좋은 판단은 스테이지 카드 보상에 반영됩니다.</p>
         <button class="dugout-continue-button" type="button" data-dugout-continue>${escapeHtml(continueLabel)}</button>
       </div>
     `;
@@ -8375,7 +8371,8 @@ function confirmDugoutChoice(index) {
   state.dugoutAfterContinue = "";
   state.pendingDugoutChoices = [];
   state.pendingDugoutAdvance = { startsInning, advanceBatter, after };
-  if (showDugoutChoiceResult(result, after === "themeSelect" ? "테마 선택" : "다음 타자")) {
+  const continueLabel = after === "themeSelect" ? "테마 선택" : startsInning ? "첫 타자 상대" : "다음 타자";
+  if (showDugoutChoiceResult(result, continueLabel)) {
     syncScreenPhase();
     return;
   }
@@ -8823,7 +8820,7 @@ function openRewardDraft(reason, result, kind = "normal") {
     state.rewardKind = "normal";
     state.rewardUpgradeTokens = [];
     if (state.awaitingThemeSelection) {
-      openStageBreakDugoutOrThemeSelect();
+      openThemeSelectOverlay();
       return;
     }
     if (state.dugoutPending) {
@@ -8964,7 +8961,7 @@ function applyReward(index) {
       return;
     }
     if (state.awaitingThemeSelection) {
-      openStageBreakDugoutOrThemeSelect();
+      openThemeSelectOverlay();
       return;
     }
   }
@@ -8976,7 +8973,7 @@ function applyReward(index) {
       return;
     }
     if (state.awaitingThemeSelection) {
-      openStageBreakDugoutOrThemeSelect();
+      openThemeSelectOverlay();
       return;
     }
   }
@@ -8989,7 +8986,7 @@ function applyReward(index) {
     return;
   }
   if (state.awaitingThemeSelection) {
-    openStageBreakDugoutOrThemeSelect();
+    openThemeSelectOverlay();
     return;
   }
   if (state.dugoutPending) {
@@ -11513,6 +11510,7 @@ function confirmStageTheme(themeId) {
   if (els.themeSelectOverlay) els.themeSelectOverlay.hidden = true;
   advanceStage(themeId);
   state.awaitingStageStart = true;
+  prepareStageStartDugout();
   showStageThemeOverlay(currentStageNumber(), currentStageInnings(), themeId);
   state.pendingStageOverlay = null;
   state.waitingNextBatter = false;

@@ -289,11 +289,11 @@ MP.batterWeaknessCatalog = [
   },
   {
     id: "weak_full_count",
-    name: "풀카운트 존끝 흔들림",
+    name: "풀카운트 코너 반응",
     category: "count",
-    description: "3볼 2스트라이크에서 존 끝 스트라이크 승부에 반응이 늦습니다.",
+    description: "3볼 2스트라이크에서 코너 스트라이크 반응이 늦습니다.",
     triggerCondition: "3볼 2스트라이크",
-    effectText: "풀카운트 존 끝 승부에 반응이 늦습니다.",
+    effectText: "풀카운트 코너 승부에 반응이 늦습니다.",
     recommendedPitchTypes: ["four", "two", "slider"],
     recommendedZones: ["edge"],
     effects: { fullCountContact: -0.08, contactQuality: -4 }
