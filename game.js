@@ -1275,6 +1275,8 @@ const els = {
   mobileGameShell: document.querySelector("#mobileGameShell"),
   mobileStageThemeSummary: document.querySelector("#mobileStageThemeSummary"),
   mobileNewGameButton: document.querySelector("#mobileNewGameButton"),
+  mobileMenuOverlay: document.querySelector("#mobileMenuOverlay"),
+  mobileMenuPanel: document.querySelector("#mobileMenuPanel"),
   mobileInningText: document.querySelector("#mobileInningText"),
   mobileRunsText: document.querySelector("#mobileRunsText"),
   mobileTargetText: document.querySelector("#mobileTargetText"),
@@ -5306,6 +5308,7 @@ function syncTitleScreenEls() {
 
 function showTitleScreen() {
   syncTitleScreenEls();
+  closeMobileMenu();
   if (els.titleOverlay) els.titleOverlay.hidden = false;
   if (els.tutorialOverlay) els.tutorialOverlay.hidden = true;
   if (els.pitcherSelectOverlay) els.pitcherSelectOverlay.hidden = true;
@@ -5319,6 +5322,7 @@ function showTitleScreen() {
 }
 
 function beginGameFromTitle() {
+  closeMobileMenu();
   if (els.titleOverlay) els.titleOverlay.hidden = true;
   if (els.tutorialOverlay) els.tutorialOverlay.hidden = true;
   syncGameOverlayUi();
@@ -5326,6 +5330,7 @@ function beginGameFromTitle() {
 }
 
 function openTutorialFromTitle() {
+  closeMobileMenu();
   if (els.titleOverlay) els.titleOverlay.hidden = true;
   if (els.tutorialOverlay) els.tutorialOverlay.hidden = false;
   state.screenPhase = SCREEN_PHASE.tutorial;
@@ -5335,6 +5340,16 @@ function openTutorialFromTitle() {
 function returnToTitleScreen() {
   if (els.tutorialOverlay) els.tutorialOverlay.hidden = true;
   showTitleScreen();
+}
+
+function openMobileMenu() {
+  if (els.mobileMenuOverlay) els.mobileMenuOverlay.hidden = false;
+  els.mobileNewGameButton?.setAttribute("aria-expanded", "true");
+}
+
+function closeMobileMenu() {
+  if (els.mobileMenuOverlay) els.mobileMenuOverlay.hidden = true;
+  els.mobileNewGameButton?.setAttribute("aria-expanded", "false");
 }
 
 function startGame() {
@@ -5383,6 +5398,7 @@ function startGame() {
   state.releaseTiming = null;
   state.lastReleaseResult = null;
   state.tutorialSeen = {};
+  closeMobileMenu();
   els.resultOverlay.hidden = true;
   if (els.rewardOverlay) els.rewardOverlay.hidden = true;
   if (els.dugoutOverlay) els.dugoutOverlay.hidden = true;
@@ -12073,7 +12089,37 @@ function bindUiEvents() {
   els.mobileLogTab?.addEventListener("click", () => openMobilePanel("log"));
   els.mobileInfoTab?.addEventListener("click", () => openMobilePanel("info"));
   els.mobileMissionCard?.addEventListener("click", () => openMobilePanel("mission"));
-  els.mobileNewGameButton?.addEventListener("click", startGame);
+  els.mobileNewGameButton?.addEventListener("click", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openMobileMenu();
+  });
+  els.mobileMenuOverlay?.addEventListener("click", (event) => {
+    if (event.target === els.mobileMenuOverlay || event.target.closest("[data-mobile-menu-close]")) {
+      event.preventDefault();
+      closeMobileMenu();
+      return;
+    }
+    if (event.target.closest("[data-mobile-menu-new-game]")) {
+      event.preventDefault();
+      startGame();
+      return;
+    }
+    if (event.target.closest("[data-mobile-menu-tutorial]")) {
+      event.preventDefault();
+      openTutorialFromTitle();
+      return;
+    }
+    if (event.target.closest("[data-mobile-menu-title]")) {
+      event.preventDefault();
+      showTitleScreen();
+      return;
+    }
+    if (event.target.closest("[data-mobile-menu-bgm]")) {
+      event.preventDefault();
+      toggleBgm();
+    }
+  });
   els.mobileThrowButton?.addEventListener("pointerdown", (event) => {
     event.preventDefault();
     finishReleaseTiming();
@@ -12231,6 +12277,11 @@ function bindUiEvents() {
   });
   if (document.addEventListener) {
     document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && els.mobileMenuOverlay && !els.mobileMenuOverlay.hidden) {
+        event.preventDefault();
+        closeMobileMenu();
+        return;
+      }
       if (state.releaseTiming?.active && event.key === "Escape") {
         event.preventDefault();
         cancelReleaseTiming();

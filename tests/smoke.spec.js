@@ -44,7 +44,7 @@ test("boots to title and pitcher select", async ({ page }) => {
   await expect(page.locator(".pitcher-choice-card")).toHaveCount(3);
 });
 
-test("title and pitcher select use dark first-screen treatment", async ({ page }) => {
+test("title screen uses the stable black logo stage and pitcher select stays dark", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 });
   await page.goto("/");
   await expect(page.locator("#titleOverlay")).toBeVisible();
@@ -63,8 +63,8 @@ test("title and pitcher select use dark first-screen treatment", async ({ page }
         rect.bottom >= window.innerHeight - 1
     };
   });
-  expect(title.backgroundImage).not.toBe("none");
-  expect(title.actionDirection).toBe("column");
+  expect(title.backgroundImage).toBe("none");
+  expect(title.actionDirection).toBe("row");
   expect(title.coversViewport).toBe(true);
 
   await page.locator("#titleStartButton").click();
@@ -80,6 +80,30 @@ test("title and pitcher select use dark first-screen treatment", async ({ page }
   expect(pitcherSelect.lightText).toBe(true);
   expect(pitcherSelect.statBars).toBe(5);
   expect(pitcherSelect.pitchBadges).toBeGreaterThanOrEqual(2);
+});
+
+test("mobile header separates count strip from mission and opens menu", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+
+  const header = await page.evaluate(() => {
+    const count = document.querySelector(".mobile-count-strip").getBoundingClientRect();
+    const mission = document.querySelector("#mobileMissionCard").getBoundingClientRect();
+    return {
+      missionBelowCount: mission.top >= count.bottom - 1,
+      countVisible: count.width > 0 && count.height > 0,
+      missionVisible: mission.width > 0 && mission.height > 0
+    };
+  });
+  expect(header).toEqual({ missionBelowCount: true, countVisible: true, missionVisible: true });
+
+  await page.locator("#mobileNewGameButton").click();
+  await expect(page.locator("#mobileMenuPanel")).toBeVisible();
+  await expect(page.locator("[data-mobile-menu-new-game]")).toContainText("새게임 시작");
+
+  await page.locator("[data-mobile-menu-new-game]").click();
+  await expect(page.locator("#mobileMenuPanel")).toBeHidden();
+  await expect(page.locator("#pitcherSelectOverlay")).toBeVisible();
 });
 
 test("stage missions stay inside playable innings", async ({ page }) => {

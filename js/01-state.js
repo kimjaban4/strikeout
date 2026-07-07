@@ -209,6 +209,8 @@ MP.els = {
   mobileGameShell: document.querySelector("#mobileGameShell"),
   mobileStageThemeSummary: document.querySelector("#mobileStageThemeSummary"),
   mobileNewGameButton: document.querySelector("#mobileNewGameButton"),
+  mobileMenuOverlay: document.querySelector("#mobileMenuOverlay"),
+  mobileMenuPanel: document.querySelector("#mobileMenuPanel"),
   mobileInningText: document.querySelector("#mobileInningText"),
   mobileRunsText: document.querySelector("#mobileRunsText"),
   mobileTargetText: document.querySelector("#mobileTargetText"),
