@@ -5,7 +5,32 @@
  * 다시 병합: node tools/consolidate-css.mjs styles.layered.backup.css
  */
 
+@font-face {
+  font-family: "Pretendard";
+  src: url("assets/fonts/PretendardVariable.woff2") format("woff2");
+  font-weight: 45 920;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
+  --font-sans: "Pretendard", "Noto Sans KR", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --navy-950: #03111f;
+  --navy-900: #061827;
+  --navy-800: #0a2134;
+  --navy-700: #12314d;
+  --blue-500: #168cff;
+  --green-500: #43b85f;
+  --yellow-500: #f1a71c;
+  --red-500: #df3934;
+  --text-strong: #edf6ff;
+  --text-muted: #aebed0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
   --ink: #17201c;
   --muted: #68726d;
   --paper: #f6f7f2;
@@ -35,7 +60,7 @@ body {
   min-height: 100vh !important;
   background: linear-gradient(180deg, #e8f6ff 0%, #f6fbff 42%, #edf5ef 100%) !important;
   color: #183049 !important;
-  font-family: "Pretendard", "Noto Sans KR", "Segoe UI", system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
 }
 
 button {
@@ -2043,22 +2068,31 @@ h2 {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(7, 19, 32, 0.68);
-  backdrop-filter: blur(8px);
+  background:
+    radial-gradient(circle at 50% 12%, rgba(35, 103, 169, 0.2), rgba(3, 17, 31, 0.78) 52%),
+    rgba(3, 17, 31, 0.82);
+  backdrop-filter: blur(10px);
 }
 
 .pitcher-select-box {
   width: min(920px, 100%);
   padding: 26px;
-  border: 1px solid rgba(187, 215, 238, 0.88);
+  border: 1px solid rgba(113, 157, 198, 0.42);
   border-radius: 10px;
-  background: linear-gradient(180deg, #ffffff, #edf6ff);
-  box-shadow: 0 26px 70px rgba(8, 26, 44, 0.34);
+  background:
+    linear-gradient(180deg, rgba(10, 33, 52, 0.96), rgba(4, 18, 33, 0.98)),
+    var(--navy-900);
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.46);
+  color: var(--text-strong);
+}
+
+.pitcher-select-box .eyebrow {
+  color: rgba(241, 167, 28, 0.88);
 }
 
 .pitcher-select-box h2 {
   margin-top: 4px;
-  color: #10283f;
+  color: var(--text-strong);
   font-size: 2rem;
 }
 
@@ -2071,25 +2105,32 @@ h2 {
 
 .pitcher-choice-card {
   position: relative;
-  min-height: 176px !important;
+  min-height: 250px !important;
   display: grid;
   align-content: start;
-  gap: 10px;
-  padding: 18px 18px !important;
-  border: 2px solid #c5d9ea;
+  gap: 12px;
+  padding: 18px !important;
+  border: 1px solid rgba(126, 171, 210, 0.44);
   border-radius: 8px;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(232, 249, 238, 0.94));
-  color: #12304a;
+  background:
+    linear-gradient(180deg, rgba(18, 49, 77, 0.94), rgba(5, 21, 37, 0.96)),
+    var(--navy-800);
+  color: var(--text-strong);
   text-align: left;
   cursor: pointer;
-  box-shadow: 0 10px 22px rgba(42, 92, 132, 0.12);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.28);
   overflow: hidden !important;
 }
 
 .pitcher-choice-card:hover {
-  border-color: #35b767;
-  box-shadow: 0 12px 24px rgba(42, 92, 132, 0.16),
-    inset 0 0 0 2px rgba(53, 183, 103, 0.14);
+  border-color: rgba(241, 167, 28, 0.8);
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.34),
+    inset 0 0 0 1px rgba(241, 167, 28, 0.2);
+}
+
+.choice-copy {
+  display: grid;
+  gap: 8px;
 }
 
 .choice-number {
@@ -2098,7 +2139,7 @@ h2 {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: #2f8ee5;
+  background: var(--blue-500);
   color: #ffffff;
   font-weight: 1000;
 }
@@ -2112,18 +2153,80 @@ h2 {
   width: fit-content;
   padding: 5px 9px;
   border-radius: 999px;
-  background: #10324d;
-  color: #ffffff;
+  background: rgba(22, 140, 255, 0.18);
+  color: #d9ecff;
   font-style: normal;
   font-size: 0.84rem;
   font-weight: 900;
+  border: 1px solid rgba(116, 178, 235, 0.26);
 }
 
 .pitcher-choice-card small {
-  color: #52697c;
+  color: var(--text-muted);
   font-size: 0.88rem;
   font-weight: 800;
   line-height: 1.45;
+}
+
+.choice-stats {
+  display: grid;
+  gap: 6px;
+}
+
+.choice-stat {
+  display: grid;
+  grid-template-columns: 38px minmax(58px, 1fr) 28px;
+  align-items: center;
+  gap: 7px;
+  color: #d8e8f7;
+  font-size: 0.74rem;
+  font-weight: 900;
+}
+
+.choice-stat b,
+.choice-stat span {
+  position: relative;
+  z-index: 2;
+}
+
+.choice-stat b {
+  color: rgba(216, 232, 247, 0.76);
+}
+
+.choice-stat i {
+  position: relative;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(180, 208, 232, 0.14);
+}
+
+.choice-stat i::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--stat);
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--blue-500), var(--green-500));
+}
+
+.choice-pitches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.choice-pitch {
+  position: relative;
+  z-index: 2;
+  padding: 4px 7px;
+  border: 1px solid rgba(174, 204, 229, 0.22);
+  border-radius: 999px;
+  background: rgba(3, 17, 31, 0.36);
+  color: rgba(237, 246, 255, 0.88);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .reward-overlay {
@@ -2363,6 +2466,24 @@ h2 {
   text-align: center;
   background: linear-gradient(180deg, #ffffff, #f4faf6);
   border-color: #c8dce8;
+}
+
+.reward-choice-card.reward-choice-card--common {
+  border-color: rgba(148, 163, 184, 0.78);
+  background: linear-gradient(180deg, #ffffff, #eef4f8);
+  box-shadow: 0 10px 20px rgba(49, 101, 139, 0.12), inset 0 0 0 1px rgba(148, 163, 184, 0.22);
+}
+
+.reward-choice-card.reward-choice-card--rare {
+  border-color: rgba(73, 145, 255, 0.86);
+  background: linear-gradient(180deg, #ffffff, #e8f1ff);
+  box-shadow: 0 12px 28px rgba(45, 118, 230, 0.24), inset 0 0 0 1px rgba(95, 165, 255, 0.28);
+}
+
+.reward-choice-card.reward-choice-card--core {
+  border-color: rgba(246, 195, 68, 0.96);
+  background: linear-gradient(180deg, #fffdf5, #fff1bf);
+  box-shadow: 0 14px 34px rgba(190, 128, 27, 0.32), inset 0 0 0 1px rgba(255, 229, 139, 0.5);
 }
 
 .core-evo-head {
@@ -3135,13 +3256,13 @@ h2 {
   z-index: 1;
   right: 14px !important;
   bottom: auto !important;
-  width: 160px !important;
-  height: 160px !important;
+  width: 116px !important;
+  height: 116px !important;
   object-fit: cover !important;
   object-position: 50% 18% !important;
   pointer-events: none;
-  opacity: 0.9;
-  filter: drop-shadow(0 12px 18px rgba(25, 63, 92, 0.22));
+  opacity: 0.72;
+  filter: saturate(0.86) contrast(1.08) drop-shadow(0 12px 18px rgba(0, 0, 0, 0.38));
   top: 50% !important;
   max-width: none !important;
   border-radius: 50% !important;
@@ -3155,23 +3276,26 @@ h2 {
   z-index: 0;
   right: 14px !important;
   bottom: auto !important;
-  width: 160px !important;
-  height: 160px !important;
+  width: 116px !important;
+  height: 116px !important;
   border-radius: 50%;
-  background: radial-gradient(circle at 45% 35%, rgba(255, 255, 255, 0.8), rgba(211, 240, 252, 0.72) 46%, rgba(177, 224, 201, 0.55) 68%, rgba(255, 255, 255, 0) 72%);
-  border: 1px solid rgba(108, 172, 210, 0.28);
+  background: radial-gradient(circle at 45% 35%, rgba(91, 149, 202, 0.44), rgba(13, 42, 68, 0.58) 56%, rgba(3, 17, 31, 0) 72%);
+  border: 1px solid rgba(116, 178, 235, 0.2);
   pointer-events: none;
   top: 50% !important;
   transform: translateY(-50%) !important;
 }
 
+.pitcher-choice-card .choice-copy,
+.pitcher-choice-card .choice-stats,
+.pitcher-choice-card .choice-pitches,
 .pitcher-choice-card .choice-number,
 .pitcher-choice-card strong,
 .pitcher-choice-card em,
 .pitcher-choice-card small {
   position: relative;
   z-index: 2;
-  max-width: calc(100% - 180px) !important;
+  max-width: calc(100% - 132px) !important;
 }
 
 .inning-banner.boss.show {
@@ -3207,14 +3331,17 @@ h2 {
 .choice-portrait {
   top: 50% !important;
   right: 18px !important;
-  width: 136px !important;
-  height: 136px !important;
+  width: 116px !important;
+  height: 116px !important;
 }
 
+.pitcher-choice-card .choice-copy,
+.pitcher-choice-card .choice-stats,
+.pitcher-choice-card .choice-pitches,
 .pitcher-choice-card .choice-number,
 .pitcher-choice-card strong,
 .pitcher-choice-card em {
-  max-width: calc(100% - 154px) !important;
+  max-width: calc(100% - 132px) !important;
 }
 
 .log-item .log-title {
@@ -4441,7 +4568,7 @@ button.card-toggle {
   border-radius: 7px !important;
   background: rgba(9, 36, 60, 0.94) !important;
   color: #ffffff !important;
-  font-family: Arial, "Malgun Gothic", sans-serif !important;
+  font-family: var(--font-sans) !important;
   font-size: 12px !important;
   font-weight: 900 !important;
   line-height: 28px !important;
@@ -4455,7 +4582,7 @@ button.card-toggle {
 .card-toggle *,
 .card-toggle.is-expanded .card-toggle-text {
   display: inline-block !important;
-  font-family: Arial, "Malgun Gothic", sans-serif !important;
+  font-family: var(--font-sans) !important;
   font-size: 12px !important;
   font-weight: 900 !important;
   line-height: 28px !important;
@@ -5769,7 +5896,7 @@ button.card-toggle {
   }
 
   .pitcher-choice-card {
-    min-height: 112px !important;
+    min-height: 188px !important;
     gap: 6px;
     padding: 12px !important;
   }
@@ -5786,6 +5913,20 @@ button.card-toggle {
   .pitcher-choice-card em,
   .pitcher-choice-card small {
     font-size: 0.78rem;
+  }
+
+  .choice-stats {
+    gap: 5px;
+  }
+
+  .choice-stat {
+    grid-template-columns: 34px minmax(52px, 1fr) 24px;
+    gap: 5px;
+    font-size: 0.68rem;
+  }
+
+  .choice-pitch {
+    font-size: 0.68rem;
   }
 
   .reward-choice-list,
@@ -5806,6 +5947,28 @@ button.card-toggle {
     max-width: none !important;
   }
 
+}
+
+@media (max-width: 320px) {
+  .pitcher-choice-card {
+    min-height: 112px !important;
+  }
+
+  .pitcher-choice-card::before,
+  .choice-portrait {
+    right: 14px !important;
+    width: 88px !important;
+    height: 88px !important;
+  }
+
+  .choice-stats,
+  .choice-pitches {
+    display: none;
+  }
+
+  .pitcher-choice-card .choice-copy {
+    max-width: calc(100% - 104px) !important;
+  }
 }
 
 @media (max-width: 1100px) {
@@ -7393,7 +7556,7 @@ button.card-toggle {
   height: 100dvh;
   z-index: 400;
   overflow: hidden;
-  background: #000;
+  background: var(--navy-950);
 }
 
 .title-screen-overlay[hidden] {
@@ -7413,38 +7576,68 @@ body:has(#titleOverlay:not([hidden])) .bgm-toggle {
   width: 100dvw;
   height: 100dvh;
   min-height: 0;
-  background: #000;
+  background:
+    linear-gradient(180deg, rgba(3, 17, 31, 0.2) 0%, rgba(3, 17, 31, 0.12) 42%, rgba(3, 17, 31, 0.72) 100%),
+    radial-gradient(circle at 50% 34%, rgba(22, 140, 255, 0.18), rgba(3, 17, 31, 0.36) 54%, rgba(3, 17, 31, 0.88) 100%),
+    url("assets/images/stadium.png");
+  background-color: var(--navy-950);
+  background-size: cover;
+  background-position: center;
   overflow: hidden;
+  isolation: isolate;
+}
+
+.title-screen-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0) 34%, rgba(0, 0, 0, 0.42) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.52));
 }
 
 .title-screen-art {
-  flex: 1 1 auto;
-  width: 100%;
-  height: 100%;
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: 32%;
+  flex: none;
+  width: min(86vw, 780px);
+  height: auto;
+  max-height: 44dvh;
   min-height: 0;
   object-fit: contain;
   object-position: center center;
+  transform: translate(-50%, -50%);
+  filter: drop-shadow(0 22px 34px rgba(0, 0, 0, 0.42));
   user-select: none;
   pointer-events: none;
 }
 
 .title-screen-actions {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  left: 50%;
+  right: auto;
+  top: 68%;
+  bottom: auto;
   z-index: 2;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
-  gap: clamp(14px, 3vw, 28px);
-  flex-wrap: wrap;
-  padding: clamp(16px, 3vh, 28px) clamp(16px, 4vw, 32px) clamp(24px, 4vh, 40px);
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.72) 55%, rgba(0, 0, 0, 0.95) 100%);
+  width: min(300px, calc(100vw - 48px));
+  gap: 12px;
+  flex-wrap: nowrap;
+  padding: 0;
+  background: none;
+  transform: translate(-50%, -50%);
 }
 
 .title-screen-button {
-  min-width: min(220px, 42vw);
+  width: 100%;
+  min-width: 0;
   min-height: 52px;
   padding: 0 28px;
   border: 2px solid rgba(186, 220, 245, 0.72);

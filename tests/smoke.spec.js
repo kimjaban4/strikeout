@@ -44,6 +44,44 @@ test("boots to title and pitcher select", async ({ page }) => {
   await expect(page.locator(".pitcher-choice-card")).toHaveCount(3);
 });
 
+test("title and pitcher select use dark first-screen treatment", async ({ page }) => {
+  await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto("/");
+  await expect(page.locator("#titleOverlay")).toBeVisible();
+
+  const title = await page.evaluate(() => {
+    const inner = getComputedStyle(document.querySelector(".title-screen-inner"));
+    const actions = getComputedStyle(document.querySelector(".title-screen-actions"));
+    const rect = document.querySelector(".title-screen-inner").getBoundingClientRect();
+    return {
+      backgroundImage: inner.backgroundImage,
+      actionDirection: actions.flexDirection,
+      coversViewport:
+        rect.left <= 1 &&
+        rect.top <= 1 &&
+        rect.right >= window.innerWidth - 1 &&
+        rect.bottom >= window.innerHeight - 1
+    };
+  });
+  expect(title.backgroundImage).not.toBe("none");
+  expect(title.actionDirection).toBe("column");
+  expect(title.coversViewport).toBe(true);
+
+  await page.locator("#titleStartButton").click();
+  await expect(page.locator("#pitcherSelectOverlay")).toBeVisible();
+  const pitcherSelect = await page.locator(".pitcher-choice-card").first().evaluate((card) => {
+    const color = getComputedStyle(card).color.match(/\d+/g).map(Number);
+    return {
+      lightText: color.slice(0, 3).reduce((sum, value) => sum + value, 0) > 560,
+      statBars: card.querySelectorAll(".choice-stat").length,
+      pitchBadges: card.querySelectorAll(".choice-pitch").length
+    };
+  });
+  expect(pitcherSelect.lightText).toBe(true);
+  expect(pitcherSelect.statBars).toBe(5);
+  expect(pitcherSelect.pitchBadges).toBeGreaterThanOrEqual(2);
+});
+
 test("stage missions stay inside playable innings", async ({ page }) => {
   await page.goto("/");
   const result = await page.evaluate(() => {
@@ -109,6 +147,16 @@ test("mobile pitch controls render and unlock throw after choosing a zone", asyn
   await expect(page.locator("#mobileReleasePanel")).toBeVisible();
 });
 
+test("event banners auto-hide after their configured duration", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+
+  await page.evaluate(() => window.MountPsycho.debug.nextBatter());
+  await expect(page.locator("#mobileInningBanner")).toBeVisible();
+  await page.waitForTimeout(1000);
+  await expect(page.locator("#mobileInningBanner")).toBeHidden();
+});
+
 test("mobile throw records a log entry", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
@@ -129,7 +177,7 @@ test("mobile throw records a log entry", async ({ page }) => {
   await page.locator("#mobileRecentLogMore").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
   await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toBeVisible({ timeout: 8000 });
-  await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toContainText(/타자가|같은|흐름|다음 공|빠른 공|코스|스윙/);
+  await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toContainText(/타자가|같은|흐름|다음 공|다음은|빠른 공|코스|스윙|계열|높이/);
 });
 
 test("stage card reward assigns performance tokens to cards", async ({ page }) => {
@@ -157,6 +205,33 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
   await expect(page.locator("#rewardAbsorbList .reward-performance-pill").filter({ hasText: /설계 삼진/ })).toHaveCount(1);
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(1);
+});
+
+test("reward card rarity changes the card frame treatment", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    const fixture = document.createElement("div");
+    fixture.innerHTML = `
+      <button id="rarityCommon" class="reward-choice-card reward-choice-card--common">일반</button>
+      <button id="rarityRare" class="reward-choice-card reward-choice-card--rare">희귀</button>
+      <button id="rarityCore" class="reward-choice-card reward-choice-card--core">핵심</button>
+    `;
+    document.body.appendChild(fixture);
+  });
+
+  const stylesByRarity = await page.evaluate(() =>
+    Object.fromEntries(
+      ["common", "rare", "core"].map((rarity) => {
+        const id = `rarity${rarity[0].toUpperCase()}${rarity.slice(1)}`;
+        const styles = getComputedStyle(document.querySelector(`#${id}`));
+        return [rarity, { borderColor: styles.borderTopColor, boxShadow: styles.boxShadow }];
+      })
+    )
+  );
+
+  expect(stylesByRarity.common.borderColor).not.toBe(stylesByRarity.rare.borderColor);
+  expect(stylesByRarity.rare.borderColor).not.toBe(stylesByRarity.core.borderColor);
+  expect(stylesByRarity.core.boxShadow).not.toBe(stylesByRarity.common.boxShadow);
 });
 
 test("stage reward card pool excludes dugout-only planning cards", async ({ page }) => {

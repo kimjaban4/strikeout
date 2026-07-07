@@ -14,6 +14,7 @@ export const deployFiles = [
 
 export const deployDirectories = [
   "assets/audio",
+  "assets/fonts",
   "assets/images/batters",
   "assets/images/pitchers",
   "assets/images/pitches",

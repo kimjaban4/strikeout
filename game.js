@@ -9901,6 +9901,25 @@ function pitcherNameParts(pitcher) {
   return { name: pitcher?.name || "-", style: "균형형 투수" };
 }
 
+function pitcherChoiceStatsHtml(pitcher) {
+  return pitcherStatOrder
+    .map((label) => {
+      const value = clampStat(pitcher?.stats?.[label] ?? 50);
+      return `<span class="choice-stat"><b>${escapeHtml(label)}</b><i style="--stat:${value}%"></i><span>${value}</span></span>`;
+    })
+    .join("");
+}
+
+function pitcherChoicePitchesHtml(pitcher) {
+  return (pitcher?.repertoire || [])
+    .slice(0, 4)
+    .map((pitch) => {
+      const name = typeof pitch === "string" ? pitch : pitch?.name || pitch?.id || "-";
+      return `<span class="choice-pitch">${escapeHtml(name)}</span>`;
+    })
+    .join("");
+}
+
 function renderPitcherChoices() {
   if (!els.pitcherSelectOverlay || !els.pitcherChoiceList) return;
   els.pitcherChoiceList.innerHTML = state.pitcherChoices
@@ -9909,9 +9928,13 @@ function renderPitcherChoices() {
       return `
         <button class="pitcher-choice-card" type="button" data-pitcher-index="${index}">
           <img class="choice-portrait" src="${pitcher.portrait}" alt="" aria-hidden="true" />
-          <span class="choice-number">${index + 1}</span>
-          <strong>${display.name}</strong>
-          <em>${display.style}</em>
+          <span class="choice-copy">
+            <span class="choice-number">${index + 1}</span>
+            <strong>${escapeHtml(display.name)}</strong>
+            <em class="choice-style">${escapeHtml(display.style)}</em>
+          </span>
+          <span class="choice-stats">${pitcherChoiceStatsHtml(pitcher)}</span>
+          <span class="choice-pitches">${pitcherChoicePitchesHtml(pitcher)}</span>
         </button>
       `;
     })
@@ -11714,6 +11737,10 @@ function showEventBanner(text, tone = "inning", duration = GAME_TIMING.eventBann
     banner.classList.add("show");
   });
   MP.inningBannerDismissHandler = () => {
+    if (inningBannerTimer) {
+      window.clearTimeout(inningBannerTimer);
+      inningBannerTimer = null;
+    }
     banners.forEach((banner) => {
       banner.classList.remove("show");
       banner.hidden = true;
@@ -11723,7 +11750,7 @@ function showEventBanner(text, tone = "inning", duration = GAME_TIMING.eventBann
   };
   inningBannerTimer = window.setTimeout(() => {
     window.addEventListener("pointerdown", MP.inningBannerDismissHandler, { once: true });
-    inningBannerTimer = null;
+    inningBannerTimer = window.setTimeout(MP.inningBannerDismissHandler, Math.max(0, Number(duration) || GAME_TIMING.eventBannerDefault));
   }, 0);
 }
 
