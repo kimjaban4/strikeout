@@ -1742,7 +1742,7 @@
   .mobile-pitch-button strong { font-size: 9px; }
 }
 
-@media (orientation: portrait) {
+@media (orientation: portrait), (min-width: 761px) {
   .mobile-game-shell {
     --m-log-height: clamp(168px, 30dvh, 300px);
     --m-card-height: clamp(50px, 13vw, 66px);
@@ -2213,7 +2213,7 @@
   }
 }
 
-@media (max-width: 760px) and (orientation: portrait) {
+@media all {
   .mobile-release-panel,
   .mobile-suspicion-row,
   .mobile-suspicion-card {
@@ -2288,5 +2288,38 @@
     -webkit-mask: var(--toast-image) center / contain no-repeat;
     mask: var(--toast-image) center / contain no-repeat;
     pointer-events: none;
+  }
+
+  .mobile-recent-log-card {
+    grid-template-rows: 30px minmax(0, 1fr);
+  }
+
+  .mobile-recent-log-card header {
+    height: 30px;
+  }
+
+  .mobile-recent-log-card header button {
+    min-width: 52px;
+    min-height: 28px;
+    padding: 0 6px;
+  }
+}
+
+@media (min-width: 761px) {
+  .mobile-game-shell {
+    left: 50%;
+    right: auto;
+    width: 430px !important;
+    min-width: 0 !important;
+    max-width: 430px !important;
+    transform: translateX(-50%);
+    box-shadow: 0 0 38px rgba(0, 0, 0, 0.58);
+  }
+
+  .mobile-info-panel {
+    left: 50%;
+    right: auto;
+    width: 430px;
+    transform: translateX(-50%);
   }
 }

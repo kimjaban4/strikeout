@@ -148,10 +148,16 @@ test("uses mobile shell as the main game screen on wide and narrow viewports", a
       return {
         shellVisible: shell.width > 0 && shell.height > 0,
         shellFits: shell.left >= 0 && shell.right <= innerWidth && shell.top >= 0 && shell.bottom <= innerHeight,
+        shellWidth: Math.round(shell.width),
+        centered: Math.abs(shell.left + shell.width / 2 - innerWidth / 2) <= 1,
         ordered: parts.every((rect, index) => index === 0 || rect.top >= parts[index - 1].bottom - 1)
       };
     });
-    expect(layout).toEqual({ shellVisible: true, shellFits: true, ordered: true });
+    expect(layout.shellVisible).toBe(true);
+    expect(layout.shellFits).toBe(true);
+    expect(layout.centered).toBe(true);
+    expect(layout.shellWidth).toBe(viewport.width > 760 ? 430 : viewport.width);
+    expect(layout.ordered).toBe(true);
   }
 });
 
