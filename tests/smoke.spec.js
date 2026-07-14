@@ -26,9 +26,11 @@ async function chooseFirstPitcher(page) {
 
 async function chooseMobilePitchAndZone(page) {
   await page.locator("#mobilePitchButtons .mobile-pitch-button").first().click();
-  await page.locator("#mobileStrikeZone .mobile-zone-button.is-strike").first().click();
-  await expect(page.locator("#mobileReleasePanel")).toBeVisible();
-  await expect(page.locator("#mobileReleasePanel")).toHaveClass(/is-active/);
+  const zone = page.locator("#mobileStrikeZone");
+  const box = await zone.boundingBox();
+  await zone.click({ position: { x: box.width * 0.56, y: box.height * 0.44 } });
+  await expect(zone.locator(".release-aim-target.show")).toBeVisible();
+  await expect(page.locator("#mobileReleasePanel")).toBeHidden();
 }
 
 test("boots to title and pitcher select", async ({ page }) => {
@@ -153,7 +155,7 @@ test("uses mobile shell as the main game screen on wide and narrow viewports", a
   }
 });
 
-test("mobile pitch controls render and unlock throw after choosing a zone", async ({ page }) => {
+test("mobile pitch controls start circular release timing at the touched course", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
 
@@ -164,11 +166,16 @@ test("mobile pitch controls render and unlock throw after choosing a zone", asyn
   await expect(page.locator(".mobile-duel-read-card")).not.toContainText(/추천|예측/);
   await expect(page.locator("#mobileDuelReadRisk")).toHaveText(/안정|경계|위험/);
   await expect(page.locator("#mobileReleasePanel")).toBeHidden();
-  await expect(page.locator('#mobileStrikeZone [data-target-col="0"][data-target-row="1"]')).toHaveAttribute("aria-label", "바깥쪽");
-  await expect(page.locator('#mobileStrikeZone [data-target-col="2"][data-target-row="1"]')).toHaveAttribute("aria-label", "몸쪽");
+  await expect(page.locator("#mobileStrikeZone .zone-grid-cell")).toHaveCount(25);
+  await expect(page.locator("#mobileStrikeZone .zone-grid-cell.is-strike")).toHaveCount(9);
 
   await chooseMobilePitchAndZone(page);
-  await expect(page.locator("#mobileReleasePanel")).toBeVisible();
+  const target = await page.locator("#mobileStrikeZone .release-aim-target.show").evaluate((element) => ({
+    x: element.style.getPropertyValue("--aim-x"),
+    y: element.style.getPropertyValue("--aim-y")
+  }));
+  expect(parseFloat(target.x)).toBeGreaterThan(50);
+  expect(parseFloat(target.y)).toBeLessThan(50);
 });
 
 test("event banners auto-hide after their configured duration", async ({ page }) => {
@@ -185,14 +192,12 @@ test("mobile throw records a log entry", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
   await expect(page.locator("#mobileRecentLog .is-batter-marker").first()).toContainText(/번 타자/);
-  await expect(page.locator(".mobile-suspicion-card")).toBeVisible();
-  await page.locator(".mobile-suspicion-card").click();
-  await expect(page.locator("#mobileInfoPanel")).toBeVisible();
-  await expect(page.locator("#mobileInfoPanelTitle")).toHaveText("간파도");
-  await page.locator("#mobileInfoPanelClose").click();
+  await expect(page.locator(".mobile-suspicion-card")).toBeHidden();
   await chooseMobilePitchAndZone(page);
 
-  await page.locator("#mobileReleasePanel").dispatchEvent("pointerdown");
+  const zone = page.locator("#mobileStrikeZone");
+  const box = await zone.boundingBox();
+  await zone.click({ position: { x: box.width * 0.56, y: box.height * 0.44 } });
   await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).toBeVisible({ timeout: 8000 });
   await expect(page.locator("#mobileRecentLog .is-batter-marker").first()).toContainText(/번 타자/);
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first()).toContainText(/구/);

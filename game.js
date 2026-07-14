@@ -5624,17 +5624,30 @@ function pitchQuality(pitch) {
   return clamp((velocityPower + movementPower + controlPower + pitch.speed * 0.18 + pitch.control * 0.16) / 1.65, 20, 96);
 }
 
-function intendedCourse(zone, intent, targetRow = null, targetCol = null) {
+function intendedCourse(zone, intent, targetRow = null, targetCol = null, targetX = null, targetY = null) {
   const base = courseZones[zone] || courseZones[5];
-  const course = { row: base.row, col: base.col, label: base.label };
-  if (intent !== "ball") return course;
+  const hasPoint = Number.isFinite(Number(targetX)) && Number.isFinite(Number(targetY));
+  const hasCell = Number.isFinite(Number(targetRow)) && Number.isFinite(Number(targetCol));
+  const course = {
+    row: base.row,
+    col: base.col,
+    x: hasPoint ? clamp(Number(targetX), 0, 1) : (base.col + 1.5) / 5,
+    y: hasPoint ? clamp(Number(targetY), 0, 1) : (base.row + 1.5) / 5,
+    label: base.label
+  };
 
-  if (Number.isFinite(Number(targetRow)) && Number.isFinite(Number(targetCol))) {
-    course.row = clamp(Number(targetRow), -1, 3);
-    course.col = clamp(Number(targetCol), -1, 3);
+  if (hasPoint || hasCell) {
+    course.row = hasPoint ? clamp(Math.floor(course.y * 5) - 1, -1, 3) : clamp(Number(targetRow), -1, 3);
+    course.col = hasPoint ? clamp(Math.floor(course.x * 5) - 1, -1, 3) : clamp(Number(targetCol), -1, 3);
+    if (!hasPoint) {
+      course.x = (course.col + 1.5) / 5;
+      course.y = (course.row + 1.5) / 5;
+    }
     course.label = actualCourseLabel(course.row, course.col);
     return course;
   }
+
+  if (intent !== "ball") return course;
 
   if (base.row === 0) course.row = -1;
   else if (base.row === 2) course.row = 3;
@@ -5642,6 +5655,9 @@ function intendedCourse(zone, intent, targetRow = null, targetCol = null) {
   else if (base.col === 2) course.col = 3;
   else if (chance(0.5)) course.row = chance(0.5) ? -1 : 3;
   else course.col = chance(0.5) ? -1 : 3;
+
+  course.x = (course.col + 1.5) / 5;
+  course.y = (course.row + 1.5) / 5;
 
   return course;
 }
@@ -5809,6 +5825,8 @@ function buildReleaseTimingChallenge(pitch, plannedCourse) {
     ballPlan: plannedCourse.ballPlan || "",
     targetRow: plannedCourse.targetRow,
     targetCol: plannedCourse.targetCol,
+    targetX: plannedCourse.targetX,
+    targetY: plannedCourse.targetY,
     startedAt: Date.now(),
     duration,
     perfectSize,
@@ -5839,9 +5857,14 @@ function updateReleaseTimingCursor() {
     clearReleaseTimingAnimation();
     return;
   }
-  const cursorPosition = releaseCursorPercent(challenge);
+  const position = releaseCursorPosition(challenge);
+  const cursorPosition = `${position * 100}%`;
   els.releaseTimingCursor?.style.setProperty("--release-cursor-x", cursorPosition);
   els.mobileReleaseCursor?.style.setProperty("--cursor-x", cursorPosition);
+  const ringScale = 0.5 + Math.abs(position - 0.5) * 1.8;
+  [els.strikeZone, els.mobileStrikeZone].filter(Boolean).forEach((zone) => {
+    zone.querySelector?.(".release-aim-ring")?.style.setProperty("--release-ring-scale", ringScale.toFixed(3));
+  });
   releaseTimingFrame = window.requestAnimationFrame(updateReleaseTimingCursor);
 }
 
@@ -5854,6 +5877,7 @@ function cancelReleaseTiming({ renderAfter = true, keepResult = false } = {}) {
   if (!state.releaseTiming?.active) return false;
   state.releaseTiming = null;
   clearReleaseTimingAnimation();
+  [els.strikeZone, els.mobileStrikeZone].filter(Boolean).forEach((zone) => zone.querySelector?.(".release-aim-target")?.classList.remove("show"));
   if (!keepResult) state.lastReleaseResult = null;
   if (els.releaseTimingCursor) els.releaseTimingCursor.style.setProperty("--release-cursor-x", "50%");
   els.mobileReleaseCursor?.style.setProperty("--cursor-x", "50%");
@@ -5929,16 +5953,33 @@ function finishReleaseTiming() {
   const release = gradeReleaseTiming(challenge);
   state.releaseTiming = null;
   clearReleaseTimingAnimation();
+  [els.strikeZone, els.mobileStrikeZone].filter(Boolean).forEach((zone) => zone.querySelector?.(".release-aim-target")?.classList.remove("show"));
   state.lastReleaseResult = release;
   if (els.releaseTimingCursor) els.releaseTimingCursor.style.setProperty("--release-cursor-x", `${release.position * 100}%`);
   els.mobileReleaseCursor?.style.setProperty("--cursor-x", `${release.position * 100}%`);
-  return throwPitch(challenge.pitchId, challenge.zone, challenge.targetRow, challenge.targetCol, release, true);
+  return throwPitch(
+    challenge.pitchId,
+    challenge.zone,
+    challenge.targetRow,
+    challenge.targetCol,
+    release,
+    true,
+    challenge.targetX,
+    challenge.targetY
+  );
 }
 
 function resolvePitchLocation(pitch, plannedCourse) {
   const zone = Number(plannedCourse?.zone || 5);
   const intent = plannedCourse?.intent === "ball" ? "ball" : "strike";
-  const aimed = intendedCourse(zone, intent, plannedCourse?.targetRow, plannedCourse?.targetCol);
+  const aimed = intendedCourse(
+    zone,
+    intent,
+    plannedCourse?.targetRow,
+    plannedCourse?.targetCol,
+    plannedCourse?.targetX,
+    plannedCourse?.targetY
+  );
   const release = plannedCourse?.release || null;
   const runners = state.bases.filter(Boolean).length;
   const mental = state.pitcher.stats.멘탈 ?? 60;
@@ -5955,50 +5996,35 @@ function resolvePitchLocation(pitch, plannedCourse) {
   );
   const strikeRecovery = intent === "strike" ? Math.min(state.consecutiveBalls * 9, 24) : 0;
   const effectiveCommand = clamp(commandScore + strikeRecovery, 5, 99);
-  const driftChance = clamp(0.68 - effectiveCommand / 116, 0.025, 0.76);
-  let row = aimed.row;
-  let col = aimed.col;
+  const releaseDistance = Math.abs((release?.position ?? 0.5) - 0.5);
+  const spread = 0.016 + ((100 - effectiveCommand) / 100) * 0.085 + releaseDistance * 0.08;
+  const angle = Math.random() * Math.PI * 2;
+  const radius = Math.sqrt(Math.random()) * spread;
+  let x = clamp(aimed.x + Math.cos(angle) * radius, 0.01, 0.99);
+  let y = clamp(aimed.y + Math.sin(angle) * radius, 0.01, 0.99);
 
-  if (chance(driftChance)) {
-    row += rand(-1, 1);
-    col += rand(-1, 1);
-  }
-  if (effectiveCommand < 42 && chance(0.35)) {
-    row += rand(-1, 1);
-    col += rand(-1, 1);
-  }
-
-  row = clamp(row, -1, 3);
-  col = clamp(col, -1, 3);
-
-  const intentMissChance =
-    intent === "ball"
-      ? clamp(0.42 - effectiveCommand / 145, 0.04, 0.36)
-      : clamp(0.36 - effectiveCommand / 145 - state.consecutiveBalls * 0.035, 0.015, 0.28);
-  if (intent === "ball" && chance(intentMissChance)) {
-    row = clamp(row, 0, 2);
-    col = clamp(col, 0, 2);
-  }
-  if (intent === "strike" && chance(intentMissChance)) {
-    const missed = missStrikeZone(row, col, aimed);
-    row = clamp(missed.row, -1, 3);
-    col = clamp(missed.col, -1, 3);
-  }
-  if (intent === "strike" && state.consecutiveBalls >= 2 && !(row >= 0 && row <= 2 && col >= 0 && col <= 2)) {
+  if (intent === "strike" && state.consecutiveBalls >= 2 && !(x >= 0.2 && x <= 0.8 && y >= 0.2 && y <= 0.8)) {
     const recoveryChance = clamp(0.24 + state.consecutiveBalls * 0.12 + effectiveCommand / 260, 0.32, 0.74);
     if (chance(recoveryChance)) {
-      row = clamp(aimed.row, 0, 2);
-      col = clamp(aimed.col, 0, 2);
+      x = clamp(x, 0.21, 0.79);
+      y = clamp(y, 0.21, 0.79);
     }
   }
   if (release?.mistakeChance && chance(release.mistakeChance)) {
-    row = clamp(aimed.row + rand(-1, 1), 0, 2);
-    col = clamp(aimed.col + rand(-1, 1), 0, 2);
     if (release.grade === "miss" && chance(0.45)) {
-      row = 1;
-      col = 1;
+      x = clamp(0.5 + (Math.random() - 0.5) * 0.08, 0.01, 0.99);
+      y = clamp(0.5 + (Math.random() - 0.5) * 0.08, 0.01, 0.99);
+    } else {
+      const mistakeAngle = Math.random() * Math.PI * 2;
+      const mistakeRadius = 0.08 + Math.random() * 0.1;
+      x = clamp(x + Math.cos(mistakeAngle) * mistakeRadius, 0.01, 0.99);
+      y = clamp(y + Math.sin(mistakeAngle) * mistakeRadius, 0.01, 0.99);
     }
   }
+
+  const row = clamp(Math.floor(y * 5) - 1, -1, 3);
+  const col = clamp(Math.floor(x * 5) - 1, -1, 3);
+  const inZone = x >= 0.2 && x <= 0.8 && y >= 0.2 && y <= 0.8;
 
   return {
     zone,
@@ -6006,7 +6032,9 @@ function resolvePitchLocation(pitch, plannedCourse) {
     aimed,
     row,
     col,
-    inZone: row >= 0 && row <= 2 && col >= 0 && col <= 2,
+    x,
+    y,
+    inZone,
     centerMistake: row === 1 && col === 1,
     unintendedCenter: row === 1 && col === 1 && (aimed.row !== 1 || aimed.col !== 1),
     commandScore: effectiveCommand,
@@ -6036,7 +6064,16 @@ function selectPitchByNumber(numberKey) {
   selectPitch(pitch.id);
 }
 
-function throwPitch(pitchId, zone, targetRow = null, targetCol = null, releaseResult = null, force = false) {
+function throwPitch(
+  pitchId,
+  zone,
+  targetRow = null,
+  targetCol = null,
+  releaseResult = null,
+  force = false,
+  targetX = null,
+  targetY = null
+) {
   if (!force && pitchInputLocked()) return null;
   if (force) state.releaseTiming = null;
 
@@ -6050,6 +6087,8 @@ function throwPitch(pitchId, zone, targetRow = null, targetCol = null, releaseRe
     ballPlan: state.pitchBallPlan,
     targetRow: Number.isFinite(Number(targetRow)) ? Number(targetRow) : null,
     targetCol: Number.isFinite(Number(targetCol)) ? Number(targetCol) : null,
+    targetX: Number.isFinite(Number(targetX)) ? clamp(Number(targetX), 0, 1) : null,
+    targetY: Number.isFinite(Number(targetY)) ? clamp(Number(targetY), 0, 1) : null,
     release
   };
   state.lastReleaseResult = release;
@@ -7095,12 +7134,9 @@ function majorResultTone(result) {
 function swingFeedbackText(result) {
   if (result.result === "ball") return "BALL";
   if (result.result === "calledStrike") return "STRIKE";
-  if (result.result === "swingingStrike") return "헛스윙";
+  if (result.result === "swingingStrike") return "MISS";
   if (result.result === "foul") return "FOUL";
-  if (!result.swung) return "";
-  if (result.timingValue > 0.78) return "FULL SWING";
-  if (result.timingValue > 0.62) return "GOOD SWING";
-  return "WEAK SWING";
+  return "";
 }
 
 function swingFeedbackTone(result) {
@@ -7383,8 +7419,8 @@ function applyPitchResult(result) {
 
   const swingFeedback = swingFeedbackText(result);
   const call = pitchCall(result);
-  if (swingFeedback) queueTiming(swingFeedback, swingFeedbackTone(result));
-  else if (call.label) queueTiming(call.label, call.type === "strike" ? "warn" : call.type === "ball" ? "good" : "danger");
+  if (!majorText && swingFeedback) queueTiming(swingFeedback, swingFeedbackTone(result));
+  else if (!majorText && call.label) queueTiming(call.label, call.type === "strike" ? "warn" : call.type === "ball" ? "good" : "danger");
   els.batterFigure.classList.toggle("swing", result.swung);
 
   window.setTimeout(() => {
@@ -10299,19 +10335,27 @@ function renderMobileCountDots(container, value, total) {
   container.innerHTML = Array.from({ length: total }, (_, index) => `<i class="${index < value ? "is-on" : ""}"></i>`).join("");
 }
 
-function renderMobileZones() {
-  if (!els.mobileStrikeZone) return;
-  const active = state.releaseTiming?.active ? state.releaseTiming : null;
-  els.mobileStrikeZone.innerHTML = Array.from({ length: 25 }, (_, index) => {
+function renderZoneGridMarkup() {
+  return Array.from({ length: 25 }, (_, index) => {
     const row = Math.floor(index / 5) - 1;
     const col = (index % 5) - 1;
     const inside = row >= 0 && row <= 2 && col >= 0 && col <= 2;
-    const nearestRow = clamp(row, 0, 2);
-    const nearestCol = clamp(col, 0, 2);
-    const zone = nearestRow * 3 + nearestCol + 1;
-    const selected = active && Number(active.targetRow) === row && Number(active.targetCol) === col;
-    return `<button class="mobile-zone-button${inside ? " is-strike" : ""}${selected ? " is-selected" : ""}" type="button" data-mobile-zone="${zone}" data-target-row="${row}" data-target-col="${col}" data-intent="${inside ? "strike" : "ball"}" aria-label="${escapeHtml(actualCourseLabel(row, col))}" ${pitchInputLocked({ includeRelease: false }) ? "disabled" : ""}></button>`;
+    return `<div class="zone-grid-cell${inside ? " is-strike" : ""}" aria-hidden="true"></div>`;
   }).join("");
+}
+
+function releaseAimMarkup() {
+  const active = state.releaseTiming?.active ? state.releaseTiming : null;
+  if (!active) return '<div class="release-aim-target" aria-hidden="true"><i class="release-aim-ring"></i></div>';
+  const x = clamp(Number(active.targetX) || 0.5, 0.01, 0.99) * 100;
+  const y = clamp(Number(active.targetY) || 0.5, 0.01, 0.99) * 100;
+  return `<div class="release-aim-target show" style="--aim-x:${x}%;--aim-y:${y}%" aria-hidden="true"><i class="release-aim-ring"></i></div>`;
+}
+
+function renderMobileZones() {
+  if (!els.mobileStrikeZone) return;
+  els.mobileStrikeZone.innerHTML = `${renderZoneGridMarkup()}${releaseAimMarkup()}<div class="pitch-marker"><span></span></div>`;
+  renderPitchMarker(els.mobileStrikeZone);
 }
 
 function renderMobilePitchButtons() {
@@ -10543,7 +10587,9 @@ function renderMobileDuelRead() {
   els.mobileDuelReadFlow.textContent = mobileCatcherLine();
   els.mobileDuelReadPitch.textContent = mobileNextActionLine();
   const riskLabel = els.mobileDuelReadRisk.closest("span");
-  if (riskLabel?.firstChild) riskLabel.firstChild.textContent = "간파도 ";
+  const suspicion = Math.round(clamp(state.atBat?.suspicion || 0, 0, 100));
+  if (riskLabel) riskLabel.hidden = suspicion < 50;
+  if (riskLabel?.firstChild) riskLabel.firstChild.textContent = "패턴 ";
   els.mobileDuelReadRisk.textContent = mobileSuspicionTone();
 }
 
@@ -11598,16 +11644,11 @@ function renderCourseControls() {
   els.strikeZone.classList.add("ball-mode", "wide-target-mode");
 
   els.strikeZone.innerHTML = `
-    ${renderZoneButtons()}
+    ${renderZoneGridMarkup()}
+    ${releaseAimMarkup()}
     <div class="zone-result"></div>
     <div class="pitch-marker"><span></span></div>
   `;
-
-  els.strikeZone.querySelectorAll(".zone-button").forEach((button) => {
-    const flashKey = `${button.dataset.targetRow}:${button.dataset.targetCol}`;
-    button.disabled = pitchInputLocked({ includeRelease: false });
-    button.classList.toggle("flash", state.flashZone === flashKey);
-  });
 
   renderPitchMarker();
 }
@@ -11628,32 +11669,34 @@ function renderZoneButtons() {
   }).join("");
 }
 
-function renderPitchMarker() {
-  const marker = els.strikeZone.querySelector?.(".pitch-marker");
-  const badge = els.strikeZone.querySelector?.(".zone-result");
-  if (!marker || !badge) return;
+function renderPitchMarker(container = els.strikeZone) {
+  const marker = container?.querySelector?.(".pitch-marker");
+  const badge = container?.querySelector?.(".zone-result");
+  if (!marker) return;
 
   marker.className = "pitch-marker";
-  badge.className = "zone-result";
+  if (badge) badge.className = "zone-result";
 
   if (!state.lastLocation || !state.lastPitchCall) {
     marker.classList.remove("show");
-    badge.textContent = "";
+    if (badge) badge.textContent = "";
     return;
   }
 
-  const x = clamp(((state.lastLocation.col + 1.5) / 5) * 100, 4, 96);
-  const y = clamp(((state.lastLocation.row + 1.5) / 5) * 100, 4, 96);
+  const x = clamp((Number.isFinite(state.lastLocation.x) ? state.lastLocation.x : (state.lastLocation.col + 1.5) / 5) * 100, 2, 98);
+  const y = clamp((Number.isFinite(state.lastLocation.y) ? state.lastLocation.y : (state.lastLocation.row + 1.5) / 5) * 100, 2, 98);
   marker.style.setProperty("--marker-x", `${x}%`);
   marker.style.setProperty("--marker-y", `${y}%`);
   marker.classList.add("show", state.lastPitchCall.type);
   marker.querySelector("span").textContent = state.lastLocation.actualLabel;
 
-  badge.textContent = state.lastPitchCall.label || "";
-  if (state.lastPitchCall.label) badge.classList.add("show", state.lastPitchCall.type);
+  if (badge) {
+    badge.textContent = state.lastPitchCall.label || "";
+    if (state.lastPitchCall.label) badge.classList.add("show", state.lastPitchCall.type);
+  }
 }
 
-function handleCourseClick(zone, targetRow = null, targetCol = null, intent = "strike") {
+function handleCourseClick(zone, targetRow = null, targetCol = null, intent = "strike", targetX = null, targetY = null) {
   if (pitchInputLocked({ includeRelease: false })) return;
   const plannedIntent = intent === "ball" ? "ball" : "strike";
   state.pitchIntent = plannedIntent;
@@ -11672,10 +11715,33 @@ function handleCourseClick(zone, targetRow = null, targetCol = null, intent = "s
       intent: state.pitchIntent,
       ballPlan: state.pitchBallPlan,
       targetRow: Number.isFinite(Number(targetRow)) ? Number(targetRow) : null,
-      targetCol: Number.isFinite(Number(targetCol)) ? Number(targetCol) : null
+      targetCol: Number.isFinite(Number(targetCol)) ? Number(targetCol) : null,
+      targetX: Number.isFinite(Number(targetX)) ? clamp(Number(targetX), 0, 1) : null,
+      targetY: Number.isFinite(Number(targetY)) ? clamp(Number(targetY), 0, 1) : null
     };
     beginReleaseTiming(pitch, plannedCourse);
   }
+}
+
+function handleCoursePointer(container, event) {
+  if (!container) return;
+  event.preventDefault();
+  if (state.releaseTiming?.active) {
+    finishReleaseTiming();
+    return;
+  }
+  if (pitchInputLocked({ includeRelease: false })) return;
+  const rect = container.getBoundingClientRect();
+  if (!rect.width || !rect.height) return;
+  const x = clamp((event.clientX - rect.left) / rect.width, 0.01, 0.99);
+  const y = clamp((event.clientY - rect.top) / rect.height, 0.01, 0.99);
+  const targetRow = clamp(Math.floor(y * 5) - 1, -1, 3);
+  const targetCol = clamp(Math.floor(x * 5) - 1, -1, 3);
+  const nearestRow = clamp(targetRow, 0, 2);
+  const nearestCol = clamp(targetCol, 0, 2);
+  const zone = nearestRow * 3 + nearestCol + 1;
+  const intent = x >= 0.2 && x <= 0.8 && y >= 0.2 && y <= 0.8 ? "strike" : "ball";
+  handleCourseClick(zone, targetRow, targetCol, intent, x, y);
 }
 
 function disablePitchButtons(disabled) {
@@ -11687,14 +11753,60 @@ function disablePitchButtons(disabled) {
   });
 }
 
+const resultToastAssets = {
+  BALL: "toast-ball-aligned-v2.png",
+  STRIKE: "toast-strike-aligned-v2.png",
+  MISS: "toast-miss-aligned-v2.png",
+  FOUL: "toast-foul-aligned-v2.png",
+  "STRIKE OUT!": "toast-strike-out-aligned-v2.png",
+  "WALK!": "toast-walk-aligned-v2.png",
+  "BASE HIT!": "toast-base-hit-aligned-v2.png",
+  "TEXAS HIT!": "toast-texas-hit-aligned-v2.png",
+  "DOUBLE!": "toast-double-aligned-v2.png",
+  "HOME RUN!": "toast-home-run-aligned-v2.png",
+  "DOUBLE PLAY!": "toast-double-play-aligned-v2.png",
+  "GROUND OUT!": "toast-ground-out-aligned-v2.png",
+  "FLY OUT!": "toast-fly-out-aligned-v2.png",
+  "OUT!": "toast-out-aligned-v2.png",
+  "ERROR!": "toast-error-aligned-v2.png"
+};
+
+function resultToastAsset(text) {
+  const filename = resultToastAssets[String(text || "").trim().toUpperCase()];
+  return filename ? `assets/images/ui/${filename}` : "";
+}
+
+function resultToastJudgement(text) {
+  const key = String(text || "").trim().toUpperCase();
+  if (["STRIKE", "MISS", "STRIKE OUT!", "DOUBLE PLAY!", "GROUND OUT!", "FLY OUT!", "OUT!"].includes(key)) return "toast-positive";
+  if (["BALL", "WALK!", "BASE HIT!", "TEXAS HIT!", "DOUBLE!", "HOME RUN!", "ERROR!"].includes(key)) return "toast-negative";
+  return "toast-neutral";
+}
+
+function renderResultToast(element, text) {
+  const asset = resultToastAsset(text);
+  element.classList.toggle("image-toast", !!asset);
+  element.classList.toggle("major-toast", ["STRIKE OUT!", "DOUBLE PLAY!", "HOME RUN!"].includes(String(text || "").trim().toUpperCase()));
+  element.classList.remove("toast-positive", "toast-negative", "toast-neutral");
+  if (asset) element.classList.add(resultToastJudgement(text));
+  if (!asset) {
+    element.textContent = text;
+    element.style.removeProperty("--toast-image");
+    return false;
+  }
+  element.innerHTML = `<img src="${asset}" alt="${escapeHtml(text)}">`;
+  element.style.setProperty("--toast-image", `url("${asset}")`);
+  return true;
+}
+
 function setTiming(text, tone) {
   if (MP.timingDismissHandler) {
     window.removeEventListener("pointerdown", MP.timingDismissHandler);
     MP.timingDismissHandler = null;
   }
   [els.timingBadge, els.mobileTimingBadge].filter(Boolean).forEach((badge) => {
-    badge.textContent = text;
-    badge.classList.remove("show", "good", "warn", "danger");
+    badge.classList.remove("show", "good", "warn", "danger", "image-toast", "major-toast", "toast-positive", "toast-negative", "toast-neutral");
+    renderResultToast(badge, text);
     if (tone) badge.classList.add(tone);
     badge.classList.add("show");
   });
@@ -11724,8 +11836,9 @@ function hideTiming() {
     timingTimer = null;
   }
   [els.timingBadge, els.mobileTimingBadge].filter(Boolean).forEach((badge) => {
-    badge.textContent = "";
-    badge.classList.remove("show", "good", "warn", "danger");
+    badge.replaceChildren();
+    badge.style.removeProperty("--toast-image");
+    badge.classList.remove("show", "good", "warn", "danger", "image-toast", "major-toast", "toast-positive", "toast-negative", "toast-neutral");
   });
 }
 
@@ -11746,9 +11859,12 @@ function showEventBanner(text, tone = "inning", duration = GAME_TIMING.eventBann
       const lines = String(text || "").split("\n").filter(Boolean);
       banner.innerHTML = `<span>${escapeHtml(lines[0] || "성장+")}</span><strong>${lines.slice(1).map(escapeHtml).join("<br>")}</strong>`;
     } else {
-      banner.textContent = text;
+      renderResultToast(banner, text);
     }
-    banner.className = `${baseClass} ${tone}`;
+    const imageClass = resultToastAsset(text) && tone !== "growth" ? " image-toast" : "";
+    const majorClass = ["STRIKE OUT!", "DOUBLE PLAY!", "HOME RUN!"].includes(String(text || "").trim().toUpperCase()) ? " major-toast" : "";
+    const judgementClass = imageClass ? ` ${resultToastJudgement(text)}` : "";
+    banner.className = `${baseClass} ${tone}${imageClass}${majorClass}${judgementClass}`;
     banner.hidden = false;
     banner.classList.add("show");
   });
@@ -11988,9 +12104,11 @@ function animatePitch(location, pitch) {
   const sceneRect = sprite.parentElement.getBoundingClientRect();
   const row = location?.row ?? 1;
   const col = location?.col ?? 1;
+  const locationX = Number.isFinite(location?.x) ? location.x : (col + 1.5) / 5;
+  const locationY = Number.isFinite(location?.y) ? location.y : (row + 1.5) / 5;
   const movement = pitchFlightProfile(pitch);
-  const endX = zoneRect.left - sceneRect.left + ((col + 1.5) / 5) * zoneRect.width;
-  const endY = zoneRect.top - sceneRect.top + ((row + 1.5) / 5) * zoneRect.height;
+  const endX = zoneRect.left - sceneRect.left + locationX * zoneRect.width;
+  const endY = zoneRect.top - sceneRect.top + locationY * zoneRect.height;
   const zoneCenterX = zoneRect.left - sceneRect.left + zoneRect.width * 0.5;
   const zoneTopY = zoneRect.top - sceneRect.top;
   const startX = zoneCenterX;
@@ -12136,20 +12254,9 @@ function bindUiEvents() {
     }
   });
   els.mobileStrikeZone?.addEventListener("pointerdown", (event) => {
-    const button = event.target.closest?.("[data-mobile-zone]");
-    if (button) {
-      event.preventDefault();
-      handleCourseClick(button.dataset.mobileZone, button.dataset.targetRow, button.dataset.targetCol, button.dataset.intent);
-    }
+    handleCoursePointer(els.mobileStrikeZone, event);
   });
   els.mobileGameShell?.addEventListener("click", (event) => {
-    if (
-      state.releaseTiming?.active &&
-      !event.target.closest?.("[data-mobile-pitch], [data-mobile-zone], #mobileReleasePanel")
-    ) {
-      finishReleaseTiming();
-      return;
-    }
     const closeButton = event.target.closest?.("[data-mobile-detail-close]");
     if (closeButton) {
       closeMobileSheets();
@@ -12203,9 +12310,8 @@ function bindUiEvents() {
     syncMobilePortraitUi();
     renderMobileGameUi();
   });
-  els.strikeZone.addEventListener("click", (event) => {
-    const button = event.target.closest?.(".zone-button");
-    if (button) handleCourseClick(button.dataset.zone, button.dataset.targetRow, button.dataset.targetCol, button.dataset.intent);
+  els.strikeZone.addEventListener("pointerdown", (event) => {
+    handleCoursePointer(els.strikeZone, event);
   });
   els.releaseTimingButton?.addEventListener("pointerdown", (event) => {
     event.preventDefault();

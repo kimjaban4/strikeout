@@ -7684,3 +7684,162 @@ body:has(#titleOverlay:not([hidden])) .bgm-toggle {
   color: #0a2034;
   background: #ffffff;
 }
+
+/* Direct aiming: the existing 5x5 course map remains visual, but the pointer is continuous. */
+.strike-zone,
+.strike-zone.ball-mode,
+.strike-zone.wide-target-mode {
+  touch-action: none !important;
+  cursor: crosshair !important;
+}
+
+.strike-zone .zone-grid-cell {
+  min-width: 0;
+  min-height: 0;
+  border: 1px dashed rgba(220, 235, 247, 0.58);
+  background: rgba(8, 20, 30, 0.16);
+  pointer-events: none;
+}
+
+.strike-zone .zone-grid-cell.is-strike {
+  border-style: solid;
+  background: rgba(36, 151, 79, 0.42);
+}
+
+.release-aim-target {
+  position: absolute;
+  left: var(--aim-x, 50%);
+  top: var(--aim-y, 50%);
+  z-index: 8;
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 221, 104, 0.98);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 0 2px rgba(4, 14, 24, 0.78), 0 0 12px rgba(255, 197, 41, 0.76);
+  pointer-events: none;
+}
+
+.release-aim-target::before,
+.release-aim-target::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  background: #fff2b8;
+  transform: translate(-50%, -50%);
+}
+
+.release-aim-target::before { width: 24px; height: 2px; }
+.release-aim-target::after { width: 2px; height: 24px; }
+.release-aim-target.show { opacity: 1; }
+
+.release-aim-ring {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 62px;
+  height: 62px;
+  border: 3px solid rgba(96, 203, 255, 0.96);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(var(--release-ring-scale, 1.4));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.76), 0 0 18px rgba(46, 169, 255, 0.78);
+  will-change: transform;
+}
+
+.release-timing-panel,
+.suspicion-meter {
+  display: none !important;
+}
+
+.strike-zone .pitch-marker > span {
+  border: 0 !important;
+}
+
+.pitch-marker.show {
+  display: block !important;
+}
+
+/* Result artwork replaces only pitch-result text; other banners keep their original UI. */
+.timing-badge.image-toast,
+.inning-banner.image-toast {
+  width: min(360px, 72%) !important;
+  max-width: none !important;
+  min-width: 0 !important;
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  isolation: isolate;
+}
+
+.timing-badge.image-toast img,
+.inning-banner.image-toast img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 13px 15px rgba(0, 0, 0, 0.58));
+}
+
+.timing-badge.image-toast::after,
+.inning-banner.image-toast::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(105deg, transparent 34%, rgba(255, 255, 255, 0.12) 43%, rgba(255, 255, 255, 0.92) 50%, rgba(255, 225, 138, 0.24) 57%, transparent 66%);
+  background-position: -180% 0;
+  background-repeat: no-repeat;
+  background-size: 42% 100%;
+  -webkit-mask: var(--toast-image) center / contain no-repeat;
+  mask: var(--toast-image) center / contain no-repeat;
+  pointer-events: none;
+}
+
+.image-toast.show img { animation: resultToastNeutral 420ms cubic-bezier(0.2, 0.85, 0.24, 1.2) both; }
+.image-toast.show.toast-positive img { animation-name: resultToastPositive; }
+.image-toast.show.toast-negative img { animation-name: resultToastNegative; }
+.image-toast.show.major-toast img { animation-name: resultToastMajor; animation-duration: 560ms; }
+.image-toast.show::after { animation: resultToastShine 720ms 180ms ease-out both; }
+
+@keyframes resultToastNeutral {
+  0% { opacity: 0; transform: scale(0.82); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes resultToastPositive {
+  0% { opacity: 0; transform: scale(1.35); filter: brightness(1.8) blur(2px); }
+  62% { opacity: 1; transform: scale(0.96); filter: brightness(1.2) blur(0); }
+  100% { transform: scale(1); }
+}
+
+@keyframes resultToastNegative {
+  0% { opacity: 0; transform: translateX(26px) scale(0.92); }
+  35% { opacity: 1; transform: translateX(-9px) scale(1.02); }
+  58% { transform: translateX(6px) scale(1); }
+  78% { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
+
+@keyframes resultToastMajor {
+  0% { opacity: 0; transform: scale(1.7); filter: brightness(2.2) blur(3px); }
+  48% { opacity: 1; transform: scale(0.9); filter: brightness(1.35) blur(0); }
+  70% { transform: scale(1.06); }
+  100% { transform: scale(1); }
+}
+
+@keyframes resultToastShine {
+  from { background-position: -180% 0; }
+  to { background-position: 280% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .image-toast.show img,
+  .image-toast.show::after { animation: none !important; }
+}
