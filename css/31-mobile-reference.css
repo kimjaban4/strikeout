@@ -2221,11 +2221,20 @@
   }
 
   .mobile-strike-zone {
-    gap: 2px;
-    padding: 3px;
+    gap: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
     overflow: visible;
     touch-action: none;
     cursor: crosshair;
+  }
+
+  .mobile-mid-panel,
+  .mobile-mid-panel.is-log-empty {
+    grid-template-rows: minmax(0, 1fr) !important;
+    gap: 0;
   }
 
   .mobile-strike-zone .strike-zone-boundary {

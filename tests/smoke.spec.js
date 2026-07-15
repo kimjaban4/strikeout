@@ -145,11 +145,13 @@ test("uses mobile shell as the main game screen on wide and narrow viewports", a
       const shell = document.querySelector("#mobileGameShell").getBoundingClientRect();
       const parts = [".mobile-game-header", ".mobile-field-scene", ".mobile-mid-panel", ".mobile-control-panel"]
         .map((selector) => document.querySelector(selector).getBoundingClientRect());
+      const log = document.querySelector(".mobile-recent-log-card").getBoundingClientRect();
       return {
         shellVisible: shell.width > 0 && shell.height > 0,
         shellFits: shell.left >= 0 && shell.right <= innerWidth && shell.top >= 0 && shell.bottom <= innerHeight,
         shellWidth: Math.round(shell.width),
         centered: Math.abs(shell.left + shell.width / 2 - innerWidth / 2) <= 1,
+        logHeight: Math.round(log.height),
         ordered: parts.every((rect, index) => index === 0 || rect.top >= parts[index - 1].bottom - 1)
       };
     });
@@ -157,6 +159,7 @@ test("uses mobile shell as the main game screen on wide and narrow viewports", a
     expect(layout.shellFits).toBe(true);
     expect(layout.centered).toBe(true);
     expect(layout.shellWidth).toBe(viewport.width > 760 ? 430 : viewport.width);
+    expect(layout.logHeight).toBeGreaterThan(100);
     expect(layout.ordered).toBe(true);
   }
 });
@@ -174,6 +177,7 @@ test("mobile pitch controls start circular release timing at the touched course"
   await expect(page.locator("#mobileReleasePanel")).toBeHidden();
   await expect(page.locator("#mobileStrikeZone .zone-grid-cell")).toHaveCount(0);
   await expect(page.locator("#mobileStrikeZone .strike-zone-boundary")).toHaveCount(1);
+  await expect(page.locator("#mobileStrikeZone")).toHaveCSS("border-top-width", "0px");
 
   await chooseMobilePitchAndZone(page);
   const target = await page.locator("#mobileStrikeZone .release-aim-target.show").evaluate((element) => ({
