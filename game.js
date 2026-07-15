@@ -364,6 +364,9 @@ function gameFlowDelay(ms) {
   return Math.round(ms / 1.3);
 }
 
+const STRIKE_ZONE_MIN = 0.125;
+const STRIKE_ZONE_MAX = 0.875;
+
 const GAME_TIMING = {
   timingFeedbackDelay: gameFlowDelay(430),
   pitchResultCleanup: gameFlowDelay(900),
@@ -5641,8 +5644,8 @@ function intendedCourse(zone, intent, targetRow = null, targetCol = null, target
   };
 
   if (hasPoint || hasCell) {
-    course.row = hasPoint ? clamp(Math.floor(course.y * 5) - 1, -1, 3) : clamp(Number(targetRow), -1, 3);
-    course.col = hasPoint ? clamp(Math.floor(course.x * 5) - 1, -1, 3) : clamp(Number(targetCol), -1, 3);
+    course.row = hasPoint ? strikeZoneAxisCell(course.y) : clamp(Number(targetRow), -1, 3);
+    course.col = hasPoint ? strikeZoneAxisCell(course.x) : clamp(Number(targetCol), -1, 3);
     if (!hasPoint) {
       course.x = (course.col + 1.5) / 5;
       course.y = (course.row + 1.5) / 5;
@@ -5664,6 +5667,17 @@ function intendedCourse(zone, intent, targetRow = null, targetCol = null, target
   course.y = (course.row + 1.5) / 5;
 
   return course;
+}
+
+function strikeZoneAxisCell(value) {
+  const point = Number(value);
+  if (point < STRIKE_ZONE_MIN) return -1;
+  if (point > STRIKE_ZONE_MAX) return 3;
+  return clamp(Math.floor(((point - STRIKE_ZONE_MIN) / (STRIKE_ZONE_MAX - STRIKE_ZONE_MIN)) * 3), 0, 2);
+}
+
+function isStrikeZonePoint(x, y) {
+  return x >= STRIKE_ZONE_MIN && x <= STRIKE_ZONE_MAX && y >= STRIKE_ZONE_MIN && y <= STRIKE_ZONE_MAX;
 }
 
 function actualCourseLabel(row, col) {
@@ -6007,11 +6021,11 @@ function resolvePitchLocation(pitch, plannedCourse) {
   let x = clamp(aimed.x + Math.cos(angle) * radius, 0.01, 0.99);
   let y = clamp(aimed.y + Math.sin(angle) * radius, 0.01, 0.99);
 
-  if (intent === "strike" && state.consecutiveBalls >= 2 && !(x >= 0.2 && x <= 0.8 && y >= 0.2 && y <= 0.8)) {
+  if (intent === "strike" && state.consecutiveBalls >= 2 && !isStrikeZonePoint(x, y)) {
     const recoveryChance = clamp(0.24 + state.consecutiveBalls * 0.12 + effectiveCommand / 260, 0.32, 0.74);
     if (chance(recoveryChance)) {
-      x = clamp(x, 0.21, 0.79);
-      y = clamp(y, 0.21, 0.79);
+      x = clamp(x, STRIKE_ZONE_MIN + 0.01, STRIKE_ZONE_MAX - 0.01);
+      y = clamp(y, STRIKE_ZONE_MIN + 0.01, STRIKE_ZONE_MAX - 0.01);
     }
   }
   if (release?.mistakeChance && chance(release.mistakeChance)) {
@@ -6026,9 +6040,9 @@ function resolvePitchLocation(pitch, plannedCourse) {
     }
   }
 
-  const row = clamp(Math.floor(y * 5) - 1, -1, 3);
-  const col = clamp(Math.floor(x * 5) - 1, -1, 3);
-  const inZone = x >= 0.2 && x <= 0.8 && y >= 0.2 && y <= 0.8;
+  const row = strikeZoneAxisCell(y);
+  const col = strikeZoneAxisCell(x);
+  const inZone = isStrikeZonePoint(x, y);
 
   return {
     zone,
@@ -11734,12 +11748,12 @@ function handleCoursePointer(container, event) {
   if (!rect.width || !rect.height) return;
   const x = clamp((event.clientX - rect.left) / rect.width, 0.01, 0.99);
   const y = clamp((event.clientY - rect.top) / rect.height, 0.01, 0.99);
-  const targetRow = clamp(Math.floor(y * 5) - 1, -1, 3);
-  const targetCol = clamp(Math.floor(x * 5) - 1, -1, 3);
+  const targetRow = strikeZoneAxisCell(y);
+  const targetCol = strikeZoneAxisCell(x);
   const nearestRow = clamp(targetRow, 0, 2);
   const nearestCol = clamp(targetCol, 0, 2);
   const zone = nearestRow * 3 + nearestCol + 1;
-  const intent = x >= 0.2 && x <= 0.8 && y >= 0.2 && y <= 0.8 ? "strike" : "ball";
+  const intent = isStrikeZonePoint(x, y) ? "strike" : "ball";
   handleCourseClick(zone, targetRow, targetCol, intent, x, y);
 }
 

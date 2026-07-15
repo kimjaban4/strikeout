@@ -200,6 +200,22 @@ test("mobile pitch controls start circular release timing at the touched course"
   expect(parseFloat(target.y)).toBeLessThan(50);
 });
 
+test("the visible strike-zone edge uses the same coordinates as pitch judgement", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  await page.locator("#mobilePitchButtons .mobile-pitch-button").first().click();
+  const zone = page.locator("#mobileStrikeZone");
+  const box = await zone.boundingBox();
+  await zone.click({ position: { x: box.width * 0.85, y: box.height * 0.5 } });
+
+  const target = await page.evaluate(() => ({
+    intent: window.MountPsycho.state.releaseTiming?.intent,
+    row: window.MountPsycho.state.releaseTiming?.targetRow,
+    col: window.MountPsycho.state.releaseTiming?.targetCol
+  }));
+  expect(target).toEqual({ intent: "strike", row: 1, col: 2 });
+});
+
 test("event banners auto-hide after their configured duration", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);

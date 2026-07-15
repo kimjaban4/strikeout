@@ -368,6 +368,9 @@ function gameFlowDelay(ms) {
   return Math.round(ms / 1.3);
 }
 
+MP.STRIKE_ZONE_MIN = 0.125;
+MP.STRIKE_ZONE_MAX = 0.875;
+
 MP.GAME_TIMING = {
   timingFeedbackDelay: gameFlowDelay(430),
   pitchResultCleanup: gameFlowDelay(900),
