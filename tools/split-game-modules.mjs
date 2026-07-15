@@ -76,6 +76,7 @@ function extractMpKeys(constantsBody) {
     if (match) keys.push(match[1]);
   }
   keys.push("state", "els");
+  keys.push("gameFlowDelay");
   timerNames.forEach((name) => keys.push(name));
   return keys;
 }
@@ -105,6 +106,7 @@ function wrapConstants(body) {
     "window.MountPsycho = window.MountPsycho || {};",
     "(function (MP) {",
     body,
+    "MP.gameFlowDelay = gameFlowDelay;",
     "})(window.MountPsycho);",
     ""
   ].join("\n");

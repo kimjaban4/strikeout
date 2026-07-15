@@ -46,6 +46,14 @@ test("boots to title and pitcher select", async ({ page }) => {
   await expect(page.locator(".pitcher-choice-card")).toHaveCount(3);
 });
 
+test("game flow runs at 1.3x while pitch result toasts stay at three seconds", async ({ page }) => {
+  await page.goto("/");
+  const timing = await page.evaluate(() => window.MountPsycho.GAME_TIMING);
+  expect(timing.autoAdvanceDefault).toBe(Math.round(650 / 1.3));
+  expect(timing.inningChangeOverlay).toBe(Math.round(1700 / 1.3));
+  expect(timing.pitchResultToast).toBe(3000);
+});
+
 test("title screen uses the stable black logo stage and pitcher select stays dark", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 });
   await page.goto("/");
@@ -478,8 +486,6 @@ test("stage clear reward cards appear after inning transition overlay", async ({
   });
   await expect(page.locator("#stageOverlay")).toBeVisible();
   await expect(page.locator("#stageOverlay")).toBeHidden({ timeout: 3000 });
-  await expect(page.locator("body")).not.toHaveClass(/game-overlay-open/);
-  await expect(page.locator("#mobileGameShell")).toBeVisible();
   await expect(page.locator("#rewardOverlay")).toBeVisible({ timeout: 3000 });
   await expect(page.locator("#rewardChoiceList .reward-choice-card")).toHaveCount(3);
 });

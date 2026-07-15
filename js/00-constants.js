@@ -364,31 +364,35 @@ MP.dugoutChoiceCatalog = [
   { id: "rival_duel_call", category: "특수형", title: "라이벌 정면승부 선언", desc: "위험 타자를 장타 없이 막으면 핵심 보상이 열리고, 장타를 맞으면 등급이 흔들립니다.", effects: { rivalCoreChoiceBonus: 1, rivalRisk: 1 }, requiresNextInningThreat: true }
 ];
 
+function gameFlowDelay(ms) {
+  return Math.round(ms / 1.3);
+}
+
 MP.GAME_TIMING = {
-  timingFeedbackDelay: 430,
-  pitchResultCleanup: 900,
-  courseFlash: 460,
-  weaknessBanner: 1250,
-  inningTransitionDelay: 900,
-  rewardAfterOutWithTransition: 2400,
-  rewardAfterOut: 1700,
-  autoAdvanceAfterTransition: 1600,
-  autoAdvanceDefault: 650,
-  rewardAutoAdvanceStageTag: 950,
-  rewardAutoAdvanceNormal: 1200,
-  stageTagRewardDelay: 2550,
-  stageEntryDelay: 700,
-  bossEntryBanner: 2050,
-  gameOverHit: 1850,
-  gameOverDefault: 650,
+  timingFeedbackDelay: gameFlowDelay(430),
+  pitchResultCleanup: gameFlowDelay(900),
+  courseFlash: gameFlowDelay(460),
+  weaknessBanner: gameFlowDelay(1250),
+  inningTransitionDelay: gameFlowDelay(900),
+  rewardAfterOutWithTransition: gameFlowDelay(2400),
+  rewardAfterOut: gameFlowDelay(1700),
+  autoAdvanceAfterTransition: gameFlowDelay(1600),
+  autoAdvanceDefault: gameFlowDelay(650),
+  rewardAutoAdvanceStageTag: gameFlowDelay(950),
+  rewardAutoAdvanceNormal: gameFlowDelay(1200),
+  stageTagRewardDelay: gameFlowDelay(2550),
+  stageEntryDelay: gameFlowDelay(700),
+  bossEntryBanner: gameFlowDelay(2050),
+  gameOverHit: gameFlowDelay(1850),
+  gameOverDefault: gameFlowDelay(650),
   pitchResultToast: 3000,
-  eventBannerDefault: 1500,
-  stageOverlayDefault: 2100,
-  stageOverlayBegin: 1900,
-  nextBatterBanner: 850,
-  bossBanner: 1900,
-  inningChangeOverlay: 1700,
-  stageOverlayLong: 2200
+  eventBannerDefault: gameFlowDelay(1500),
+  stageOverlayDefault: gameFlowDelay(2100),
+  stageOverlayBegin: gameFlowDelay(1900),
+  nextBatterBanner: gameFlowDelay(850),
+  bossBanner: gameFlowDelay(1900),
+  inningChangeOverlay: gameFlowDelay(1700),
+  stageOverlayLong: gameFlowDelay(2200)
 };
 
 MP.suspicionStageMultipliers = [0.8, 1, 1.2];
@@ -1083,4 +1087,5 @@ MP.courseZones = {
   9: { row: 2, col: 2, label: "9번 낮은 몸쪽" }
 };
 
+MP.gameFlowDelay = gameFlowDelay;
 })(window.MountPsycho);

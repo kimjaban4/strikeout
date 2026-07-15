@@ -48,6 +48,7 @@ window.MountPsycho = window.MountPsycho || {};
     courseZones,
     state,
     els,
+    gameFlowDelay,
     timingTimer,
     autoAdvanceTimer,
     courseFlashTimer,
@@ -91,7 +92,7 @@ function showTutorialStep(id) {
   if (!step || state.tutorialSeen?.[id]) return;
   state.tutorialSeen = { ...(state.tutorialSeen || {}), [id]: true };
   addLog(step.title, step.text);
-  showEventBanner(step.title.replace("튜토리얼 · ", ""), "reward", 1600);
+  showEventBanner(step.title.replace("튜토리얼 · ", ""), "reward", gameFlowDelay(1600));
 }
 
 function clamp(value, min, max) {
@@ -5961,7 +5962,7 @@ function recordPrePitchStageProgress(result, plannedCourse, pattern) {
   }
   if (pitchMatchesRevealedWeakness(result) && isStrikeLikeResult(result)) {
     stats.weaknessPitchSuccesses += 1;
-    if (result.weaknessFeedback !== "공략 성공") showEventBanner("약점 공략 성공", "reward", 900);
+    if (result.weaknessFeedback !== "공략 성공") showEventBanner("약점 공략 성공", "reward", gameFlowDelay(900));
     result.weaknessFeedback = "공략 성공";
     if (state.atBat) state.atBat.suspicion = clamp((state.atBat.suspicion || 0) - 8, 0, 100);
     if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "약점 태그 활용", "약점 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
@@ -6085,7 +6086,7 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
     if (isOutResult(result)) stats.weaknessOuts += 1;
     if (["calledStrike", "swingingStrike", "inPlayOut", "doublePlay"].includes(result.result)) {
       stats.weaknessPitchSuccesses += 1;
-      if (result.weaknessFeedback !== "공략 성공") showEventBanner("약점 공략 성공", "reward", 900);
+      if (result.weaknessFeedback !== "공략 성공") showEventBanner("약점 공략 성공", "reward", gameFlowDelay(900));
       result.weaknessFeedback = "공략 성공";
       absorbCardPerformance(0.02, 0, { key: "weakness", label: "약점 태그 적중", score: 2, source: "공략", limit: 4 });
       if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "약점 태그 활용", "약점 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
@@ -6447,7 +6448,7 @@ function finishAtBat(title, text, options = {}) {
     MP.rewardTimer = window.setTimeout(() => {
       MP.rewardTimer = null;
       openStageTagReward();
-    }, delayAfterInningTransition(transition, 600));
+    }, delayAfterInningTransition(transition, gameFlowDelay(600)));
     return;
   }
   if (state.awaitingThemeSelection) {
@@ -6455,7 +6456,7 @@ function finishAtBat(title, text, options = {}) {
     MP.rewardTimer = window.setTimeout(() => {
       MP.rewardTimer = null;
       openStageTagReward();
-    }, delayAfterInningTransition(transition, 600));
+    }, delayAfterInningTransition(transition, gameFlowDelay(600)));
     return;
   }
   if (options.rewardReason) {
@@ -6472,7 +6473,7 @@ function finishAtBat(title, text, options = {}) {
     MP.rewardTimer = window.setTimeout(() => {
       MP.rewardTimer = null;
       openDugoutChoiceOverlay();
-    }, delayAfterInningTransition(transition, 450));
+    }, delayAfterInningTransition(transition, gameFlowDelay(450)));
     return;
   }
   if (stageOverlay) {
@@ -7269,12 +7270,12 @@ function addChoiceRevealShine(card, delay = 0) {
           { opacity: 0.9, offset: 0.2 },
           { opacity: 0, transform: "translateX(64%) rotate(4deg)" }
         ],
-        { duration: 520, delay, easing: "ease-out", fill: "both" }
+        { duration: gameFlowDelay(520), delay, easing: "ease-out", fill: "both" }
       )
       .finished.catch(() => {})
       .finally(() => shine.remove());
   } else {
-    window.setTimeout(() => shine.remove(), delay + 540);
+    window.setTimeout(() => shine.remove(), delay + gameFlowDelay(540));
   }
 }
 
@@ -7283,8 +7284,8 @@ function playChoiceRevealAnimation(overlay, cardSelector, options = {}) {
   const cards = [...overlay.querySelectorAll(cardSelector)];
   if (!cards.length) return 0;
   const orderedCards = revealOrder(cards);
-  const duration = options.duration || 720;
-  const stagger = options.stagger || 140;
+  const duration = options.duration || gameFlowDelay(720);
+  const stagger = options.stagger || gameFlowDelay(140);
   const startScale = options.startScale || 0.94;
   resetChoiceRevealAnimation(overlay, cardSelector);
   orderedCards.forEach((card, orderIndex) => {
@@ -7299,7 +7300,7 @@ function playChoiceRevealAnimation(overlay, cardSelector, options = {}) {
   window.requestAnimationFrame(() => {
     window.requestAnimationFrame(() => {
       orderedCards.forEach((card, orderIndex) => {
-        const delay = 80 + orderIndex * stagger;
+        const delay = gameFlowDelay(80) + orderIndex * stagger;
         if (typeof card.animate === "function") {
           const direction = orderIndex % 2 === 0 ? -1 : 1;
           card.animate(
@@ -7337,7 +7338,7 @@ function playChoiceRevealAnimation(overlay, cardSelector, options = {}) {
       });
     });
   });
-  return 80 + (orderedCards.length - 1) * stagger + duration + 80;
+  return gameFlowDelay(160) + (orderedCards.length - 1) * stagger + duration;
 }
 
 function startDugoutRevealAnimation() {
@@ -7355,7 +7356,7 @@ function startDugoutRevealAnimation() {
     els.dugoutOverlay?.classList.remove("is-revealing");
     els.dugoutOverlay?.classList.add("is-revealed");
     resetChoiceRevealAnimation(els.dugoutOverlay, ".dugout-choice-card, .dugout-result-card");
-  }, revealMs || 1100);
+  }, revealMs || gameFlowDelay(1100));
 }
 
 function clearPitcherRevealAnimation() {
@@ -7374,7 +7375,7 @@ function startPitcherRevealAnimation() {
   void els.pitcherSelectOverlay.offsetWidth;
   els.pitcherSelectOverlay.classList.add("is-revealing");
   const revealMs = playChoiceRevealAnimation(els.pitcherSelectOverlay, ".pitcher-choice-card", {
-    duration: 720,
+    duration: gameFlowDelay(720),
     startY: 68,
     startScale: 0.88
   });
@@ -7383,7 +7384,7 @@ function startPitcherRevealAnimation() {
     els.pitcherSelectOverlay?.classList.remove("is-revealing");
     els.pitcherSelectOverlay?.classList.add("is-revealed");
     resetChoiceRevealAnimation(els.pitcherSelectOverlay, ".pitcher-choice-card");
-  }, revealMs || 1100);
+  }, revealMs || gameFlowDelay(1100));
 }
 
 function openDugoutChoiceOverlay() {
@@ -7457,11 +7458,11 @@ function applyDugoutChoice(choice) {
     const hintHtml = choice.hint ? `<p class="log-muted">${escapeHtml(choice.hint)}</p>` : "";
     const effectHtml = effectLines.length ? `<p class="log-muted">효과: ${effectLines.map(escapeHtml).join(" · ")}</p>` : "";
     addLog("덕아웃 판단", `<p>${resultHtml}</p>${hintHtml}${effectHtml}<p class="log-muted">선택: ${escapeHtml(choice.title)}</p>`);
-    showEventBanner(`덕아웃 판단\n${choice.title}`, choice.correct ? "reward" : "walk", 1300);
+    showEventBanner(`덕아웃 판단\n${choice.title}`, choice.correct ? "reward" : "walk", gameFlowDelay(1300));
     return { title: "덕아웃 판단", resultText: choice.resultText || choice.title, effectLines };
   } else {
     addLog("덕아웃 선택", `${choice.title}${rarityNote} · ${choice.desc}`);
-    showEventBanner(`이닝 작전\n${choice.title}`, "reward", 1200);
+    showEventBanner(`이닝 작전\n${choice.title}`, "reward", gameFlowDelay(1200));
     return { title: "덕아웃 작전", resultText: choice.title, effectLines: dugoutEffectSummary(effects, true) };
   }
 }
@@ -7947,7 +7948,7 @@ function startRewardRevealAnimation() {
   void els.rewardOverlay.offsetWidth;
   els.rewardOverlay.classList.add("is-revealing");
   const revealMs = playChoiceRevealAnimation(els.rewardOverlay, ".reward-choice-card", {
-    duration: state.rewardKind === "coreEvolution" ? 780 : 720,
+    duration: gameFlowDelay(state.rewardKind === "coreEvolution" ? 780 : 720),
     startY: state.rewardKind === "coreEvolution" ? 72 : 68,
     startScale: state.rewardKind === "coreEvolution" ? 0.86 : 0.88
   });
@@ -7956,7 +7957,7 @@ function startRewardRevealAnimation() {
     els.rewardOverlay?.classList.remove("is-revealing");
     els.rewardOverlay?.classList.add("is-revealed");
     resetChoiceRevealAnimation(els.rewardOverlay, ".reward-choice-card");
-  }, revealMs || 1100);
+  }, revealMs || gameFlowDelay(1100));
 }
 
 function openRewardDraft(reason, result, kind = "normal") {
@@ -7982,7 +7983,7 @@ function openRewardDraft(reason, result, kind = "normal") {
       openDugoutChoiceOverlay();
       return;
     }
-    scheduleAutoAdvance(900);
+    scheduleAutoAdvance(gameFlowDelay(900));
     return;
   }
   state.rewardUpgradeTokens = buildRewardUpgradeTokens(kind);
@@ -8078,7 +8079,7 @@ function applyReward(index) {
   showEventBanner(
     reward.type === "tag" ? "TAG GET!" : reward.type === "supportUpgrade" ? "TAG UP!" : reward.type === "coreEvolution" ? "EVOLUTION!" : "REWARD GET!",
     "reward",
-    1050
+    gameFlowDelay(1050)
   );
   state.rewardPending = false;
   state.rewardKind = "normal";
@@ -8098,7 +8099,7 @@ function applyReward(index) {
     state.pendingRewardKindAfterCurrent = null;
     window.setTimeout(() => {
       if (!state.gameOver) openRewardDraft(nextKind === "stageCard" ? "스테이지 보상" : "보상", null, nextKind);
-    }, 280);
+    }, gameFlowDelay(280));
     return;
   }
   if (rewardKind === "stageCard") {
@@ -8106,7 +8107,7 @@ function applyReward(index) {
       state.pendingRewardKindAfterCurrent = null;
       window.setTimeout(() => {
         if (!state.gameOver) openCoreTagRewardAfterStageCard();
-      }, 280);
+      }, gameFlowDelay(280));
       return;
     }
     if (state.pendingRunComplete) {
@@ -8133,7 +8134,7 @@ function applyReward(index) {
     }
   }
   if (afterStageOverlay) {
-    queueStageEntryAndTagReward(afterStageOverlay, 450);
+    queueStageEntryAndTagReward(afterStageOverlay, gameFlowDelay(450));
     return;
   }
   if ((state.pendingRunComplete || state.awaitingThemeSelection) && rewardKind === "normal") {
@@ -9521,7 +9522,7 @@ function recordMobileBatterStart(batter) {
 function recordMobileGrowthMark(growthResult) {
   const label = growthMarkLabel(growthResult);
   if (!label) return;
-  showEventBanner(`성장+\n${label}`, "growth", 1400);
+  showEventBanner(`성장+\n${label}`, "growth", gameFlowDelay(1400));
 }
 
 function renderMobileRecentLog() {
