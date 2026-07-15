@@ -19,5 +19,6 @@ export const deployDirectories = [
   "assets/images/pitchers",
   "assets/images/pitches",
   "assets/images/title",
+  "assets/images/ui",
   "css"
 ];
