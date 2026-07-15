@@ -2239,7 +2239,7 @@
 
   .mobile-strike-zone .strike-zone-boundary {
     position: absolute;
-    inset: 20%;
+    inset: 12.5%;
     border: 2px solid rgba(255, 255, 255, 0.9);
     background: rgba(8, 24, 36, 0.12);
     box-shadow: 0 0 0 1px rgba(5, 15, 24, 0.62);

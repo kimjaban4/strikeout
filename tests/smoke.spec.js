@@ -178,6 +178,10 @@ test("mobile pitch controls start circular release timing at the touched course"
   await expect(page.locator("#mobileStrikeZone .zone-grid-cell")).toHaveCount(0);
   await expect(page.locator("#mobileStrikeZone .strike-zone-boundary")).toHaveCount(1);
   await expect(page.locator("#mobileStrikeZone")).toHaveCSS("border-top-width", "0px");
+  const zoneRatio = await page.locator("#mobileStrikeZone").evaluate((zone) =>
+    zone.querySelector(".strike-zone-boundary").getBoundingClientRect().width / zone.getBoundingClientRect().width
+  );
+  expect(zoneRatio).toBeCloseTo(0.75, 1);
 
   await chooseMobilePitchAndZone(page);
   const target = await page.locator("#mobileStrikeZone .release-aim-target.show").evaluate((element) => ({
