@@ -377,7 +377,7 @@ const GAME_TIMING = {
   bossEntryBanner: 2050,
   gameOverHit: 1850,
   gameOverDefault: 650,
-  eventBannerPitchResult: 850,
+  pitchResultToast: 3000,
   eventBannerDefault: 1500,
   stageOverlayDefault: 2100,
   stageOverlayBegin: 1900,
@@ -7415,7 +7415,7 @@ function applyPitchResult(result) {
   }
 
   const majorText = majorResultText(result);
-  if (majorText) showEventBanner(majorText, majorResultTone(result), GAME_TIMING.eventBannerPitchResult);
+  if (majorText) showEventBanner(majorText, majorResultTone(result), GAME_TIMING.pitchResultToast);
 
   const swingFeedback = swingFeedbackText(result);
   const call = pitchCall(result);
@@ -11795,6 +11795,10 @@ function renderResultToast(element, text) {
 }
 
 function setTiming(text, tone) {
+  if (timingTimer) {
+    window.clearTimeout(timingTimer);
+    timingTimer = null;
+  }
   if (MP.timingDismissHandler) {
     window.removeEventListener("pointerdown", MP.timingDismissHandler);
     MP.timingDismissHandler = null;
@@ -11811,13 +11815,14 @@ function setTiming(text, tone) {
   window.setTimeout(() => {
     if (MP.timingDismissHandler) window.addEventListener("pointerdown", MP.timingDismissHandler, { once: true });
   }, 0);
+  timingTimer = window.setTimeout(hideTiming, GAME_TIMING.pitchResultToast);
 }
 
 function queueTiming(text, tone) {
   if (timingTimer) window.clearTimeout(timingTimer);
   timingTimer = window.setTimeout(() => {
-    setTiming(text, tone);
     timingTimer = null;
+    setTiming(text, tone);
   }, GAME_TIMING.timingFeedbackDelay);
 }
 
@@ -12451,6 +12456,7 @@ MP.debug = {
   beginReleaseTiming,
   finishReleaseTiming,
   cancelReleaseTiming,
+  setTiming,
   buildReleaseTimingChallenge,
   gradeReleaseTiming,
   modelReleaseForBot,

@@ -381,7 +381,7 @@ MP.GAME_TIMING = {
   bossEntryBanner: 2050,
   gameOverHit: 1850,
   gameOverDefault: 650,
-  eventBannerPitchResult: 850,
+  pitchResultToast: 3000,
   eventBannerDefault: 1500,
   stageOverlayDefault: 2100,
   stageOverlayBegin: 1900,

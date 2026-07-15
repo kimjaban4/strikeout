@@ -202,6 +202,17 @@ test("event banners auto-hide after their configured duration", async ({ page })
   await expect(page.locator("#mobileInningBanner")).toBeHidden();
 });
 
+test("pitch result toasts auto-hide after three seconds", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+
+  await page.evaluate(() => window.MountPsycho.debug.setTiming("STRIKE", "warn"));
+  await expect(page.locator("#mobileTimingBadge")).toHaveClass(/show/);
+  await page.waitForTimeout(2500);
+  await expect(page.locator("#mobileTimingBadge")).toHaveClass(/show/);
+  await expect(page.locator("#mobileTimingBadge")).not.toHaveClass(/show/, { timeout: 1000 });
+});
+
 test("mobile throw records a log entry", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);

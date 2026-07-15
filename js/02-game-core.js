@@ -6138,7 +6138,7 @@ function applyPitchResult(result) {
   }
 
   const majorText = majorResultText(result);
-  if (majorText) showEventBanner(majorText, majorResultTone(result), GAME_TIMING.eventBannerPitchResult);
+  if (majorText) showEventBanner(majorText, majorResultTone(result), GAME_TIMING.pitchResultToast);
 
   const swingFeedback = swingFeedbackText(result);
   const call = pitchCall(result);
@@ -10518,6 +10518,10 @@ function renderResultToast(element, text) {
 }
 
 function setTiming(text, tone) {
+  if (MP.timingTimer) {
+    window.clearTimeout(MP.timingTimer);
+    MP.timingTimer = null;
+  }
   if (MP.timingDismissHandler) {
     window.removeEventListener("pointerdown", MP.timingDismissHandler);
     MP.timingDismissHandler = null;
@@ -10534,13 +10538,14 @@ function setTiming(text, tone) {
   window.setTimeout(() => {
     if (MP.timingDismissHandler) window.addEventListener("pointerdown", MP.timingDismissHandler, { once: true });
   }, 0);
+  MP.timingTimer = window.setTimeout(hideTiming, GAME_TIMING.pitchResultToast);
 }
 
 function queueTiming(text, tone) {
   if (MP.timingTimer) window.clearTimeout(MP.timingTimer);
   MP.timingTimer = window.setTimeout(() => {
-    setTiming(text, tone);
     MP.timingTimer = null;
+    setTiming(text, tone);
   }, GAME_TIMING.timingFeedbackDelay);
 }
 
@@ -11174,6 +11179,7 @@ MP.debug = {
   beginReleaseTiming,
   finishReleaseTiming,
   cancelReleaseTiming,
+  setTiming,
   buildReleaseTimingChallenge,
   gradeReleaseTiming,
   modelReleaseForBot,
