@@ -172,8 +172,8 @@ test("mobile pitch controls start circular release timing at the touched course"
   await expect(page.locator(".mobile-duel-read-card")).not.toContainText(/추천|예측/);
   await expect(page.locator("#mobileDuelReadRisk")).toHaveText(/안정|경계|위험/);
   await expect(page.locator("#mobileReleasePanel")).toBeHidden();
-  await expect(page.locator("#mobileStrikeZone .zone-grid-cell")).toHaveCount(25);
-  await expect(page.locator("#mobileStrikeZone .zone-grid-cell.is-strike")).toHaveCount(9);
+  await expect(page.locator("#mobileStrikeZone .zone-grid-cell")).toHaveCount(0);
+  await expect(page.locator("#mobileStrikeZone .strike-zone-boundary")).toHaveCount(1);
 
   await chooseMobilePitchAndZone(page);
   const target = await page.locator("#mobileStrikeZone .release-aim-target.show").evaluate((element) => ({

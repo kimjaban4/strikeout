@@ -9058,13 +9058,8 @@ function renderMobileCountDots(container, value, total) {
   container.innerHTML = Array.from({ length: total }, (_, index) => `<i class="${index < value ? "is-on" : ""}"></i>`).join("");
 }
 
-function renderZoneGridMarkup() {
-  return Array.from({ length: 25 }, (_, index) => {
-    const row = Math.floor(index / 5) - 1;
-    const col = (index % 5) - 1;
-    const inside = row >= 0 && row <= 2 && col >= 0 && col <= 2;
-    return `<div class="zone-grid-cell${inside ? " is-strike" : ""}" aria-hidden="true"></div>`;
-  }).join("");
+function renderStrikeZoneGuideMarkup() {
+  return '<div class="strike-zone-boundary" aria-hidden="true"></div>';
 }
 
 function releaseAimMarkup() {
@@ -9077,7 +9072,7 @@ function releaseAimMarkup() {
 
 function renderMobileZones() {
   if (!els.mobileStrikeZone) return;
-  els.mobileStrikeZone.innerHTML = `${renderZoneGridMarkup()}${releaseAimMarkup()}<div class="pitch-marker"><span></span></div>`;
+  els.mobileStrikeZone.innerHTML = `${renderStrikeZoneGuideMarkup()}${releaseAimMarkup()}<div class="pitch-marker"><span></span></div>`;
   renderPitchMarker(els.mobileStrikeZone);
 }
 
@@ -10367,7 +10362,7 @@ function renderCourseControls() {
   els.strikeZone.classList.add("ball-mode", "wide-target-mode");
 
   els.strikeZone.innerHTML = `
-    ${renderZoneGridMarkup()}
+    ${renderStrikeZoneGuideMarkup()}
     ${releaseAimMarkup()}
     <div class="zone-result"></div>
     <div class="pitch-marker"><span></span></div>
