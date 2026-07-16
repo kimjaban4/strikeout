@@ -200,20 +200,33 @@ test("mobile pitch controls start circular release timing at the touched course"
   expect(parseFloat(target.y)).toBeLessThan(50);
 });
 
-test("the visible strike-zone edge uses the same coordinates as pitch judgement", async ({ page }) => {
+test("both visible strike-zone edges keep the correct inside and outside labels", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
+  await page.evaluate(() => {
+    Math.random = () => 0;
+  });
   await page.locator("#mobilePitchButtons .mobile-pitch-button").first().click();
   const zone = page.locator("#mobileStrikeZone");
   const box = await zone.boundingBox();
   await zone.click({ position: { x: box.width * 0.85, y: box.height * 0.5 } });
+  const inside = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.releaseTiming.startedAt = Date.now() - MP.state.releaseTiming.duration / 4;
+    MP.debug.finishReleaseTiming();
+    return { inZone: MP.state.lastLocation.inZone, label: MP.state.lastLocation.actualLabel };
+  });
+  expect(inside).toEqual({ inZone: true, label: "몸쪽" });
 
-  const target = await page.evaluate(() => ({
-    intent: window.MountPsycho.state.releaseTiming?.intent,
-    row: window.MountPsycho.state.releaseTiming?.targetRow,
-    col: window.MountPsycho.state.releaseTiming?.targetCol
-  }));
-  expect(target).toEqual({ intent: "strike", row: 1, col: 2 });
+  await page.locator("#mobilePitchButtons .mobile-pitch-button").first().click();
+  await zone.click({ position: { x: box.width * 0.15, y: box.height * 0.5 } });
+  const outside = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.releaseTiming.startedAt = Date.now() - MP.state.releaseTiming.duration / 4;
+    MP.debug.finishReleaseTiming();
+    return { inZone: MP.state.lastLocation.inZone, label: MP.state.lastLocation.actualLabel };
+  });
+  expect(outside).toEqual({ inZone: true, label: "바깥쪽" });
 });
 
 test("event banners auto-hide after their configured duration", async ({ page }) => {

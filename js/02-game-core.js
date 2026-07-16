@@ -647,7 +647,7 @@ function batterHasTag(batter, tagId) {
 
 function isInsideMistake(location) {
   const side = locationSideFromRowCol(location.row, location.col);
-  return side === "inside" && location.inZone && (location.centerMistake || location.unintendedCenter || location.col <= 0);
+  return side === "inside" && location.inZone && location.col >= 2;
 }
 
 function coreTagFitsRepertoire(tag, repertoire = []) {
@@ -2470,10 +2470,10 @@ function classifyBallIntent(zone, intent, selectedPlan = "", targetRow = null, t
   if (ballIntentPlans[selectedPlan]) return selectedPlan;
   const row = Number.isFinite(Number(targetRow)) ? Number(targetRow) : courseZones[zone]?.row ?? 1;
   const col = Number.isFinite(Number(targetCol)) ? Number(targetCol) : courseZones[zone]?.col ?? 1;
-  if (col < 0) return "brush";
+  if (col > 2) return "brush";
   if (row > 2) return "fishing";
   if (row < 0) return "show";
-  if (col > 2) return "waste";
+  if (col < 0) return "waste";
   return "waste";
 }
 
@@ -3719,7 +3719,7 @@ function recommendationForCategory(category, batter) {
   if (category === "breaking") {
     return {
       title: `${pitchName}로 헛스윙 유도`,
-      text: "변화구를 던질 수 있는 상황입니다. 히터박스 오른쪽 낮은 코스(바깥쪽)가 가장 안정적입니다."
+      text: "변화구를 던질 수 있는 상황입니다. 히터박스 왼쪽 낮은 코스(바깥쪽)가 가장 안정적입니다."
     };
   }
   return {
@@ -4414,8 +4414,8 @@ function actualCourseLabel(row, col) {
 function ballTakeDetail(location) {
   if (location.row < 0) return "높은 볼을 골라냈습니다.";
   if (location.row > 2) return "낮은 볼을 골라냈습니다.";
-  if (location.col < 0) return "몸쪽 볼을 골라냈습니다.";
-  if (location.col > 2) return "바깥쪽 볼을 골라냈습니다.";
+  if (location.col < 0) return "바깥쪽 볼을 골라냈습니다.";
+  if (location.col > 2) return "몸쪽 볼을 골라냈습니다.";
   return "존에 걸친 공을 지켜봤습니다.";
 }
 
