@@ -264,7 +264,9 @@ test("mobile throw records a log entry", async ({ page }) => {
   await expect(page.locator("#mobileRecentLog .is-batter-marker").first()).toContainText(/번 타자/);
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first()).toContainText(/구/);
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first().locator(".mobile-pitch-zone")).toHaveText(/바깥|몸쪽|중앙|높게|낮게/);
-  await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row small").first()).toBeVisible();
+  await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row small").first()).toHaveText(
+    /끝까지 보고 골랐습니다|그대로 지켜봤습니다|배트가 먼저 나왔습니다|배트가 늦게 나왔습니다|배트가 공을 놓쳤습니다|가까스로 걷어냈습니다|배트에 걸렸습니다|땅볼을 쳤습니다|뜬공을 쳤습니다|약한 타구를 쳤습니다|타구를 정확히 맞혔습니다|강하게 받아쳤습니다|완벽하게 받아쳤습니다|수비가 처리하지 못했습니다/
+  );
   await page.locator("#mobileRecentLogMore").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
   await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toBeVisible({ timeout: 8000 });

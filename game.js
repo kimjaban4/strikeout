@@ -10722,31 +10722,32 @@ function mobilePitchTimingSide(result) {
 }
 
 function mobilePitchReactionText(result) {
-  if (result?.displayReaction) return result.displayReaction;
-  if (result.result === "calledStrike") return "타자가 지켜봤습니다";
-  if (result.result === "ball") return "타자가 골라냈습니다";
+  if (result.result === "calledStrike") return "그대로 지켜봤습니다";
+  if (result.result === "ball") return "끝까지 보고 골랐습니다";
   if (result.result === "swingingStrike") {
     const side = mobilePitchTimingSide(result);
-    if (side === "early") return "타자가 먼저 배트를 냈습니다";
-    if (side === "late") return "타자가 공을 늦게 따라갔습니다";
-    return "노린 공과 달라 배트가 헛나갔습니다";
+    if (side === "early") return "배트가 먼저 나왔습니다";
+    if (side === "late") return "배트가 늦게 나왔습니다";
+    return "배트가 공을 놓쳤습니다";
   }
   if (result.result === "foul") {
-    if (result.foulRead?.label) return result.foulRead.label;
+    if (String(result.countBefore || "").endsWith("-2")) return "가까스로 걷어냈습니다";
     const side = mobilePitchTimingSide(result);
-    if (side === "early") return "타자가 먼저 맞혔습니다";
-    if (side === "late") return "타자가 늦게 따라왔습니다";
-    return "정타는 아니지만 배트에 맞혔습니다";
+    if (side === "early") return "배트가 먼저 나왔습니다";
+    if (side === "late") return "배트가 늦게 나왔습니다";
+    return "배트에 걸렸습니다";
   }
   if (result.result === "inPlayOut") {
-    return /GROUND/i.test(result.outLabel || "") ? "땅볼을 유도했습니다" : "약한 타구를 유도했습니다";
+    if (/GROUND/i.test(result.outLabel || "")) return "땅볼을 쳤습니다";
+    if (/FLY/i.test(result.outLabel || "")) return "뜬공을 쳤습니다";
+    return "약한 타구를 쳤습니다";
   }
-  if (result.result === "doublePlay") return "땅볼을 유도했습니다";
-  if (result.result === "single") return "타이밍을 맞췄습니다";
-  if (result.result === "double") return "강한 타구를 허용했습니다";
-  if (result.result === "homerun") return "타자가 완벽하게 때려냈습니다";
+  if (result.result === "doublePlay") return "땅볼을 쳤습니다";
+  if (result.result === "single") return "타구를 정확히 맞혔습니다";
+  if (result.result === "double") return "강하게 받아쳤습니다";
+  if (result.result === "homerun") return "완벽하게 받아쳤습니다";
   if (result.result === "error") return "수비가 처리하지 못했습니다";
-  return "타자 반응을 확인했습니다";
+  return "타구 결과를 확인했습니다";
 }
 
 function mobilePitchResultTone(result) {
