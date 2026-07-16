@@ -92,6 +92,30 @@ test("title screen uses the stable black logo stage and pitcher select stays dar
   expect(pitcherSelect.pitchBadges).toBeGreaterThanOrEqual(2);
 });
 
+test("stage intro presents the briefing before a full-width start button", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await startFromTitle(page);
+  await page.locator(".pitcher-choice-card").first().click();
+
+  await expect(page.locator("#stageOverlay")).toHaveClass(/is-stage-intro/);
+  await expect(page.locator("#stageTitle")).toContainText("STAGE 1");
+  await expect(page.locator("#stageThemePanel")).toContainText(/타선 성향|라이벌|경기 브리핑|목표|주의/);
+  const layout = await page.evaluate(() => {
+    const box = document.querySelector(".stage-overlay-box").getBoundingClientRect();
+    const briefing = document.querySelector(".stage-briefing").getBoundingClientRect();
+    const button = document.querySelector("#stageStartButton").getBoundingClientRect();
+    return {
+      fits: box.left >= 0 && box.right <= innerWidth && box.bottom <= innerHeight,
+      buttonGap: Math.round(button.top - briefing.bottom),
+      buttonWidth: Math.round(button.width),
+      boxWidth: Math.round(box.width)
+    };
+  });
+  expect(layout.fits).toBe(true);
+  expect(layout.buttonGap).toBeLessThanOrEqual(24);
+  expect(layout.buttonWidth).toBe(layout.boxWidth);
+});
+
 test("mobile header separates count strip from mission and opens menu", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);

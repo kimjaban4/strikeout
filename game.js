@@ -11927,6 +11927,7 @@ function hideEventBanner() {
 
 function showStageOverlay(title, subtitle, duration = GAME_TIMING.stageOverlayDefault) {
   if (!els.stageOverlay) return;
+  els.stageOverlay.classList.remove("is-stage-intro");
   els.stageTitle.textContent = title;
   els.stageTitle.classList.remove("stage-title-split");
   els.stageSubtitle.textContent = subtitle;
@@ -11975,22 +11976,32 @@ function showStageThemeOverlay(stageNumber, innings, themeId = state.stageThemeI
   const theme = MP.getStageTheme ? MP.getStageTheme(themeId || state.stageThemeId) : null;
   const run = ensureStageRunState();
   const rivalName = run.rival?.name || state.lineup?.find((batter) => batter.isRival)?.name || "-";
+  const briefing = String(config.rival?.goalText || "").split(". ").map((text) => text.replace(/\.$/, "")).filter(Boolean);
+  const goalText = briefing[0] || "라이벌 타선을 막으세요";
+  const warningText = briefing.slice(1).join(". ") || theme?.dangerText || "실투와 반복 패턴을 조심하세요";
+  els.stageOverlay.classList.add("is-stage-intro");
   els.stageTitle.classList.add("stage-title-split");
   els.stageTitle.innerHTML = `
     <span class="stage-number-line">STAGE ${stageNumber || currentStageNumber()}</span>
     <em class="stage-lineup-line">${escapeHtml(config.name)}</em>
   `;
   els.stageSubtitle.innerHTML = `
-    <strong class="stage-rule-innings">${innings || currentStageInnings()}이닝</strong>
-    <span class="stage-rule-limit">실점 제한 ${currentStageRunLimit()}</span>
+    <strong class="stage-rule-innings"><b>${innings || currentStageInnings()}</b>이닝</strong>
+    <span class="stage-rule-limit">실점 제한 <b>${currentStageRunLimit()}</b></span>
   `;
   if (els.stageThemePanel && theme) {
     els.stageThemePanel.hidden = false;
     els.stageThemePanel.innerHTML = `
-      <p class="stage-theme-summary"><span>스테이지 테마</span><strong>${escapeHtml(theme.name)}</strong></p>
-      <p class="stage-theme-summary"><span>라이벌</span><strong>${escapeHtml(rivalName)}</strong></p>
-      <p class="stage-theme-note">${escapeHtml(config.rival?.goalText || "")}</p>
-      <p class="stage-theme-note">${escapeHtml(config.themeText || "")}</p>
+      <div class="stage-opponent-panel">
+        <p class="stage-theme-summary"><span>타선 성향</span><strong>${escapeHtml(theme.name)}</strong></p>
+        <p class="stage-theme-summary"><span>라이벌</span><strong>${escapeHtml(rivalName)}</strong></p>
+      </div>
+      <section class="stage-briefing">
+        <h2>경기 브리핑</h2>
+        <p class="stage-briefing-row"><b>목표</b><span>${escapeHtml(goalText)}</span></p>
+        <p class="stage-briefing-row is-warning"><b>주의</b><span>${escapeHtml(warningText)}</span></p>
+        <p class="stage-theme-note">${escapeHtml(config.themeText || "")}</p>
+      </section>
     `;
   } else if (els.stageThemePanel) {
     els.stageThemePanel.hidden = true;
@@ -12007,6 +12018,7 @@ function startStageFromOverlay() {
   state.stageJustAdvanced = false;
   state.waitingNextBatter = false;
   els.stageOverlay?.classList.remove("show");
+  els.stageOverlay?.classList.remove("is-stage-intro");
   if (els.stageOverlay) els.stageOverlay.hidden = true;
   if (!state.dugoutPending && !state.atBat) startAtBat();
   render();
