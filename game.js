@@ -5835,6 +5835,9 @@ function buildReleaseTimingChallenge(pitch, plannedCourse) {
   const goodSize = clamp((0.24 + (control - 55) * 0.0034 - pressure * 0.0024) * RELEASE_TIMING_ZONE_SCALE, 0.1, 0.44);
   const baseDuration = clamp(1220 + (control - 55) * 8 + (mental - 55) * 2 - pressure * 9, 660, 1640);
   const duration = Math.round(baseDuration / RELEASE_TIMING_SPEED);
+  const controlShake = Math.max(0, (68 - control) * 0.35);
+  const pressureShake = pressure >= 32 ? 2 + (pressure - 32) * 0.08 : 0;
+  const shakeAmount = clamp(Math.max(controlShake, pressureShake), 0, 9);
   return {
     active: true,
     pitchId: pitch.id,
@@ -5853,7 +5856,8 @@ function buildReleaseTimingChallenge(pitch, plannedCourse) {
     pressureReasons,
     control,
     mental,
-    shake: pressure >= 32,
+    shake: shakeAmount >= 1,
+    shakeAmount,
     plannedCourse
   };
 }
@@ -10362,7 +10366,7 @@ function releaseAimMarkup() {
   if (!active) return '<div class="release-aim-target" aria-hidden="true"><i class="release-aim-ring"></i></div>';
   const x = clamp(Number(active.targetX) || 0.5, 0.01, 0.99) * 100;
   const y = clamp(Number(active.targetY) || 0.5, 0.01, 0.99) * 100;
-  return `<div class="release-aim-target show" style="--aim-x:${x}%;--aim-y:${y}%" aria-hidden="true"><i class="release-aim-ring"></i></div>`;
+  return `<div class="release-aim-target show${active.shake ? " is-shaking" : ""}" style="--aim-x:${x}%;--aim-y:${y}%;--aim-shake:${active.shakeAmount || 0}px" aria-hidden="true"><i class="release-aim-ring"></i></div>`;
 }
 
 function renderMobileZones() {

@@ -186,18 +186,31 @@ test("mobile pitch controls start circular release timing at the touched course"
   await expect(page.locator("#mobileStrikeZone .zone-grid-cell")).toHaveCount(0);
   await expect(page.locator("#mobileStrikeZone .strike-zone-boundary")).toHaveCount(1);
   await expect(page.locator("#mobileStrikeZone")).toHaveCSS("border-top-width", "0px");
-  const zoneRatio = await page.locator("#mobileStrikeZone").evaluate((zone) =>
-    zone.querySelector(".strike-zone-boundary").getBoundingClientRect().width / zone.getBoundingClientRect().width
-  );
-  expect(zoneRatio).toBeCloseTo(0.75, 1);
+  const zoneGuide = await page.locator("#mobileStrikeZone").evaluate((zone) => {
+    const boundary = zone.querySelector(".strike-zone-boundary");
+    return {
+      ratio: boundary.getBoundingClientRect().width / zone.getBoundingClientRect().width,
+      gradients: (getComputedStyle(boundary).backgroundImage.match(/linear-gradient/g) || []).length
+    };
+  });
+  expect(zoneGuide.ratio).toBeCloseTo(0.75, 1);
+  expect(zoneGuide.gradients).toBe(2);
+
+  await page.evaluate(() => {
+    window.MountPsycho.state.pitcher.stats.제구 = 40;
+  });
 
   await chooseMobilePitchAndZone(page);
   const target = await page.locator("#mobileStrikeZone .release-aim-target.show").evaluate((element) => ({
     x: element.style.getPropertyValue("--aim-x"),
-    y: element.style.getPropertyValue("--aim-y")
+    y: element.style.getPropertyValue("--aim-y"),
+    shake: parseFloat(element.style.getPropertyValue("--aim-shake")),
+    animation: getComputedStyle(element).animationName
   }));
   expect(parseFloat(target.x)).toBeGreaterThan(50);
   expect(parseFloat(target.y)).toBeLessThan(50);
+  expect(target.shake).toBeGreaterThanOrEqual(8);
+  expect(target.animation).toBe("releaseAimShake");
 });
 
 test("both visible strike-zone edges keep the correct inside and outside labels", async ({ page }) => {
