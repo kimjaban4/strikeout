@@ -42,6 +42,17 @@
     button.secondary { background: #276e82; }
     button.warn { background: #8c4a18; }
     button:disabled { opacity: 0.5; cursor: wait; }
+    .stage-picker { display: grid; gap: 6px; font-size: 12px; font-weight: 900; }
+    select {
+      width: 100%;
+      min-height: 42px;
+      padding: 0 10px;
+      border: 1px solid rgba(31, 65, 96, 0.28);
+      border-radius: 8px;
+      background: #fff;
+      color: #142438;
+      font-weight: 900;
+    }
     .server-link {
       display: none;
       min-height: 42px;
@@ -91,12 +102,33 @@
   <aside class="panel">
     <h1>스테이지 플로우 테스트</h1>
     <p>게임을 다시 플레이하지 않고 종료/보상/덕아웃 흐름을 빠르게 확인합니다.</p>
+    <p><b>QA 20260721 · 시작/핵심태그/직사각형 존</b></p>
+    <button class="secondary" data-action="titleScreen">시작 화면 확인</button>
+    <button class="secondary" data-action="coreTagScreen">핵심태그 선택 확인</button>
+    <button class="secondary" data-action="themeScreen">상대 타선 선택 확인</button>
     <button data-action="prepare">게임 준비</button>
+    <label class="stage-picker" for="stageSelect">
+      확인할 STAGE
+      <select id="stageSelect">
+        <option value="0">GAME 1 · STAGE 1 · 1회</option>
+        <option value="1">GAME 1 · STAGE 2 · 2회</option>
+        <option value="2">GAME 1 · STAGE 3 · 3회</option>
+        <option value="3">GAME 2 · STAGE 4 · 1회</option>
+        <option value="4">GAME 2 · STAGE 5 · 2회</option>
+        <option value="5">GAME 2 · STAGE 6 · 3회</option>
+        <option value="6">GAME 3 · STAGE 7 · 1회</option>
+        <option value="7">GAME 3 · STAGE 8 · 2회</option>
+        <option value="8">GAME 3 · STAGE 9 · 3회</option>
+        <option value="9">GAME 4 · STAGE 10 · 1회</option>
+        <option value="10">GAME 4 · STAGE 11 · 2회</option>
+        <option value="11">GAME 4 · STAGE 12 · 3회</option>
+      </select>
+    </label>
+    <button data-action="openStage">선택 STAGE 바로 시작</button>
+    <button class="warn" data-action="naturalStageEnd">3아웃으로 STAGE 종료</button>
     <button class="secondary" data-action="stageReward">스테이지 보상 바로 열기</button>
-    <button class="secondary" data-action="naturalStageEnd">자연 종료 보상</button>
-    <button class="secondary" data-action="inningChange">이닝 교체</button>
     <button class="secondary" data-action="dugout">덕아웃 이벤트</button>
-    <button class="warn" data-action="runComplete">런 클리어 보상</button>
+    <button class="warn" data-action="runComplete">STAGE 12 최종 정산</button>
     <button data-action="reload">새로고침</button>
     <a class="server-link" href="http://127.0.0.1:4173/stage-debug.html">로컬 서버 주소 열기</a>
     <div id="status" class="status">대기 중</div>
@@ -109,11 +141,32 @@
   <script>
     const frame = document.querySelector("#gameFrame");
     const statusBox = document.querySelector("#status");
+    const stageSelect = document.querySelector("#stageSelect");
     const localServerUrl = "http://127.0.0.1:4173/stage-debug.html";
     const fileMode = window.location.protocol === "file:";
+    let lastMessage = "대기 중";
 
     function log(message) {
-      statusBox.textContent = `${new Date().toLocaleTimeString()}\n${message}`;
+      lastMessage = message;
+      renderStatus();
+    }
+
+    function renderStatus() {
+      let snapshot = "게임 준비 전";
+      try {
+        const MP = game();
+        if (MP?.state?.pitcher) {
+          const state = MP.state;
+          snapshot = [
+            `GAME ${MP.debug.currentGameNumber()} · STAGE ${MP.debug.currentStageNumber()} · ${MP.debug.currentGameInning()}회`,
+            `실점 ${state.runs} · 타순 ${state.batterIndex + 1}번 · 보상 ${MP.debug.stageRewardKind()}`,
+            `팀 기억 ${state.patternMemory?.pitches?.length || 0}개`
+          ].join("\n");
+        }
+      } catch (_) {
+        snapshot = fileMode ? "로컬 서버 실행 필요" : "게임 화면 로딩 중";
+      }
+      statusBox.textContent = `${new Date().toLocaleTimeString()}\n${lastMessage}\n\n${snapshot}`;
     }
 
     function sleep(ms) {
@@ -172,12 +225,13 @@
     async function prepareGame() {
       await waitFor(() => game()?.debug);
       const MP = game();
-      if (MP.state?.screenPhase === "game" && MP.state?.pitcher) return MP;
-      await clickWhenReady("#titleStartButton");
+      if (MP.state?.pitcher && MP.state?.lineup?.length) return MP;
+      if (visibleElement("#titleStartButton")) await clickWhenReady("#titleStartButton");
       await clickWhenReady(".pitcher-choice-card", () => {
         const overlay = doc().querySelector("#pitcherSelectOverlay");
         return overlay && !overlay.hidden && !overlay.classList.contains("is-revealing");
       });
+      await clickWhenReady("#pitcherChoiceConfirm");
       await clickWhenReady("#stageStartButton", () => {
         const overlay = doc().querySelector("#stageOverlay");
         return overlay && !overlay.hidden;
@@ -188,6 +242,56 @@
         doc().querySelector("[data-dugout-continue]")?.click();
       }
       await waitFor(() => MP.state?.pitcher && MP.state?.lineup?.length);
+      return MP;
+    }
+
+    async function freshGame() {
+      await new Promise((resolve) => {
+        frame.addEventListener("load", resolve, { once: true });
+        frame.src = `index.html?debug=stage&v=${Date.now()}`;
+      });
+      return prepareGame();
+    }
+
+    async function titleScreen() {
+      await new Promise((resolve) => {
+        frame.addEventListener("load", resolve, { once: true });
+        frame.src = `index.html?debug=stage&v=${Date.now()}`;
+      });
+      log("시작 화면을 열었습니다.");
+    }
+
+    async function coreTagScreen() {
+      await titleScreen();
+      await clickWhenReady("#titleStartButton");
+      await waitFor(() => visibleElement(".pitcher-choice-card"));
+      log("핵심태그 선택 화면을 열었습니다.");
+    }
+
+    async function themeScreen() {
+      const MP = await prepareGame();
+      MP.state.pendingThemeChoices = MP.rollThemeChoices(3, MP.state.pitcher);
+      MP.state.awaitingThemeSelection = true;
+      MP.debug.openThemeSelectOverlay();
+      log("상대 타선 선택 화면을 열었습니다.");
+    }
+
+    async function openSelectedStage() {
+      const targetStage = Number(stageSelect.value);
+      const MP = await freshGame();
+      for (let stage = 0; stage < targetStage; stage += 1) {
+        MP.debug.advanceStage(MP.state.stageThemeId);
+      }
+      MP.state.awaitingStageStart = false;
+      MP.state.pendingStageOverlay = null;
+      MP.state.pendingStageTransition = false;
+      MP.state.pendingStageRewardKind = "";
+      MP.state.pendingRunComplete = false;
+      MP.state.dugoutPending = false;
+      MP.state.waitingNextBatter = false;
+      if (!MP.state.atBat) MP.debug.startAtBat();
+      MP.debug.render();
+      log(`STAGE ${targetStage + 1}을 바로 시작했습니다.`);
       return MP;
     }
 
@@ -202,11 +306,11 @@
       run.stagePerformanceEvents = labels.map((label, index) => ({
         key: `debug:${index}`,
         label,
-        score: 1,
+        score: 2,
         source: "테스트"
       }));
       run.rewardBoost.absorbed = labels.length;
-      run.rewardBoost.performanceScore = labels.length;
+      run.rewardBoost.performanceScore = labels.length * 2;
       run.rewardBoost.rareBonus = Math.max(run.rewardBoost.rareBonus || 0, 0.4);
       run.rewardBoost.coreBonus = Math.max(run.rewardBoost.coreBonus || 0, 0.08);
       MP.state.pitcher.rewardHistory.conditionTypesByStage = ["pitchUpgrade", "weaknessMitigation", "bonusTag"].map((type) => ({
@@ -249,18 +353,9 @@
       log("성과 20개 샘플을 넣고 실제 addOut 경로로 종료했습니다.");
     }
 
-    async function inningChange() {
-      const MP = await prepareGame();
-      MP.state.inning = Math.min(MP.state.inning, MP.debug.currentStageInnings() - 1 || 1);
-      MP.state.outs = 2;
-      MP.debug.addOut();
-      MP.debug.finishAtBat("GROUND OUT!", "테스트 이닝 종료");
-      log("3아웃 이닝 교체 흐름을 실행했습니다.");
-    }
-
     async function dugout() {
       const MP = await prepareGame();
-      MP.state.pendingDugoutChoices = MP.debug.generateDugoutChoices();
+      MP.state.pendingDugoutChoices = MP.debug.generateDugoutChoices({ force: true });
       MP.state.dugoutPending = true;
       MP.state.dugoutBeforeAtBat = true;
       MP.state.dugoutAdvanceBatterOnConfirm = false;
@@ -269,9 +364,9 @@
     }
 
     async function runComplete() {
-      const MP = await prepareGame();
+      stageSelect.value = "11";
+      const MP = await openSelectedStage();
       seedStageRewardDemo(MP);
-      MP.state.stageIndex = 2;
       MP.state.inning = MP.debug.currentStageInnings();
       MP.state.outs = 2;
       withCommonBaseCards(() => {
@@ -290,7 +385,9 @@
       log("테스트 화면을 새로 불러옵니다.");
     }
 
-    const actions = { prepare: prepareGame, stageReward, naturalStageEnd, inningChange, dugout, runComplete, reload: reloadFrame };
+    const actions = { titleScreen, coreTagScreen, themeScreen, prepare: prepareGame, openStage: openSelectedStage, stageReward, naturalStageEnd, dugout, runComplete, reload: reloadFrame };
+
+    window.setInterval(renderStatus, 500);
 
     document.querySelector(".panel").addEventListener("click", async (event) => {
       const button = event.target.closest("button[data-action]");
@@ -304,6 +401,9 @@
       document.querySelectorAll("button").forEach((item) => { item.disabled = true; });
       try {
         await action();
+        if (window.matchMedia("(max-width: 760px)").matches && button.dataset.action !== "reload") {
+          frame.scrollIntoView({ block: "start" });
+        }
         if (button.dataset.action === "prepare") log("게임 준비 완료");
       } catch (error) {
         log(`실패: ${error.message}`);

@@ -5,11 +5,14 @@ window.MountPsycho = window.MountPsycho || {};
   const {
     pitchLibrary,
     categoryNames,
-    stageInnings,
     RELEASE_TIMING_SPEED,
     RELEASE_TIMING_ZONE_SCALE,
+    gameConfigs,
     stageConfigs,
+    stageInnings,
+    gameRunLimits,
     stageRunLimits,
+    stageRewardSchedule,
     rivalPsychPatterns,
     batterWeaknessCatalog,
     rewardCardCatalog,
@@ -61,6 +64,48 @@ window.MountPsycho = window.MountPsycho || {};
     gameOverTimer,
     uiEventsBound
   } = MP;
+
+const RUN_SAVE_KEY = "mount-psycho-run-v1";
+const RUN_SAVE_VERSION = 1;
+const CLUBHOUSE_KEY = "mount-psycho-clubhouse-v1";
+const CLUBHOUSE_VERSION = 1;
+const EQUIPMENT_LIMITS = [5, 9, 13, 17, 20];
+const equipmentConflicts = {
+  infield_shift: "outfield_position",
+  outfield_position: "infield_shift"
+};
+const equipmentCatalog = [
+  { id: "rosin_bag", slot: "mound", category: "릴리즈·제구", name: "로진백", price: 3, description: "모든 투구의 GOOD 릴리즈 판정 범위가 20% 넓어집니다." },
+  { id: "pitching_spikes", slot: "mound", category: "릴리즈·제구", name: "투수용 스파이크", price: 4, description: "가장자리 또는 낮은 코스의 릴리즈 게이지 속도가 15% 느려집니다." },
+  { id: "release_target", slot: "mound", category: "릴리즈·제구", name: "릴리즈 포인트 타깃", price: 4, description: "같은 코스 연속 선택 시 두 번째부터 직전 게이지 속도를 유지합니다." },
+  { id: "pitching_rubber", slot: "mound", category: "릴리즈·제구", name: "피칭 고무판", price: 5, description: "GOOD 이상 3회 연속이면 BAD 전까지 게이지 속도가 20% 느려집니다." },
+  { id: "high_speed_camera", slot: "mound", category: "릴리즈·제구", name: "고속 촬영 카메라", price: 6, description: "BAD가 나온 구종은 다음 사용 시 릴리즈 결과가 한 단계 상승합니다." },
+  { id: "grip_chart", slot: "tactical", category: "구종·배합", name: "구종 그립 차트", price: 3, description: "같은 구종을 다른 코스로 연속 사용하면 팀 기억 증가량이 절반이 됩니다." },
+  { id: "radar_gun", slot: "tactical", category: "구종·배합", name: "레이더건", price: 5, description: "빠른 공 PERFECT 뒤 같은 타석의 다음 느린 공은 현재 노림수를 무시합니다." },
+  { id: "sequence_board", slot: "tactical", category: "구종·배합", name: "피치 시퀀스 보드", price: 6, description: "RUN 시작 전 정한 3계열 순서를 완성하면 세 번째 공이 간파와 팀 기억을 무시합니다.", setup: "sequence" },
+  { id: "tracking_radar", slot: "tactical", category: "구종·배합", name: "투구 추적 레이더", price: 7, description: "같은 코스에 다른 계열을 연속 사용하면 두 번째 공의 간파와 팀 기억 영향이 절반이 됩니다." },
+  { id: "design_tablet", slot: "tactical", category: "구종·배합", name: "피치 디자인 태블릿", price: 8, description: "RUN 시작 전 연결한 두 구종을 같은 행·열에 연속 사용하면 간파와 팀 기억을 무시합니다.", setup: "linkedPitches" },
+  { id: "tubing_band", slot: "mound", category: "부담·컨디션", name: "튜빙 밴드", price: 3, description: "매 이닝 첫 3구는 연속 사용 추가 부담이 발생하지 않습니다." },
+  { id: "compression_sleeve", slot: "mound", category: "부담·컨디션", name: "컴프레션 암 슬리브", price: 4, description: "타석 중 새 부담 단계의 페널티는 다음 타자부터 적용됩니다." },
+  { id: "massage_gun", slot: "mound", category: "부담·컨디션", name: "마사지 건", price: 5, description: "이닝에서 3계열 이상 사용하면 종료 시 가장 높은 구종 부담이 12 감소합니다." },
+  { id: "icing_bag", slot: "mound", category: "부담·컨디션", name: "아이싱 백", price: 5, description: "GAME 종료 시 가장 부담이 높은 구종 하나의 부담이 절반으로 감소합니다." },
+  { id: "blister_kit", slot: "mound", category: "부담·컨디션", name: "물집 관리 키트", price: 7, description: "GAME당 처음 한계 부담에 도달한 구종을 위험 단계 시작 수치로 낮춥니다." },
+  { id: "lineup_card", slot: "tactical", category: "분석·심리전", name: "라인업 카드", price: 3, description: "다음 타자 3명의 유형 태그를 항상 표시합니다." },
+  { id: "pitch_chart", slot: "tactical", category: "분석·심리전", name: "투구 차트 클립보드", price: 4, description: "팀 기억이 가장 강한 구종 계열+코스 조합 2개를 표시합니다." },
+  { id: "scouting_binder", slot: "tactical", category: "분석·심리전", name: "스카우팅 리포트 바인더", price: 5, description: "한 타자에게 2구를 던지면 고정 패턴 태그 하나를 공개합니다." },
+  { id: "spray_chart", slot: "tactical", category: "분석·심리전", name: "스프레이 차트 보드", price: 5, description: "타자의 첫 인플레이 뒤 타구 성향을 GAME 동안 공개합니다." },
+  { id: "video_tablet", slot: "tactical", category: "분석·심리전", name: "경기 영상 분석 태블릿", price: 6, description: "재등장 타자에게 직전 타석의 실제 노림 구종 계열과 코스를 표시합니다." },
+  { id: "coach_stopwatch", slot: "mound", category: "카운트·위기관리", name: "코치용 스톱워치", price: 3, description: "볼이 스트라이크보다 많으면 릴리즈 게이지 속도가 15% 느려집니다." },
+  { id: "pitch_counter", slot: "mound", category: "카운트·위기관리", name: "투구 수 카운터", price: 4, description: "이닝 11·12번째 투구는 기본 부담과 연속 사용 부담이 증가하지 않습니다." },
+  { id: "electrolyte_bottle", slot: "mound", category: "카운트·위기관리", name: "전해질 보틀", price: 4, description: "3볼에서 GOOD을 스트라이크·볼 판정에 한해 PERFECT로 처리합니다." },
+  { id: "first_pitch_plan", slot: "tactical", category: "카운트·위기관리", name: "초구 플랜 카드", price: 5, description: "모든 타석의 첫 투구는 타자 간파와 팀 기억을 증가시키지 않습니다." },
+  { id: "mound_visit_note", slot: "tactical", category: "카운트·위기관리", name: "마운드 방문 메모", price: 6, description: "GAME 첫 실점 때 팀 기억을 절반으로 줄이고 연속 구종 횟수를 초기화합니다." },
+  { id: "infield_shift", slot: "tactical", category: "수비·경기 운영", name: "내야 수비 시프트 카드", price: 4, description: "낮은 코스의 약한·보통 인플레이 타구를 50% 확률로 땅볼 아웃 처리합니다." },
+  { id: "outfield_position", slot: "tactical", category: "수비·경기 운영", name: "외야 수비 위치표", price: 4, description: "높은 코스의 약한·보통 인플레이 타구를 50% 확률로 뜬공 아웃 처리합니다." },
+  { id: "catcher_mitt", slot: "mound", category: "수비·경기 운영", name: "포수 미트", price: 6, description: "가장자리 GOOD을 스트라이크·볼 판정에 한해 PERFECT로 처리합니다." },
+  { id: "manager_clipboard", slot: "tactical", category: "수비·경기 운영", name: "감독 클립보드", price: 7, description: "보상 후보 하나를 고정하고 나머지 둘을 보상 화면당 한 번 재추첨합니다." },
+  { id: "dugout_tactics", slot: "tactical", category: "수비·경기 운영", name: "더그아웃 전술 보드", price: 7, description: "각 GAME 시작 시 선택한 전술 하나를 GAME 종료까지 적용합니다.", setup: "tactic" }
+];
 
 const tutorialSteps = {
   firstPitch: {
@@ -523,7 +568,7 @@ function logStageGrowthSummaryOnce() {
 }
 
 function coreEvolutionById(evolutionId) {
-  return coreEvolutionCatalog.find((item) => item.id === evolutionId) || null;
+  return plannedCoreEvolutionCatalog?.find((item) => item.id === evolutionId) || coreEvolutionCatalog.find((item) => item.id === evolutionId) || null;
 }
 
 function coreTagNameById(tagId) {
@@ -532,10 +577,13 @@ function coreTagNameById(tagId) {
 
 function evolutionPitchContext(pitch, location, atBat, intent) {
   const history = atBat?.pitchHistory || [];
-  const prevCategory = history.length ? history[history.length - 1] : null;
+  const previousChoice = atBat?.choiceHistory?.[atBat.choiceHistory.length - 1] || null;
+  const prevCategory = previousChoice?.category || (history.length >= 2 ? history[history.length - 2] : null);
+  const previousPitchId = previousChoice?.pitchId || state.lastPitchPattern?.pitchId || null;
   const lowCourse = location.row >= 2;
   const highCourse = location.row <= 0;
   const edge = location.inZone && (location.col <= 0 || location.col >= 2 || location.row <= 0 || location.row >= 2);
+  const bestPitch = [...(state.pitcher?.repertoire || [])].sort((a, b) => (b.stageMastery || 0) - (a.stageMastery || 0))[0];
   return {
     fullCount: state.balls === 3 && state.strikes === 2,
     twoStrike: state.strikes >= 2,
@@ -546,11 +594,12 @@ function evolutionPitchContext(pitch, location, atBat, intent) {
     behindCount: state.balls >= 3,
     runners: state.bases.filter(Boolean).length > 0,
     runnerFirst: !!state.bases[0],
-    scoring: state.bases.some(Boolean),
+    scoring: !!state.bases[1] || !!state.bases[2],
     lowCourse,
     highFast: highCourse && pitch.category === "fast",
-    afterHigh: history.length && (state.lastLocation?.row ?? 1) <= 0,
-    afterHighFast: prevCategory === "fast" && highCourse,
+    afterHigh: !!previousChoice && previousChoice.height === "high",
+    afterHighFast: prevCategory === "fast" && previousChoice?.height === "high",
+    afterSlow: prevCategory === "offspeed",
     afterSecondary: prevCategory && prevCategory !== "fast",
     fast: pitch.category === "fast",
     secondary: pitch.category !== "fast",
@@ -560,14 +609,21 @@ function evolutionPitchContext(pitch, location, atBat, intent) {
     strike: intent === "strike",
     chaseZone: !location.inZone,
     categorySwitch: prevCategory && prevCategory !== pitch.category,
+    differentPitch: previousPitchId && previousPitchId !== pitch.id,
+    bothSecondary: prevCategory && prevCategory !== "fast" && pitch.category !== "fast",
+    threeCategories: new Set([...(atBat?.choiceHistory || []).slice(-2).map((entry) => entry.category), pitch.category]).size >= 3,
+    sideSwitch: !!previousChoice && previousChoice.side !== locationSideFromRowCol(location.row, location.col),
+    brushPitch: ["cutter", "two"].includes(pitch.id),
+    bestPitch: bestPitch?.id === pitch.id,
     highSuspicion: (atBat?.suspicion || 0) >= 60,
     counterPitch: atBat?.target && pitch.category !== atBat.target,
     patternExposed: !!state.patternMemory?.pitches?.length && state.patternMemory.pitches.length >= 2,
     afterFalseClue: !!atBat?.lastFalseClue,
     ballIntentSwitch: state.pitchIntent === "strike" && atBat?.ballIntent,
+    afterIntentionalBall: !!previousChoice?.ballIntent && previousChoice.intent === "ball",
     afterFirstStrike: history.length === 1 && state.strikes >= 1,
-    afterRun: !!state.runJustScored,
-    boss: !!atBat?.batter?.isBoss
+    afterRun: !!state.comboRuntime?.setup?.afterRun,
+    boss: !!atBat?.batter?.isBoss || !!atBat?.batter?.isRival
   };
 }
 
@@ -744,7 +800,7 @@ function dugoutEffectMultiplier(key, fallback = 1) {
 }
 
 function rewardCardControlBonus(pitch, aimed, intent) {
-  let bonus = state.nextPitchControlBonus || 0;
+  let bonus = (state.nextPitchControlBonus || 0) + (pitch.category !== "fast" ? state.nextBreakingControlBonus || 0 : 0);
   const stack = (id) => cardStackCount(id);
   const previousPitch = state.atBat?.choiceHistory?.[state.atBat.choiceHistory.length - 1];
   const impression = state.atBat?.batterMind?.lastImpression;
@@ -772,6 +828,12 @@ function rewardCardControlBonus(pitch, aimed, intent) {
   }
   if (pitch.category === "fast") bonus += dugoutEffectValue("fastControl");
   if (pitch.category !== "fast") bonus += dugoutEffectValue("breakingQuality");
+  const combo = state.comboRuntime?.setup || {};
+  const edge = aimed.inZone && (aimed.col === 0 || aimed.col === 2 || aimed.row === 0 || aimed.row === 2);
+  if (hasRewardCard("TC02") && combo.activeGroundOutNext && edge && intent === "strike") bonus += 4;
+  if (hasRewardCard("TC04") && combo.breakingTake && pitch.category === "fast") bonus += 3;
+  if (hasRewardCard("TC05") && combo.cornerSide && edge && ((combo.cornerSide === "inside" && aimed.col === 0) || (combo.cornerSide === "outside" && aimed.col === 2))) bonus += 4;
+  if (hasRewardCard("TC08") && combo.activeAfterRun && firstPitch) bonus += 5;
   return Math.round(bonus);
 }
 
@@ -965,6 +1027,30 @@ function currentStageInnings() {
   return stageConfig().innings;
 }
 
+function gameIndexForStage(stageIndex = state.stageIndex) {
+  return clamp(Math.floor((Number(stageIndex) || 0) / 3), 0, gameConfigs.length - 1);
+}
+
+function currentGameIndex() {
+  return gameIndexForStage(state.stageIndex);
+}
+
+function currentGameNumber() {
+  return currentGameIndex() + 1;
+}
+
+function currentGameInning() {
+  return (state.stageIndex % 3) + 1;
+}
+
+function isGameFinalStage(stageIndex = state.stageIndex) {
+  return stageIndex % 3 === 2;
+}
+
+function stageRewardKind(stageIndex = state.stageIndex) {
+  return stageRewardSchedule[stageIndex] || "none";
+}
+
 function currentStageRunLimit() {
   return stageRunLimits[state.stageIndex] ?? stageConfig().clearRuns + 1;
 }
@@ -998,6 +1084,32 @@ function createPatternMemory() {
     pitches: [],
     lastWarningAt: 0
   };
+}
+
+function teamMemoryProfile() {
+  const pitches = (state.patternMemory?.pitches || []).slice(-18);
+  const categoryWeights = { fast: 0, breaking: 0, offspeed: 0 };
+  pitches.forEach((pitch) => {
+    if (categoryWeights[pitch.category] == null) return;
+    categoryWeights[pitch.category] += pitch.memoryWeight ?? 1;
+  });
+  const total = Object.values(categoryWeights).reduce((sum, value) => sum + value, 0);
+  const [dominantCategory, dominantWeight] = Object.entries(categoryWeights).sort((a, b) => b[1] - a[1])[0] || ["", 0];
+  return { pitches, categoryWeights, total, dominantCategory, dominantShare: total ? dominantWeight / total : 0 };
+}
+
+function adjustWeightsByTeamMemory(weights) {
+  const adjusted = { ...weights };
+  const memory = teamMemoryProfile();
+  if (memory.pitches.length < 6 || memory.dominantShare < 0.42) return adjusted;
+  adjusted[memory.dominantCategory] = (adjusted[memory.dominantCategory] || 1) + memory.dominantShare * 3;
+  return adjusted;
+}
+
+function decayTeamMemory() {
+  (state.patternMemory?.pitches || []).forEach((pitch) => {
+    pitch.memoryWeight = (pitch.memoryWeight ?? 1) * 0.85;
+  });
 }
 
 const BALANCE_LOG_VERSION = 1;
@@ -1052,6 +1164,8 @@ function recordBalanceStageClear(stageResult) {
     stageName: stageResult.stageName,
     stars: stageResult.stars,
     runs: stageResult.runs,
+    performanceScore: stageResult.rewardBoost?.performanceScore || 0,
+    rewardPlan: stageRewardUpgradePlan(stageResult),
     failed: false
   });
 }
@@ -1404,11 +1518,13 @@ function missionRewardText() {
 }
 
 function rivalActionText(config = stageConfig()) {
-  switch (config.id) {
+  switch (config.gameId || config.id) {
     case "rookie_lineup":
       return "장타를 막으세요. 실투와 반복 패턴이 가장 위험합니다.";
     case "analysis_lineup":
       return "같은 구종을 두 번 이상 보여주지 마세요.";
+    case "threat_lineup":
+      return "선택한 위협 유형의 강점을 정면으로 피하세요.";
     case "championship_lineup":
       return "장타를 막고 출루도 1번 이하로 묶으세요.";
     default:
@@ -1417,7 +1533,7 @@ function rivalActionText(config = stageConfig()) {
 }
 
 function rewardCardById(cardId) {
-  return rewardCardCatalog.find((card) => card.id === cardId) || null;
+  return rewardCardCatalog.find((card) => card.id === cardId) || tagRewardCardCatalog?.find((card) => card.id === cardId) || null;
 }
 
 function ownedRewardCardId(entry) {
@@ -1476,10 +1592,11 @@ function suspicionAverageForStage(run = ensureStageRunState()) {
 function isRivalGoalMet(run = ensureStageRunState()) {
   const config = stageConfig(run.stageIndex);
   if (!config.rival) return false;
-  if (run.stageIndex === 1) {
+  const inningIndex = run.stageIndex % 3;
+  if (inningIndex === 1) {
     return Object.values(run.rival.pitchUseCounts || {}).every((count) => count < 2);
   }
-  if (run.stageIndex === 2) {
+  if (inningIndex === 2) {
     return run.rival.longHitsAllowed <= 0 && run.rival.onBaseAllowed <= 1;
   }
   return run.rival.longHitsAllowed <= 0;
@@ -1494,9 +1611,10 @@ function calculateStageResult() {
   if (stars && state.runs <= config.stableRuns) stars = 2;
   if (stars && state.runs <= config.perfectRuns) {
     let perfect = true;
-    if (state.stageIndex === 0) perfect = run.walks <= 1;
-    if (state.stageIndex === 1) perfect = run.maxPitchStreak < 3 && avgSuspicion <= 55;
-    if (state.stageIndex === 2) perfect = rivalGoalMet && avgSuspicion <= 60;
+    const inningIndex = state.stageIndex % 3;
+    if (inningIndex === 0) perfect = run.walks <= 1;
+    if (inningIndex === 1) perfect = run.maxPitchStreak < 3 && avgSuspicion <= 55;
+    if (inningIndex === 2) perfect = rivalGoalMet && avgSuspicion <= 60;
     if (perfect) stars = 3;
   }
   run.rival.succeeded = rivalGoalMet;
@@ -1534,30 +1652,11 @@ function rollStageRewardBaseRarity(result) {
 
 function stageRewardUpgradePlan(result) {
   const score = result.rewardBoost?.performanceScore || 0;
-  if ((result.rewardBoost?.coreChoiceBonus || 0) > 0 || score >= 19) return ["core", "rare"];
-  if (score >= 11) return ["rare", "rare"];
-  if (score >= 7) return ["rare"];
-  if (score >= 4 || (result.rewardBoost?.guaranteedRare || 0) > 0) return ["rare"];
-  return [];
-}
-
-function applyStageRewardPerformanceUpgrades(choices, result, used) {
-  stageRewardUpgradePlan(result).forEach((targetRarity) => {
-    const candidates = choices
-      .map((choice, index) => ({ choice, index }))
-      .filter(({ choice }) => choice.type === "rewardCard" && raritySortValue(choice.rarity) < raritySortValue(targetRarity));
-    const selected = pick(candidates);
-    if (!selected) return;
-    const card = pickRewardCardByRarity(targetRarity, used);
-    if (!card) return;
-    used.add(card.id);
-    choices[selected.index] = {
-      ...toRewardCardChoice(card, `${result.starLabel} · 등급 상승`),
-      upgradedByPerformance: true,
-      upgradedFromRarity: selected.choice.rarity
-    };
-  });
-  return choices;
+  if ((result.rewardBoost?.coreChoiceBonus || 0) > 0 || score >= 40) return ["core", "rare", "rare"];
+  if (score >= 30) return ["rare", "rare", "rare"];
+  if (score >= 20) return ["rare", "rare", "common"];
+  if (score >= 10 || (result.rewardBoost?.guaranteedRare || 0) > 0) return ["rare", "common", "common"];
+  return ["common", "common", "common"];
 }
 
 function pickRewardCardByRarity(rarity, usedIds = new Set()) {
@@ -1637,24 +1736,135 @@ function conditionalStageCardCandidates(result) {
   return choices;
 }
 
+function plannedEvolution(coreTagId, index, name, condition, effectText, when, effects) {
+  return { id: `planned_${coreTagId}_${index}`, coreTagId, name, icon: index === 3 ? "bolt" : index === 2 ? "cycle" : "target", role: ["canonical", "synergy", "risk"][index - 1], condition, effectText, operation: `${condition}을 중심으로 ${name} 운영`, when, effects };
+}
+
+const plannedCoreEvolutionCatalog = [
+  plannedEvolution("core_high_fastballer", 1, "상단압박", "높은 빠른 공", "구위 +4, 헛스윙 +7%, 타구 품질 -4", { highFast: true }, { highFastQualityBonus: 4, highFastWhiffBonus: 0.07, contactQuality: -4 }),
+  plannedEvolution("core_high_fastballer", 2, "눈높이 지배", "높은 공 뒤 낮은 변화구", "후속 변화구 구위 +3, 헛스윙 +5%", { afterHigh: true, lowCourse: true, secondary: true }, { secondaryQualityBonus: 3, whiffBonus: 0.05, contactQuality: -3 }),
+  plannedEvolution("core_high_fastballer", 3, "강속승부", "높은 빠른 공", "구위 +7, 헛스윙 +8%, 실투 장타 위험 +7", { highFast: true }, { highFastQualityBonus: 7, highFastWhiffBonus: 0.08, mistakeHomerunRisk: 7 }),
+
+  plannedEvolution("core_low_grounder", 1, "지면유도", "낮은 공", "땅볼 +16%, 타구 품질 -6", { lowCourse: true }, { groundballBonus: 0.16, lowContactQualityPenalty: 6 }),
+  plannedEvolution("core_low_grounder", 2, "병살루트", "1루 주자 + 낮은 공", "병살 +18%, 타구 품질 -4", { runnerFirst: true, lowCourse: true }, { doublePlayBonus: 0.18, lowContactQualityPenalty: 4 }),
+  plannedEvolution("core_low_grounder", 3, "장타봉쇄", "낮은 공", "타구 품질 -9, 헛스윙 -2%", { lowCourse: true }, { lowContactQualityPenalty: 9, swing: -0.02 }),
+
+  plannedEvolution("core_tempo_master", 1, "완급폭발", "다른 계열 전환", "구위 +3, 컨택 -5%, 타구 품질 -5", { categorySwitch: true }, { quality: 3, contact: -0.05, contactQuality: -5 }),
+  plannedEvolution("core_tempo_master", 2, "3단 시퀀스", "한 타석 세 속도대", "세 번째 공 구위 +5, 컨택 -6%", { threeCategories: true }, { quality: 5, contact: -0.06, contactQuality: -5 }),
+  plannedEvolution("core_tempo_master", 3, "느린공 미끼", "느린 공 성공 뒤 빠른 공", "빠른 공 구위 +4, 타구 품질 -7", { afterSlow: true, fast: true }, { fastQualityBonus: 4, contactQuality: -7 }),
+
+  plannedEvolution("core_breaking_maestro", 1, "각도강화", "변화구", "구위 +3, 헛스윙 +6%, 타구 품질 -4", { secondary: true }, { secondaryQualityBonus: 3, whiffBonus: 0.06, contactQuality: -4 }),
+  plannedEvolution("core_breaking_maestro", 2, "궤적은폐", "서로 다른 변화구 연속", "컨택 -5%, 간파 증가 절반", { bothSecondary: true, differentPitch: true }, { contact: -0.05, contactQuality: -4, memoryMultiplier: 0.5 }),
+  plannedEvolution("core_breaking_maestro", 3, "결정낙차", "2스트라이크 변화구", "구위 +6, 헛스윙 +8%, 실패 시 부담 +4", { twoStrike: true, secondary: true }, { secondaryQualityBonus: 6, whiffBonus: 0.08, failBurden: 4 }),
+
+  plannedEvolution("core_corner_artist", 1, "코너봉쇄", "존 가장자리 스트라이크", "제구 +5, 구위 +2", { edge: true, strike: true }, { strikeControlBonus: 5, quality: 2 }),
+  plannedEvolution("core_corner_artist", 2, "양쪽승부", "반대쪽 코너 연결", "제구 +4, 타구 품질 -5", { edge: true, sideSwitch: true }, { strikeControlBonus: 4, contactQuality: -5 }),
+  plannedEvolution("core_corner_artist", 3, "볼넷차단", "3볼 이후 코너", "제구 +7, 볼넷 위험 감소", { behindCount: true, edge: true }, { strikeControlBonus: 7, fullCountWalkReduce: 2 }),
+
+  plannedEvolution("core_bait_designer", 1, "유인강화", "존 밖 근처 공", "스윙 +6%, 헛스윙 +5%", { chaseZone: true }, { chaseBonus: 0.06, whiffBonus: 0.05 }),
+  plannedEvolution("core_bait_designer", 2, "미끼회수", "의도한 볼 뒤 스트라이크", "제구 +4, 성공 시 간파도 -6", { afterIntentionalBall: true, strike: true }, { strikeControlBonus: 4, suspicionRecovery: 6 }),
+  plannedEvolution("core_bait_designer", 3, "과감한 유인", "존 밖 공", "유인 +11%, 3볼 제구 -5", { chaseZone: true }, { chaseBonus: 0.11, fullCountPenalty: 5 }),
+
+  plannedEvolution("core_counter_pitcher", 1, "노림파괴", "간파도 60 이상 역계열", "컨택 -7%, 타구 품질 -7", { highSuspicion: true, counterPitch: true }, { contact: -0.07, counterContactPenalty: 7 }),
+  plannedEvolution("core_counter_pitcher", 2, "허상심기", "읽힌 계열 뒤 다른 선택", "타구 품질 -5, 아웃 시 다음 타자 간파도 -6", { highSuspicion: true, categorySwitch: true }, { contactQuality: -5, nextSuspicionRecovery: 6 }),
+  plannedEvolution("core_counter_pitcher", 3, "역류승부", "간파도가 높을수록 역노림", "구위 +5, 컨택 -9%, 실패 장타 위험 +6", { highSuspicion: true, counterPitch: true }, { quality: 5, contact: -0.09, mistakeHomerunRisk: 6 }),
+
+  plannedEvolution("core_clutch_pitcher", 1, "위기봉쇄", "득점권", "제구 +5, 타구 품질 -6", { scoring: true }, { pressureReduce: 5, contactQuality: -6 }),
+  plannedEvolution("core_clutch_pitcher", 2, "승부수", "풀카운트 스트라이크", "제구 +7, 구위 +4, 실패 부담 +4", { fullCount: true, strike: true }, { fullCountControlBonus: 7, quality: 4, failBurden: 4 }),
+  plannedEvolution("core_clutch_pitcher", 3, "멘탈리셋", "실점 직후 다음 타자 초구", "제구 +6, 타구 품질 -4", { afterRun: true, firstPitch: true }, { firstPitchControlBonus: 6, contactQuality: -4 }),
+
+  plannedEvolution("core_first_pitch_pressure", 1, "초구선점", "초구 스트라이크", "제구 +5, 구위 +3, 타구 품질 -4", { firstPitch: true, strike: true }, { firstPitchControlBonus: 5, firstPitchQualityBonus: 3, contactQuality: -4 }),
+  plannedEvolution("core_first_pitch_pressure", 2, "초구복선", "초구 스트라이크 뒤 다른 계열", "후속 구위 +4, 타구 품질 -5", { afterFirstStrike: true, categorySwitch: true }, { quality: 4, contactQuality: -5 }),
+  plannedEvolution("core_first_pitch_pressure", 3, "빠른카운트", "3구 이내 아웃", "사용 구종 부담 -7", {}, { quickOutRecovery: 7 }),
+
+  plannedEvolution("core_cutter_softcontact", 1, "중심회피", "커터·투심", "컨택 -5%, 타구 품질 -6", { brushPitch: true }, { contact: -0.05, contactQuality: -6 }),
+  plannedEvolution("core_cutter_softcontact", 2, "먹힌타구", "몸쪽 빠른 공", "타구 품질 -8", { inside: true, fast: true }, { contactQuality: -8 }),
+  plannedEvolution("core_cutter_softcontact", 3, "파울유도", "파울 뒤 범타·삼진", "다음 타자 타구 품질 -5", {}, { foulFollowupPenalty: 5 }),
+
+  plannedEvolution("core_finisher_collector", 1, "결정구집중", "2스트라이크 최고 숙련 구종", "구위 +6, 컨택 -6%", { twoStrike: true, bestPitch: true }, { quality: 6, contact: -0.06 }),
+  plannedEvolution("core_finisher_collector", 2, "보스킬러", "라이벌·보스 2스트라이크", "구위 +7, 헛스윙 +7%", { twoStrike: true, boss: true }, { quality: 7, swing: 0.07, contact: -0.07 }),
+  plannedEvolution("core_finisher_collector", 3, "부담관리", "2스트라이크 결정구", "부담 증가 -8", { twoStrike: true }, { burdenReduction: 8 }),
+
+  plannedEvolution("core_game_manager", 1, "운영템포", "동점 카운트", "제구 +3, 구위 +3", { evenCount: true }, { strikeControlBonus: 3, evenCountQualityBonus: 3 }),
+  plannedEvolution("core_game_manager", 2, "구종분배", "서로 다른 구종 사용", "미사용 구종 부담 -4", { differentPitch: true }, { otherPitchRecovery: 4 }),
+  plannedEvolution("core_game_manager", 3, "흐름전환", "직전 공과 다른 계열", "타구 품질 -4, 간파도 -3", { categorySwitch: true }, { contactQuality: -4, suspicionRecovery: 3 })
+];
+
+const tagRewardCardCatalog = [
+  { id: "T001", coreTagId: "core_high_fastballer", rarity: "common", name: "위쪽 자신감", triggerCondition: "높은 빠른 공 헛스윙", effectText: "사용 구종 부담 -6" },
+  { id: "T002", coreTagId: "core_low_grounder", rarity: "common", name: "땅볼 회수", triggerCondition: "낮은 공 땅볼 아웃", effectText: "다음 타자 시작 간파도 -5" },
+  { id: "T003", coreTagId: "core_tempo_master", rarity: "common", name: "속도차 성과", triggerCondition: "다른 계열로 헛스윙", effectText: "사용 구종 부담 -5" },
+  { id: "T004", coreTagId: "core_breaking_maestro", rarity: "common", name: "낙차 회수", triggerCondition: "변화구 헛스윙", effectText: "다음 첫 변화구 제구 +3" },
+  { id: "T005", coreTagId: "core_corner_artist", rarity: "common", name: "코너 루킹", triggerCondition: "가장자리 루킹 스트라이크", effectText: "현재 타자 간파도 -4" },
+  { id: "T006", coreTagId: "core_bait_designer", rarity: "common", name: "쫓아나온 배트", triggerCondition: "존 밖 공 스윙", effectText: "현재 타자 간파도 -4" },
+  { id: "T007", coreTagId: "core_counter_pitcher", rarity: "common", name: "역노림 적중", triggerCondition: "간파도 60 이상에서 범타·삼진", effectText: "다음 타자 시작 간파도 -6" },
+  { id: "T008", coreTagId: "core_clutch_pitcher", rarity: "common", name: "위기 호흡", triggerCondition: "주자 상황에서 아웃", effectText: "사용 구종 부담 -5" },
+  { id: "T009", coreTagId: "core_first_pitch_pressure", rarity: "common", name: "선점", triggerCondition: "초구 스트라이크", effectText: "현재 타자 간파도 -3" },
+  { id: "T010", coreTagId: "core_cutter_softcontact", rarity: "common", name: "빗맞힘 회수", triggerCondition: "약한 타구 아웃", effectText: "사용 구종 부담 -5" },
+  { id: "T011", coreTagId: "core_finisher_collector", rarity: "common", name: "결정구 회수", triggerCondition: "2스트라이크 이후 삼진", effectText: "결정구 부담 -8" },
+  { id: "T012", coreTagId: "core_game_manager", rarity: "common", name: "계획 이행", triggerCondition: "STAGE 미션 성공", effectText: "모든 구종 부담 -3" },
+  { id: "TC01", coreTagId: "core_high_fastballer", rarity: "rare", combo: true, name: "위에서 아래로", triggerCondition: "높은 빠른 공 성공 → 낮은 변화구", effectText: "후속 헛스윙 +6%, 타구 품질 -4" },
+  { id: "TC02", coreTagId: "core_low_grounder", rarity: "rare", combo: true, name: "땅볼 뒤 코너", triggerCondition: "땅볼 아웃 → 다음 타자 코너 스트라이크", effectText: "후속 제구 +4, 성공 시 성과 +2" },
+  { id: "TC03", coreTagId: "core_tempo_master", rarity: "rare", combo: true, name: "완급 되치기", triggerCondition: "느린 공 성공 → 빠른 공", effectText: "후속 컨택 -4%, 타구 품질 -4" },
+  { id: "TC04", coreTagId: "core_breaking_maestro", rarity: "rare", combo: true, name: "보여준 낙차", triggerCondition: "변화구 노스윙 → 빠른 공", effectText: "후속 제구 +3, 타구 품질 -3" },
+  { id: "TC05", coreTagId: "core_corner_artist", rarity: "rare", combo: true, name: "양쪽 문 닫기", triggerCondition: "한쪽 코너 성공 → 반대쪽 코너", effectText: "후속 제구 +4, 타구 품질 -4" },
+  { id: "TC06", coreTagId: "core_bait_designer", rarity: "rare", combo: true, name: "한 번 빼고 승부", triggerCondition: "일부러 존 밖에 던진 뒤 → 다음 공 스트라이크", effectText: "현재 타자 간파도 -6" },
+  { id: "TC07", coreTagId: "core_counter_pitcher", rarity: "rare", combo: true, name: "패턴 절단", triggerCondition: "간파도 60 이상 → 다른 계열로 아웃", effectText: "다음 타자 시작 간파도 -8" },
+  { id: "TC08", coreTagId: "core_clutch_pitcher", rarity: "rare", combo: true, name: "실점 후 리셋", triggerCondition: "실점 → 다음 타자 초구 스트라이크", effectText: "후속 제구 +5, 성공 시 부담 -5" },
+  { id: "TC09", coreTagId: "core_first_pitch_pressure", rarity: "rare", combo: true, name: "초구 복선", triggerCondition: "초구 스트라이크 → 다른 계열", effectText: "후속 품질 +3, 타구 품질 -3" },
+  { id: "TC10", coreTagId: "core_cutter_softcontact", rarity: "rare", combo: true, name: "파울 뒤 약타", triggerCondition: "파울 → 같은 타자 범타", effectText: "다음 타자 타구 품질 -4" },
+  { id: "TC11", coreTagId: "core_finisher_collector", rarity: "rare", combo: true, name: "결정구 준비", triggerCondition: "2스트 이전 다른 계열 → 삼진", effectText: "결정구 부담 증가 -8, 성공 시 성과 +2" },
+  { id: "TC12", coreTagId: "core_game_manager", rarity: "rare", combo: true, name: "구종 로테이션", triggerCondition: "서로 다른 구종 3개 → 아웃", effectText: "미사용 구종 부담 -4, 성공 시 성과 +2" }
+];
+
+function toTagRewardCardChoice(card, result) {
+  return { type: "rewardCard", cardId: card.id, rarity: card.rarity, title: card.name, desc: card.effectText, effectText: card.effectText, triggerCondition: card.triggerCondition, cardType: [card.combo ? "COMBO!" : "상황 보상"], synergyTags: [coreTagNameById(card.coreTagId)], stackType: "unique", combo: !!card.combo, recommendReason: `${result.starLabel} · 성과 ${result.rewardBoost?.performanceScore || 0}점` };
+}
+
+function generateTagGrowthChoice(rarity) {
+  const score = state.lastStageResult?.rewardBoost?.performanceScore || 0;
+  if (rarity === "core" && score >= 40 && !state.pitcher?.coreEvolutionId) {
+    const evolution = generateCoreEvolutionChoices()[0];
+    if (evolution) return { ...evolution, rarity: "core" };
+  }
+  const tag = generateStageTagChoices()[0];
+  return tag ? { ...tag, rarity: rarity === "core" ? "rare" : rarity } : null;
+}
+
+function generateAuxiliaryGrowthChoice(rarity, result) {
+  const candidates = generateRewardChoices("스테이지 성장", result).filter((reward) => ["stat", "pitch", "pitchUpgrade", "newPitch"].includes(reward.type));
+  const reward = pick(candidates);
+  if (!reward) return null;
+  const rare = rarity === "rare" || rarity === "core";
+  if (reward.type === "stat") reward.amount = rare ? 2 : 1;
+  if (reward.type === "pitch") reward.amount = rare ? 5 : 3;
+  return { ...reward, rarity: rare ? "rare" : "common" };
+}
+
 function generateStageCardChoices() {
   const result = state.lastStageResult || calculateStageResult();
-  const maxStageCardChoices = 3;
-  const used = new Set();
+  const rarities = stageRewardUpgradePlan(result);
   const choices = [];
-  const conditionChoice = sample(conditionalStageCardCandidates(result), 1)[0] || null;
-  if (conditionChoice) {
-    choices.push(conditionChoice);
-    used.add(conditionChoice.cardId || conditionChoice.tagId || conditionChoice.weaknessTagId || conditionChoice.title);
+  const tagChoice = generateTagGrowthChoice(rarities[0]);
+  if (tagChoice) choices.push(tagChoice);
+  const auxIndex = rarities.findIndex((rarity, index) => index > 0 && rarity !== "core");
+  if (auxIndex >= 0 && chance(0.45)) {
+    const aux = generateAuxiliaryGrowthChoice(rarities[auxIndex], result);
+    if (aux) choices.push(aux);
   }
-  while (choices.length < maxStageCardChoices) {
-    const rarity = rollStageRewardBaseRarity(result);
-    const card = pickRewardCardByRarity(rarity, used) || pickRewardCardByRarity("common", used);
+  const owned = new Set(state.ownedRewardCards || []);
+  while (choices.length < 3) {
+    const rarity = rarities[choices.length] === "core" ? "rare" : rarities[choices.length];
+    const exact = tagRewardCardCatalog.filter((card) => card.coreTagId === state.pitcher?.coreTagId && card.rarity === rarity && !owned.has(card.id));
+    const fallback = tagRewardCardCatalog.filter((card) => card.rarity === rarity && !owned.has(card.id));
+    const card = pick(exact.length ? exact : fallback);
     if (!card) break;
-    used.add(card.id);
-    choices.push(toRewardCardChoice(card, `${result.starLabel} · 성과 ${result.rewardBoost?.performanceScore || 0}점`));
+    owned.add(card.id);
+    choices.push(toTagRewardCardChoice(card, result));
   }
-  return applyStageRewardPerformanceUpgrades(choices.slice(0, maxStageCardChoices), result, used);
+  return choices.slice(0, 3).map((choice) => raritySortValue(choice.rarity) > raritySortValue("common")
+    ? { ...choice, upgradedByPerformance: true, upgradedFromRarity: "common" }
+    : choice);
 }
 
 function cardEffectMultiplier() {
@@ -1698,7 +1908,7 @@ function revealBatterWeakness(batter, options = {}) {
   const label = options.label || "약점 태그 공개";
   addLog(label, `${batter.name}: ${tag?.name || tagId}`);
   showTutorialStep("weakness");
-  showEventBanner("다음타자\n약점공개", "reward", GAME_TIMING.weaknessBanner);
+
   return tag;
 }
 
@@ -1945,10 +2155,12 @@ function finalizeInningMission(inningNumber) {
     if (hasRewardCard("C013")) run.rewardBoost.choiceBonus += cardStackCount("C013");
     if (dugoutEffectValue("missionChoiceBonus")) run.rewardBoost.choiceBonus += dugoutEffectValue("missionChoiceBonus");
     const revealed = revealUpcomingBatterWeakness();
+    if (hasRewardCard("T012")) state.pitcher?.repertoire?.forEach((pitch) => reducePitchBurden(pitch, 3));
     addLog("이닝 미션 성공", `${missionActionText(mission)}${revealed ? " · 다음 이닝 첫 타자 약점 태그 1개 공개" : ""}`);
   } else {
-    if (state.stageIndex === 1 && state.atBat) state.atBat.suspicion = clamp((state.atBat.suspicion || 0) + 5, 0, 100);
-    if (state.stageIndex === 2) state.nextBatterSuspicionBonus += 10;
+    const inningIndex = state.stageIndex % 3;
+    if (inningIndex === 1 && state.atBat) state.atBat.suspicion = clamp((state.atBat.suspicion || 0) + 5, 0, 100);
+    if (inningIndex === 2) state.nextBatterSuspicionBonus += 10;
     addLog("이닝 미션 실패", `${missionActionText(mission)} · 다음 이닝은 약점 태그 없이 시작합니다.`);
   }
   activeDugoutEffectEntries().forEach((entry) => {
@@ -2468,8 +2680,8 @@ function zoneHeight(zone) {
 function classifyBallIntent(zone, intent, selectedPlan = "", targetRow = null, targetCol = null) {
   if (intent !== "ball") return null;
   if (ballIntentPlans[selectedPlan]) return selectedPlan;
-  const row = Number.isFinite(Number(targetRow)) ? Number(targetRow) : courseZones[zone]?.row ?? 1;
-  const col = Number.isFinite(Number(targetCol)) ? Number(targetCol) : courseZones[zone]?.col ?? 1;
+  const row = targetRow != null && Number.isFinite(Number(targetRow)) ? Number(targetRow) : courseZones[zone]?.row ?? 1;
+  const col = targetCol != null && Number.isFinite(Number(targetCol)) ? Number(targetCol) : courseZones[zone]?.col ?? 1;
   if (col > 2) return "brush";
   if (row > 2) return "fishing";
   if (row < 0) return "show";
@@ -3556,8 +3768,8 @@ function applyMixingRelief(pitch, plannedCourse, batter) {
 function buildPitchMindContext(pitch, plannedCourse, batter) {
   const zone = Number(plannedCourse.zone) || 5;
   const intent = plannedCourse.intent === "ball" ? "ball" : "strike";
-  const targetRow = Number.isFinite(Number(plannedCourse.targetRow)) ? Number(plannedCourse.targetRow) : null;
-  const targetCol = Number.isFinite(Number(plannedCourse.targetCol)) ? Number(plannedCourse.targetCol) : null;
+  const targetRow = plannedCourse.targetRow != null && Number.isFinite(Number(plannedCourse.targetRow)) ? Number(plannedCourse.targetRow) : null;
+  const targetCol = plannedCourse.targetCol != null && Number.isFinite(Number(plannedCourse.targetCol)) ? Number(plannedCourse.targetCol) : null;
   const ballIntent = classifyBallIntent(zone, intent, plannedCourse.ballPlan || "", targetRow, targetCol);
   const targetMatch = isTargetedPitchCategory(pitch.category, state.atBat?.target);
 
@@ -3648,6 +3860,7 @@ function buildBatterMemoryItem(pitch, plannedCourse, location, result) {
 
 function updateBatterMemoryAfterPitch(pitch, plannedCourse, result, batter) {
   if (!state.atBat) return [];
+  if (result?.equipmentMemoryMultiplier === 0) return [];
 
   if (!state.atBat.batterMemory) {
     state.atBat.batterMemory = createEmptyBatterMemory(batter);
@@ -3697,10 +3910,11 @@ function recordPitchPattern(pitch, plannedCourse, result, pattern) {
     ballIntent: pattern?.ballIntent || null,
     count: result.countBefore || countKey(),
     runners: result.runnersBefore || runnersKey(),
-    result: result.result
+    result: result.result,
+    memoryWeight: pattern?.equipmentMemoryMultiplier ?? 1
   };
   state.patternMemory.pitches.push(entry);
-  if (state.patternMemory.pitches.length > 40) state.patternMemory.pitches.shift();
+  if (state.patternMemory.pitches.length > 18) state.patternMemory.pitches.shift();
   state.atBat?.choiceHistory?.push(entry);
 
   if (pattern?.exposed && state.pitchCount - (state.patternMemory.lastWarningAt || 0) >= 3) {
@@ -3760,12 +3974,19 @@ function refreshRecommendationForNextPitch(batter = currentBatter()) {
   state.atBat.recommendation = buildRecommendation(nextTarget, batter, state.atBat.suspicion || 0);
 }
 
-function generatePitcher(portrait = pick(pitcherPortraits)) {
-  const profile = pick(pitcherProfiles);
+function generatePitcher(portrait = pick(pitcherPortraits), forcedCoreTagId = null) {
+  let profile = pick(pitcherProfiles);
+  let repertoire = buildPitcherRepertoire(profile);
+  if (forcedCoreTagId) {
+    const tag = coreTagCatalog.find((item) => item.id === forcedCoreTagId);
+    for (let attempt = 0; tag && attempt < 20 && !coreTagFitsRepertoire(tag, repertoire); attempt += 1) {
+      profile = pick(pitcherProfiles);
+      repertoire = buildPitcherRepertoire(profile);
+    }
+  }
   const stats = buildPitcherStats(profile);
-  const repertoire = buildPitcherRepertoire(profile);
   const weaknessPool = ["homerun_risk", "walk_risk", "full_count_wobble", "pressure_wobble"];
-  const coreTagId = coreTagForProfile(profile.id, repertoire);
+  const coreTagId = forcedCoreTagId || coreTagForProfile(profile.id, repertoire);
 
   return {
     name: makeName(),
@@ -3877,21 +4098,24 @@ function boostBossStats(stats) {
 }
 
 function boostStageStats(stats, stageIndex) {
-  if (stageIndex <= 0) return stats;
-  const baseBoost = stageIndex === 1 ? 9 : 26;
-  const variance = stageIndex === 1 ? 5 : 8;
+  const gameIndex = gameIndexForStage(stageIndex);
+  if (gameIndex <= 0) return stats;
+  const baseBoost = gameIndex === 1 ? 9 : gameIndex === 2 ? 18 : 26;
+  const variance = gameIndex === 1 ? 5 : 8;
   return Object.fromEntries(
     Object.entries(stats).map(([label, value]) => [label, clampStat(value + baseBoost + rand(0, variance))])
   );
 }
 
 function rivalPatternForStage(stageIndex = state.stageIndex) {
-  if (stageIndex >= 2) return rivalPsychPatterns.clutchSlugger;
-  if (stageIndex === 1) return rivalPsychPatterns.patternReader;
+  const gameIndex = gameIndexForStage(stageIndex);
+  if (gameIndex >= 2) return rivalPsychPatterns.clutchSlugger;
+  if (gameIndex === 1) return rivalPsychPatterns.patternReader;
   return rivalPsychPatterns.leadoffProbe;
 }
 
 function generateLineup(stageIndex = state.stageIndex) {
+  const gameIndex = gameIndexForStage(stageIndex);
   const theme = MP.getStageTheme ? MP.getStageTheme(state.stageThemeId) : null;
   const affinityMap = MP.assignThemeAffinities ? MP.assignThemeAffinities() : {};
   const bossSlot =
@@ -3909,14 +4133,14 @@ function generateLineup(stageIndex = state.stageIndex) {
       예측: rand(...archetype.guess)
     };
     const isBoss = slot === bossSlot;
-    let stageStats = boostStageStats(baseStats, stageIndex);
+    let stageStats = boostStageStats(baseStats, gameIndex * 3);
     if (theme?.id === "bottom_revolt" && slot >= 7) {
       stageStats = Object.fromEntries(
         Object.entries(stageStats).map(([label, value]) => [label, clampStat(value + rand(6, 12))])
       );
     }
     stageStats = MP.applyThemeToBatterStats
-      ? MP.applyThemeToBatterStats(stageStats, theme, themeAffinity, stageIndex)
+      ? MP.applyThemeToBatterStats(stageStats, theme, themeAffinity, gameIndex)
       : stageStats;
     const stats = isBoss ? boostBossStats(stageStats) : stageStats;
     let mind = pickMindType(stats, isBoss);
@@ -3936,10 +4160,10 @@ function generateLineup(stageIndex = state.stageIndex) {
       Object.assign(memory, { id: "genius", label: "천재형", span: 18, suspicion: 16 });
     }
     let weights = isBoss
-      ? Object.fromEntries(Object.entries(archetype.weights).map(([key, value]) => [key, value + 2 + stageIndex * 2]))
-      : Object.fromEntries(Object.entries(archetype.weights).map(([key, value]) => [key, value + stageIndex * 2]));
+      ? Object.fromEntries(Object.entries(archetype.weights).map(([key, value]) => [key, value + 2 + gameIndex * 2]))
+      : Object.fromEntries(Object.entries(archetype.weights).map(([key, value]) => [key, value + gameIndex * 2]));
     weights = MP.applyThemeToWeights
-      ? MP.applyThemeToWeights(weights, theme, themeAffinity, stageIndex)
+      ? MP.applyThemeToWeights(weights, theme, themeAffinity, gameIndex)
       : weights;
     const batterTagIds = pickBatterTags(slot, isBoss);
     const weaknessTags = pickBatterWeaknessTags(slot, isBoss);
@@ -3966,10 +4190,24 @@ function generateLineup(stageIndex = state.stageIndex) {
   });
 }
 
-function assignStageRival() {
+function assignStageRival(preserveExisting = false) {
   const config = stageConfig();
   const rivalInfo = config.rival;
   if (!rivalInfo || !state.lineup?.length) return;
+  const existing = preserveExisting ? state.lineup.find((batter) => batter.isRival) : null;
+  if (existing) {
+    ensureStageRunState().rival = {
+      ...ensureStageRunState().rival,
+      name: existing.name,
+      slot: existing.slot,
+      plateAppearances: 0,
+      onBaseAllowed: 0,
+      longHitsAllowed: 0,
+      pitchUseCounts: {},
+      succeeded: false
+    };
+    return;
+  }
   state.lineup.forEach((batter) => {
     batter.isRival = false;
   });
@@ -4001,9 +4239,18 @@ function assignStageRival() {
 
 function createPlan(batter) {
   const approach = batter.tendency?.approach || pick(["균형", "적극", "신중", "초구", "보호"]);
-  const weights = adjustWeightsByMemory(batter.weights, state.lastAtBatMemory);
+  const weights = adjustWeightsByTeamMemory(adjustWeightsByMemory(batter.weights, state.lastAtBatMemory));
   const target = weightedCategory(weights);
-  const suspicion = clamp((batter.isBoss ? 10 : 0) + (batter.memory?.suspicion || 0) + state.stageIndex * 4, 0, 100);
+  const teamMemory = teamMemoryProfile();
+  const suspicion = clamp(
+    (batter.isBoss ? 10 : 0) +
+      (batter.memory?.suspicion || 0) +
+      currentGameIndex() * 4 +
+      (teamMemory.pitches.length >= 6 ? Math.round(teamMemory.dominantShare * 10) : 0),
+    0,
+    100
+  );
+  const batterMemory = batter.gameMemory || (batter.gameMemory = createEmptyBatterMemory(batter));
   return {
     target,
     approach,
@@ -4014,7 +4261,7 @@ function createPlan(batter) {
     patternSignals: [],
     weaknessUseCounts: {},
     batterMind: createBatterMind(batter),
-    batterMemory: createEmptyBatterMemory(batter),
+    batterMemory,
     activeMemoryModifiers: createEmptyMemoryModifiers(),
     suspicion,
     reverseRead: false,
@@ -4026,14 +4273,430 @@ function createPlan(batter) {
 
 function syncTitleScreenEls() {
   els.titleOverlay = document.querySelector("#titleOverlay");
+  els.titleContinueButton = document.querySelector("#titleContinueButton");
   els.titleStartButton = document.querySelector("#titleStartButton");
+  els.titleClubhouseButton = document.querySelector("#titleClubhouseButton");
   els.titleTutorialButton = document.querySelector("#titleTutorialButton");
   els.tutorialOverlay = document.querySelector("#tutorialOverlay");
   els.tutorialBackButton = document.querySelector("#tutorialBackButton");
 }
 
+function readRunCheckpoint() {
+  try {
+    const checkpoint = JSON.parse(window.localStorage.getItem(RUN_SAVE_KEY) || "null");
+    const savedState = checkpoint?.state;
+    if (
+      checkpoint?.version !== RUN_SAVE_VERSION ||
+      !savedState?.pitcher ||
+      !Array.isArray(savedState.lineup) ||
+      !savedState.lineup.length ||
+      !Number.isInteger(savedState.stageIndex) ||
+      savedState.stageIndex < 0 ||
+      savedState.stageIndex >= stageInnings.length
+    ) {
+      return null;
+    }
+    return checkpoint;
+  } catch (error) {
+    console.warn("[run checkpoint] 저장 데이터를 읽지 못했습니다.", error);
+    return null;
+  }
+}
+
+function updateContinueButton() {
+  syncTitleScreenEls();
+  if (els.titleContinueButton) els.titleContinueButton.hidden = !readRunCheckpoint();
+}
+
+function saveRunCheckpoint() {
+  if (!state.pitcher || state.gameOver || state.pendingGameOver) return false;
+  try {
+    const savedState = JSON.parse(JSON.stringify(state));
+    savedState.pitcherChoices = [];
+    savedState.releaseTiming = null;
+    savedState.flashZone = null;
+    savedState.pendingGameOver = false;
+    window.localStorage.setItem(
+      RUN_SAVE_KEY,
+      JSON.stringify({ version: RUN_SAVE_VERSION, savedAt: Date.now(), state: savedState })
+    );
+    updateContinueButton();
+    return true;
+  } catch (error) {
+    console.warn("[run checkpoint] 저장하지 못했습니다.", error);
+    return false;
+  }
+}
+
+function clearRunCheckpoint() {
+  try {
+    window.localStorage.removeItem(RUN_SAVE_KEY);
+  } catch (error) {
+    console.warn("[run checkpoint] 저장 데이터를 지우지 못했습니다.", error);
+  }
+  updateContinueButton();
+}
+
+function defaultClubhouseProfile() {
+  return { cp: 0, owned: [], equipped: [], equipmentLimit: EQUIPMENT_LIMITS[0] };
+}
+
+function equipmentIds(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  return Object.values(value || {}).filter(Boolean);
+}
+
+function equipmentLoadoutCost(ids) {
+  return equipmentIds(ids).reduce((total, id) => total + (equipmentById(id)?.price || 0), 0);
+}
+
+function equipmentLimitForLegacyLoadout(ids) {
+  const cost = equipmentLoadoutCost(ids);
+  return EQUIPMENT_LIMITS.find((limit) => limit >= cost) || EQUIPMENT_LIMITS.at(-1);
+}
+
+function readClubhouseProfile() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(CLUBHOUSE_KEY) || "null");
+    if (saved?.version !== CLUBHOUSE_VERSION || !saved.profile) return defaultClubhouseProfile();
+    const knownIds = new Set(equipmentCatalog.map((item) => item.id));
+    const owned = [...new Set(Array.isArray(saved.profile.owned) ? saved.profile.owned.filter((id) => knownIds.has(id)) : [])];
+    const legacyEquipped = [...new Set(equipmentIds(saved.profile.equipped).filter((id) => knownIds.has(id) && owned.includes(id)))];
+    const savedLimit = Math.floor(Number(saved.profile.equipmentLimit) || 0);
+    const equipmentLimit = EQUIPMENT_LIMITS.includes(savedLimit)
+      ? savedLimit
+      : equipmentLimitForLegacyLoadout(legacyEquipped);
+    const equipped = [];
+    for (const id of legacyEquipped) {
+      const conflict = equipmentConflicts[id];
+      if (conflict && equipped.includes(conflict)) continue;
+      const nextCost = equipmentLoadoutCost([...equipped, id]);
+      if (nextCost <= equipmentLimit) equipped.push(id);
+    }
+    return { cp: Math.max(0, Math.floor(Number(saved.profile.cp) || 0)), owned, equipped, equipmentLimit };
+  } catch (error) {
+    console.warn("[clubhouse] 영구 프로필을 읽지 못했습니다.", error);
+    return defaultClubhouseProfile();
+  }
+}
+
+function writeClubhouseProfile(profile) {
+  try {
+    window.localStorage.setItem(CLUBHOUSE_KEY, JSON.stringify({ version: CLUBHOUSE_VERSION, profile }));
+    return true;
+  } catch (error) {
+    console.warn("[clubhouse] 영구 프로필을 저장하지 못했습니다.", error);
+    return false;
+  }
+}
+
+function equipmentSlotLabel(slot) {
+  return slot === "mound" ? "마운드 장비" : "전술 도구";
+}
+
+function equipmentById(id) {
+  return equipmentCatalog.find((item) => item.id === id) || null;
+}
+
+function hasRunEquipment(id) {
+  return equipmentIds(state.runEquipment).includes(id);
+}
+MP.hasRunEquipment = hasRunEquipment;
+
+function resetEquipmentRuntime({ newGame = true, newRun = false } = {}) {
+  const previous = state.equipmentRuntime || {};
+  state.equipmentRuntime = {
+    sequence: newRun ? [] : previous.sequence || [],
+    linkedPitches: newRun ? [] : previous.linkedPitches || [],
+    tactic: newGame ? "" : previous.tactic || "",
+    correctionByPitch: previous.correctionByPitch || {},
+    inningPitchCount: 0,
+    inningFamilies: [],
+    releaseStreak: 0,
+    routine: false,
+    atBatSequenceIndex: 0,
+    speedReady: false,
+    firstRunUsed: false,
+    blisterUsed: false,
+    lastPitchId: null,
+    lastCategory: null,
+    lastZone: null,
+    lastReleaseDuration: null,
+    lastReleaseDirection: null
+  };
+}
+
+function openEquipmentSetup() {
+  if (els.equipmentSetupOverlay && !els.equipmentSetupOverlay.hidden) {
+    state.pendingEquipmentSetup = true;
+    return false;
+  }
+  const item = equipmentIds(state.runEquipment)
+    .map(equipmentById)
+    .find((entry) => entry?.setup && (entry.setup === "tactic" ? !state.equipmentRuntime?.tactic : !state.equipmentRuntime?.[entry.setup]?.length));
+  if (!item?.setup || !els.equipmentSetupOverlay || !els.equipmentSetupControls) return false;
+  const categoryOptions = [["fast", "빠른 공"], ["breaking", "변화구"], ["offspeed", "느린 공"]]
+    .map(([value, label]) => `<option value="${value}">${label}</option>`).join("");
+  els.equipmentSetupTitle.textContent = item.name;
+  if (item.setup === "sequence") {
+    els.equipmentSetupHelp.textContent = "같은 타석에서 완성할 구종 계열 3개 순서를 정합니다.";
+    els.equipmentSetupControls.innerHTML = [0, 1, 2].map((index) => `<label>${index + 1}번째 계열<select data-equipment-setup="sequence">${categoryOptions}</select></label>`).join("");
+    [...els.equipmentSetupControls.querySelectorAll("select")].forEach((select, index) => { select.selectedIndex = index; });
+  } else if (item.setup === "linkedPitches") {
+    els.equipmentSetupHelp.textContent = "피치 터널링에 사용할 연결 구종 2개를 정합니다.";
+    const options = (state.pitcher?.repertoire || []).map((pitch) => `<option value="${escapeHtml(pitch.id)}">${escapeHtml(pitch.name)}</option>`).join("");
+    els.equipmentSetupControls.innerHTML = [0, 1].map((index) => `<label>${index + 1}번째 구종<select data-equipment-setup="linkedPitches">${options}</select></label>`).join("");
+    const selects = [...els.equipmentSetupControls.querySelectorAll("select")];
+    if (selects[1]) selects[1].selectedIndex = Math.min(1, selects[1].options.length - 1);
+  } else {
+    els.equipmentSetupHelp.textContent = `GAME ${currentGameNumber()}에서 유지할 전술을 정합니다.`;
+    els.equipmentSetupControls.innerHTML = `<label>GAME 전술<select data-equipment-setup="tactic"><option value="strikeout">삼진 승부</option><option value="groundball">땅볼 유도</option><option value="soft_contact">약한 타구 유도</option></select></label>`;
+  }
+  els.equipmentSetupOverlay.dataset.setupType = item.setup;
+  els.equipmentSetupOverlay.dataset.equipmentId = item.id;
+  els.equipmentSetupOverlay.hidden = false;
+  syncGameOverlayUi();
+  return true;
+}
+
+function confirmEquipmentSetup() {
+  const type = els.equipmentSetupOverlay?.dataset.setupType;
+  const values = [...(els.equipmentSetupControls?.querySelectorAll("select") || [])].map((select) => select.value);
+  if (type === "recovery") {
+    const pending = state.pendingEquipmentRecovery;
+    const pitch = state.pitcher?.repertoire?.find((item) => item.id === values[0]);
+    if (!pending || !pitch) return;
+    const before = Number(pitch.burden || 0);
+    pitch.burden = pending.factor ? clamp(before * pending.factor, 0, 100) : clamp(before - pending.amount, 0, 100);
+    state.pendingEquipmentRecovery = null;
+    els.equipmentSetupOverlay.hidden = true;
+    addLog("장비 회복", `${pitch.name} 부담 ${Math.round(before)} → ${Math.round(pitch.burden)}`);
+    const continueSetup = state.pendingEquipmentSetup;
+    state.pendingEquipmentSetup = false;
+    syncGameOverlayUi();
+    if (continueSetup) openEquipmentSetup();
+    saveRunCheckpoint();
+    render();
+    return;
+  }
+  if (!type || !values.length || (type !== "tactic" && new Set(values).size !== values.length)) return;
+  const setupItem = equipmentById(els.equipmentSetupOverlay?.dataset.equipmentId);
+  state.equipmentRuntime[type] = type === "tactic" ? values[0] : values;
+  state.pendingEquipmentSetup = false;
+  els.equipmentSetupOverlay.hidden = true;
+  addLog("장비 설정", `${setupItem?.name || "전술 도구"} · ${values.join(" → ")}`);
+  saveRunCheckpoint();
+  if (!openEquipmentSetup()) syncGameOverlayUi();
+}
+
+function applyEquipmentRecovery(kind, recovery) {
+  const pitches = state.pitcher?.repertoire || [];
+  const highest = Math.max(...pitches.map((pitch) => Number(pitch.burden || 0)));
+  const candidates = pitches.filter((pitch) => Number(pitch.burden || 0) === highest);
+  if (!candidates.length) return false;
+  const pending = kind === "icing"
+    ? { kind, factor: Number(recovery?.factor || 0.5) }
+    : { kind, amount: Number(recovery?.amount || 12) };
+  if (candidates.length === 1 || !els.equipmentSetupOverlay || !els.equipmentSetupControls) {
+    const pitch = candidates[0];
+    pitch.burden = pending.factor ? clamp(pitch.burden * pending.factor, 0, 100) : clamp(pitch.burden - pending.amount, 0, 100);
+    return true;
+  }
+  state.pendingEquipmentRecovery = pending;
+  els.equipmentSetupTitle.textContent = kind === "icing" ? "아이싱 대상 선택" : "마사지 대상 선택";
+  els.equipmentSetupHelp.textContent = `최고 부담 ${Math.round(highest)}로 동률인 구종 중 하나를 선택합니다.`;
+  els.equipmentSetupControls.innerHTML = `<label>회복 구종<select data-equipment-setup="recovery">${candidates.map((pitch) => `<option value="${escapeHtml(pitch.id)}">${escapeHtml(pitch.name)} · 부담 ${Math.round(pitch.burden)}</option>`).join("")}</select></label>`;
+  els.equipmentSetupOverlay.dataset.setupType = "recovery";
+  els.equipmentSetupOverlay.hidden = false;
+  syncGameOverlayUi();
+  return true;
+}
+MP.applyEquipmentRecovery = applyEquipmentRecovery;
+
+function buyOrEquipItem(id) {
+  const item = equipmentById(id);
+  if (!item) return;
+  const profile = readClubhouseProfile();
+  if (!profile.owned.includes(id)) {
+    if (profile.cp < item.price) return;
+    profile.cp -= item.price;
+    profile.owned.push(id);
+  }
+  if (profile.equipped.includes(id)) {
+    profile.equipped = profile.equipped.filter((equippedId) => equippedId !== id);
+  } else {
+    const conflict = equipmentConflicts[id];
+    const withinLimit = equipmentLoadoutCost([...profile.equipped, id]) <= profile.equipmentLimit;
+    if (!conflict || !profile.equipped.includes(conflict)) {
+      if (withinLimit) profile.equipped.push(id);
+    }
+  }
+  writeClubhouseProfile(profile);
+  renderClubhouse();
+}
+
+function renderClubhouse() {
+  const profile = readClubhouseProfile();
+  const equippedCost = equipmentLoadoutCost(profile.equipped);
+  const nextLimitIndex = EQUIPMENT_LIMITS.indexOf(profile.equipmentLimit) + 1;
+  const nextLimit = EQUIPMENT_LIMITS[nextLimitIndex];
+  if (els.clubhouseCp) els.clubhouseCp.textContent = `${profile.cp} CP`;
+  if (els.clubhouseEquipped) {
+    const equippedNames = profile.equipped.map((id) => equipmentById(id)?.name).filter(Boolean).join(" · ") || "미장착";
+    els.clubhouseEquipped.innerHTML = `
+      <h3 class="clubhouse-section-title">장착 구성</h3>
+      <div class="clubhouse-loadout-row"><b>장착 CP</b><strong>${equippedCost} / ${profile.equipmentLimit} CP</strong></div>
+      <div class="clubhouse-loadout-row"><b>현재 장비</b><span>${escapeHtml(equippedNames)}</span></div>
+      <p class="clubhouse-next-limit">다음 한도 · ${nextLimit ? `${nextLimit} CP / GAME ${nextLimitIndex} 클리어` : "최종 한도 해금"}</p>
+    `;
+  }
+  if (els.clubhouseCatalog) {
+    els.clubhouseCatalog.innerHTML = equipmentCatalog
+      .map((item) => {
+        const owned = profile.owned.includes(item.id);
+        const equipped = profile.equipped.includes(item.id);
+        const canBuy = profile.cp >= item.price;
+        const conflict = equipmentConflicts[item.id];
+        const conflictEquipped = conflict && profile.equipped.includes(conflict);
+        const withinLimit = equipmentLoadoutCost([...profile.equipped, item.id]) <= profile.equipmentLimit;
+        const canEquip = !conflictEquipped && withinLimit;
+        const disabled = equipped ? false : owned ? !canEquip : !canBuy;
+        const buttonText = equipped
+          ? "장착 해제"
+          : owned && conflictEquipped
+            ? "상충 장비 장착 중"
+            : owned && !withinLimit
+              ? "장착 한도 부족"
+              : owned
+                ? "장착"
+                : canBuy
+                  ? `${item.price} CP 구매${canEquip ? "·장착" : ""}`
+                  : `CP 부족 · ${item.price}`;
+        return `
+          <article class="clubhouse-item${equipped ? " is-equipped" : ""}">
+            <header><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)}${equipmentConflicts[item.id] ? " · 상충 장비" : ""}</small></header>
+            <p>${escapeHtml(item.description).replace(/(\d+%)/g, "<em>$1</em>")}</p>
+            <footer>
+              <span class="clubhouse-item-cost"><b>${item.price}</b> CP</span>
+              <button type="button" data-equipment-id="${escapeHtml(item.id)}" ${disabled ? "disabled" : ""}>${buttonText}</button>
+            </footer>
+          </article>
+        `;
+      })
+      .join("");
+  }
+}
+
+function openClubhouse() {
+  renderClubhouse();
+  if (els.clubhouseOverlay) els.clubhouseOverlay.hidden = false;
+  syncGameOverlayUi();
+}
+
+function closeClubhouse() {
+  if (els.clubhouseOverlay) els.clubhouseOverlay.hidden = true;
+  if (els.equipmentSetupOverlay) els.equipmentSetupOverlay.hidden = true;
+  syncGameOverlayUi();
+}
+
+function completedStageCount() {
+  return clamp(state.stageIndex + (state.stageRun?.completed ? 1 : 0), 0, stageInnings.length);
+}
+
+function calculateRunCp(won = false) {
+  const stages = completedStageCount();
+  const games = Math.floor(stages / 3);
+  const gameBonus = (games * (games + 1)) / 2;
+  return stages + gameBonus + (won && stages === stageInnings.length ? 4 : 0);
+}
+
+function unlockEquipmentLimitForGame(gameNumber) {
+  const nextLimit = EQUIPMENT_LIMITS[clamp(Number(gameNumber) || 0, 0, EQUIPMENT_LIMITS.length - 1)];
+  const profile = readClubhouseProfile();
+  if (!nextLimit || nextLimit <= profile.equipmentLimit) return 0;
+  profile.equipmentLimit = nextLimit;
+  writeClubhouseProfile(profile);
+  addLog("장착 CP 한도 해금", `${nextLimit} CP · 다음 RUN부터 적용됩니다.`);
+  return nextLimit;
+}
+
+function settleRunCp(won = false) {
+  if (state.runCpAwarded > 0) return state.runCpAwarded;
+  const earned = calculateRunCp(won);
+  const profile = readClubhouseProfile();
+  profile.cp += earned;
+  writeClubhouseProfile(profile);
+  state.runCpAwarded = earned;
+  return earned;
+}
+
+function abandonRunAndStartGame() {
+  if (state.pitcher && !state.gameOver && !state.pendingGameOver) settleRunCp(false);
+  clearRunCheckpoint();
+  startGame();
+}
+
+function hideRunOverlaysForRestore() {
+  if (els.titleOverlay) els.titleOverlay.hidden = true;
+  if (els.tutorialOverlay) els.tutorialOverlay.hidden = true;
+  if (els.pitcherSelectOverlay) els.pitcherSelectOverlay.hidden = true;
+  if (els.resultOverlay) els.resultOverlay.hidden = true;
+  if (els.rewardOverlay) els.rewardOverlay.hidden = true;
+  if (els.dugoutOverlay) els.dugoutOverlay.hidden = true;
+  if (els.stageOverlay) els.stageOverlay.hidden = true;
+  if (els.themeSelectOverlay) els.themeSelectOverlay.hidden = true;
+  if (els.clubhouseOverlay) els.clubhouseOverlay.hidden = true;
+}
+
+function resumeRunFromTitle() {
+  const checkpoint = readRunCheckpoint();
+  if (!checkpoint) {
+    updateContinueButton();
+    return false;
+  }
+  clearAutoAdvance();
+  clearCourseFlash();
+  clearRewardTimer();
+  clearGameOverTimer();
+  hideBallSprite(true);
+  closeMobileMenu();
+  Object.assign(state, checkpoint.state);
+  state.pitcherChoices = [];
+  state.releaseTiming = null;
+  state.flashZone = null;
+  state.pendingGameOver = false;
+  state.gameOver = false;
+  ensurePitcherTagFields(state.pitcher);
+  ensurePitcherGrowthFields(state.pitcher);
+  state.pitcher.repertoire?.forEach((pitch) => MP.ensurePitchRuntime?.(pitch));
+  hideRunOverlaysForRestore();
+  if (els.logList) els.logList.innerHTML = "";
+  beginBalancePlayLog();
+  startBgm();
+  render();
+  addLog("RUN 이어하기", `GAME ${currentGameNumber()} · STAGE ${currentStageNumber()} 체크포인트를 불러왔습니다.`);
+
+  if (state.rewardPending) {
+    openRewardDraft(state.rewardReason || "스테이지 보상", null, state.rewardKind, true);
+  } else if (state.pendingStageTransition) {
+    openScheduledStageReward();
+  } else if (state.awaitingThemeSelection) {
+    openThemeSelectOverlay();
+  } else if (state.awaitingStageStart) {
+    showStageThemeOverlay(currentStageNumber(), currentStageInnings(), state.stageThemeId);
+  } else if (state.dugoutPending) {
+    openDugoutChoiceOverlay();
+  } else if (!state.atBat) {
+    startAtBat();
+    render();
+  }
+  syncGameOverlayUi();
+  return true;
+}
+
 function showTitleScreen() {
   syncTitleScreenEls();
+  updateContinueButton();
   closeMobileMenu();
   if (els.titleOverlay) els.titleOverlay.hidden = false;
   if (els.tutorialOverlay) els.tutorialOverlay.hidden = true;
@@ -4043,6 +4706,7 @@ function showTitleScreen() {
   if (els.dugoutOverlay) els.dugoutOverlay.hidden = true;
   if (els.stageOverlay) els.stageOverlay.hidden = true;
   if (els.themeSelectOverlay) els.themeSelectOverlay.hidden = true;
+  if (els.clubhouseOverlay) els.clubhouseOverlay.hidden = true;
   state.screenPhase = SCREEN_PHASE.title;
   syncGameOverlayUi();
 }
@@ -4083,18 +4747,19 @@ function startGame() {
   clearCourseFlash();
   clearRewardTimer();
   clearGameOverTimer();
-  hideBallSprite();
+  hideBallSprite(true);
   resetTagDetail();
   resetPitcherTagDetail();
   if (els.titleOverlay) els.titleOverlay.hidden = true;
   if (els.tutorialOverlay) els.tutorialOverlay.hidden = true;
-  state.pitcherChoices = sample(pitcherPortraits, 3).map((portrait) => generatePitcher(portrait));
+  state.pitcherChoices = sample(coreTagCatalog, 3).map((tag, index) => generatePitcher(pitcherPortraits[index % pitcherPortraits.length], tag.id));
   state.gameOver = true;
   state.waitingNextBatter = false;
   state.pendingGameOver = false;
   state.rewardPending = false;
   state.rewardChoices = [];
   state.rewardKind = "normal";
+  state.rewardReason = "";
   state.afterRewardStageOverlay = null;
   state.pendingRewardKindAfterCurrent = null;
   state.pendingTransitionBanner = null;
@@ -4102,7 +4767,9 @@ function startGame() {
   state.coreEvolutionOffered = false;
   state.pendingCoreEvolutionReward = false;
   state.ownedRewardCards = [];
+  state.acquiredRewards = [];
   state.cardTriggerLog = [];
+  state.comboRuntime = { setup: {}, scoreCounts: {} };
   state.stageRun = null;
   state.currentInningStats = null;
   state.currentAtBatMeta = null;
@@ -4116,11 +4783,14 @@ function startGame() {
   state.activeDugoutEffects = [];
   state.pendingRunComplete = false;
   state.pendingRunCompleteMessage = "";
+  state.pendingStageTransition = false;
+  state.pendingStageRewardKind = "";
   state.lastStageResult = null;
   state.lastGrowthResult = null;
   state.stageGrowthSummary = null;
   state.nextBatterSuspicionBonus = 0;
   state.nextPitchControlBonus = 0;
+  state.nextBreakingControlBonus = 0;
   state.releaseTiming = null;
   state.lastReleaseResult = null;
   state.tutorialSeen = {};
@@ -4132,6 +4802,7 @@ function startGame() {
   if (els.missionFocusCard) els.missionFocusCard.hidden = true;
   if (els.stageOverlay) els.stageOverlay.hidden = true;
   if (els.themeSelectOverlay) els.themeSelectOverlay.hidden = true;
+  if (els.clubhouseOverlay) els.clubhouseOverlay.hidden = true;
   if (els.stageThemeBadge) els.stageThemeBadge.hidden = true;
   state.awaitingThemeSelection = false;
   state.pendingThemeChoices = [];
@@ -4142,14 +4813,8 @@ function startGame() {
 }
 
 function assignStartingBonusTag(pitcher) {
+  // 보조태그는 시작 지급하지 않고 스테이지 보상에서 획득합니다.
   ensurePitcherTagFields(pitcher);
-  const owned = new Set([...(pitcher.bonusTags || []), ...(pitcher.coreTagId ? [pitcher.coreTagId] : [])]);
-  const pool = supportTags().filter((tag) => !owned.has(tag.id));
-  if (!pool.length) return;
-  if ((pitcher.bonusTags || []).length) return;
-  const tagId = pick(pool).id;
-  pitcher.bonusTags = [tagId];
-  pitcher.bonusTagTiers[tagId] = 1;
 }
 
 function beginGameWithPitcher(pitcher) {
@@ -4197,6 +4862,7 @@ function beginGameWithPitcher(pitcher) {
   state.rewardChoices = [];
   state.rewardPending = false;
   state.rewardKind = "normal";
+  state.rewardReason = "";
   state.afterRewardStageOverlay = null;
   state.pendingRewardKindAfterCurrent = null;
   state.pendingTransitionBanner = null;
@@ -4204,7 +4870,9 @@ function beginGameWithPitcher(pitcher) {
   state.coreEvolutionOffered = false;
   state.pendingCoreEvolutionReward = false;
   state.ownedRewardCards = [];
+  state.acquiredRewards = [];
   state.cardTriggerLog = [];
+  state.comboRuntime = { setup: {}, scoreCounts: {} };
   state.currentInningStats = null;
   state.currentAtBatMeta = null;
   state.pendingDugoutChoices = [];
@@ -4217,16 +4885,24 @@ function beginGameWithPitcher(pitcher) {
   state.activeDugoutEffects = [];
   state.pendingRunComplete = false;
   state.pendingRunCompleteMessage = "";
+  state.pendingStageTransition = false;
+  state.pendingStageRewardKind = "";
   state.lastStageResult = null;
   state.lastGrowthResult = null;
   resetStageGrowthSummary();
   state.nextBatterSuspicionBonus = 0;
   state.nextPitchControlBonus = 0;
+  state.nextBreakingControlBonus = 0;
   state.lastAtBatMemory = null;
   state.mobilePitchRecords = [];
   state.patternMemory = createPatternMemory();
   state.pendingGameOver = false;
   state.runStats = createRunStats();
+  state.runEquipment = [...readClubhouseProfile().equipped];
+  resetEquipmentRuntime({ newRun: true });
+  state.pendingEquipmentRecovery = null;
+  state.pendingEquipmentSetup = false;
+  state.runCpAwarded = 0;
   state.gameOver = false;
   state.waitingNextBatter = false;
   state.batterCardExpanded = false;
@@ -4251,6 +4927,7 @@ function beginGameWithPitcher(pitcher) {
   clearPitcherRevealAnimation();
   els.pitcherSelectOverlay.hidden = true;
   if (els.themeSelectOverlay) els.themeSelectOverlay.hidden = true;
+  if (els.clubhouseOverlay) els.clubhouseOverlay.hidden = true;
   els.logList.innerHTML = "";
   beginInningTracking(1);
   state.atBat = null;
@@ -4263,6 +4940,7 @@ function beginGameWithPitcher(pitcher) {
   state.pendingDugoutChoices = [];
   render();
   showStageThemeOverlay(currentStageNumber(), currentStageInnings());
+  openEquipmentSetup();
   const coreTagName = tagById(state.pitcher.coreTagId)?.name || "핵심태그";
   addLog(
     "새 경기",
@@ -4270,6 +4948,8 @@ function beginGameWithPitcher(pitcher) {
   );
   showTutorialStep("firstPitch");
   showTutorialStep("inningMission");
+  clearRunCheckpoint();
+  saveRunCheckpoint();
 }
 
 function startAtBat() {
@@ -4288,6 +4968,31 @@ function startAtBat() {
   state.strikes = 0;
   state.consecutiveBalls = 0;
   state.atBat = createPlan(currentBatter());
+  if (state.comboRuntime) {
+    const setup = state.comboRuntime.setup || {};
+    setup.activeNextContactPenalty = setup.nextContactPenalty || 0;
+    setup.nextContactPenalty = 0;
+    setup.activeGroundOutNext = !!setup.groundOutNext;
+    setup.groundOutNext = false;
+    setup.activeAfterRun = !!setup.afterRun;
+    setup.afterRun = false;
+    setup.usedPitchIds = [];
+    setup.preTwoStrikeCategories = [];
+    setup.foulBatter = "";
+    setup.firstStrikeCategory = "";
+    setup.intentionalBall = false;
+    setup.highFast = false;
+    setup.slow = false;
+    setup.breakingTake = false;
+    setup.cornerSide = "";
+  }
+  if (state.equipmentRuntime) {
+    state.equipmentRuntime.atBatSequenceIndex = 0;
+    state.equipmentRuntime.speedReady = false;
+    state.equipmentRuntime.lastPitchId = null;
+    state.equipmentRuntime.lastCategory = null;
+    state.equipmentRuntime.lastZone = null;
+  }
   if (state.nextBatterSuspicionBonus) {
     state.atBat.suspicion = clamp((state.atBat.suspicion || 0) + state.nextBatterSuspicionBonus, 0, 100);
     state.nextBatterSuspicionBonus = 0;
@@ -4325,6 +5030,13 @@ function recordBatterTransitionLog(batter, isFirstBatterOfInning) {
     addLog("보스 타자", `${batter.slot}번 ${batter.name}. 같은 패턴은 바로 위험해집니다.`);
     return;
   }
+  if (hasRunEquipment("lineup_card")) {
+    const next = [1, 2, 3].map((offset) => state.lineup[(state.batterIndex + offset) % state.lineup.length]).filter(Boolean);
+    addLog("라인업 카드", next.map((batter) => `${batter.slot}번 ${batter.name} · ${batter.type}`).join(" / "));
+  }
+  if (hasRunEquipment("video_tablet") && currentBatter()?.equipmentLastTarget) {
+    addLog("직전 타석 영상", `${currentBatter().name} · ${currentBatter().equipmentLastTarget}`);
+  }
   if (batter.isRival) {
     addLog("라이벌 등장", `${batter.slot}번 ${batter.name}. 이전 승부 흐름을 기억합니다.`);
     return;
@@ -4352,8 +5064,8 @@ function pitchQuality(pitch) {
 
 function intendedCourse(zone, intent, targetRow = null, targetCol = null, targetX = null, targetY = null) {
   const base = courseZones[zone] || courseZones[5];
-  const hasPoint = Number.isFinite(Number(targetX)) && Number.isFinite(Number(targetY));
-  const hasCell = Number.isFinite(Number(targetRow)) && Number.isFinite(Number(targetCol));
+  const hasPoint = targetX != null && targetY != null && Number.isFinite(Number(targetX)) && Number.isFinite(Number(targetY));
+  const hasCell = targetRow != null && targetCol != null && Number.isFinite(Number(targetRow)) && Number.isFinite(Number(targetCol));
   const course = {
     row: base.row,
     col: base.col,
@@ -4551,9 +5263,17 @@ function buildReleaseTimingChallenge(pitch, plannedCourse) {
   if (burdenPressure >= 8) pressureReasons.push("구종 부담");
   const pressure = clamp(runnerPressure.pressure + mentalPressure + burdenPressure, 0, 78);
   const perfectSize = clamp((0.068 + (control - 60) * 0.0028 - pressure * 0.001) * RELEASE_TIMING_ZONE_SCALE, 0.024, 0.14);
-  const goodSize = clamp((0.24 + (control - 55) * 0.0034 - pressure * 0.0024) * RELEASE_TIMING_ZONE_SCALE, 0.1, 0.44);
+  let goodSize = clamp((0.24 + (control - 55) * 0.0034 - pressure * 0.0024) * RELEASE_TIMING_ZONE_SCALE, 0.1, 0.44);
   const baseDuration = clamp(1220 + (control - 55) * 8 + (mental - 55) * 2 - pressure * 9, 660, 1640);
-  const duration = Math.round(baseDuration / RELEASE_TIMING_SPEED);
+  const zone = courseZones[Number(plannedCourse.zone) || 5] || courseZones[5];
+  let duration = Math.round(baseDuration / RELEASE_TIMING_SPEED);
+  if (hasRunEquipment("rosin_bag")) goodSize = clamp(goodSize * 1.2, 0.1, 0.52);
+  if (hasRunEquipment("pitching_spikes") && (zone.row === 2 || zone.col === 0 || zone.col === 2)) duration = Math.round(duration / 0.85);
+  if (hasRunEquipment("coach_stopwatch") && state.balls > state.strikes) duration = Math.round(duration / 0.85);
+  if (hasRunEquipment("pitching_rubber") && state.equipmentRuntime?.routine) duration = Math.round(duration / 0.8);
+  if (hasRunEquipment("release_target") && state.equipmentRuntime?.lastZone === Number(plannedCourse.zone) && state.equipmentRuntime?.lastReleaseDuration) {
+    duration = state.equipmentRuntime.lastReleaseDuration;
+  }
   const controlShake = Math.max(0, (68 - control) * 0.35);
   const pressureShake = pressure >= 32 ? 2 + (pressure - 32) * 0.08 : 0;
   const shakeAmount = clamp(Math.max(controlShake, pressureShake), 0, 9);
@@ -4569,6 +5289,7 @@ function buildReleaseTimingChallenge(pitch, plannedCourse) {
     targetY: plannedCourse.targetY,
     startedAt: Date.now(),
     duration,
+    startReverse: hasRunEquipment("release_target") && state.equipmentRuntime?.lastZone === Number(plannedCourse.zone) && state.equipmentRuntime?.lastReleaseDirection === "reverse",
     perfectSize,
     goodSize,
     pressure,
@@ -4646,7 +5367,15 @@ function releaseCursorPosition(challenge, now = Date.now()) {
   const duration = Math.max(240, challenge?.duration || 1200);
   const phase = (((now - challenge.startedAt) % duration) + duration) % duration;
   const progress = phase / duration;
-  return progress <= 0.5 ? progress * 2 : 2 - progress * 2;
+  const basePosition = progress <= 0.5 ? progress * 2 : 2 - progress * 2;
+  return challenge?.startReverse ? 1 - basePosition : basePosition;
+}
+
+function releaseCursorDirection(challenge, now = Date.now()) {
+  const duration = Math.max(240, challenge?.duration || 1200);
+  const phase = (((now - challenge.startedAt) % duration) + duration) % duration;
+  const baseDirection = phase / duration <= 0.5 ? "forward" : "reverse";
+  return challenge?.startReverse ? (baseDirection === "forward" ? "reverse" : "forward") : baseDirection;
 }
 
 function gradeReleaseTiming(challenge, position = releaseCursorPosition(challenge)) {
@@ -4688,10 +5417,13 @@ function beginReleaseTiming(pitch, plannedCourse) {
   return true;
 }
 
-function finishReleaseTiming() {
+function finishReleaseTiming(instant = false) {
   const challenge = state.releaseTiming;
   if (!challenge?.active) return null;
-  const release = gradeReleaseTiming(challenge);
+  const finishedAt = Date.now();
+  const release = gradeReleaseTiming(challenge, releaseCursorPosition(challenge, finishedAt));
+  release.direction = releaseCursorDirection(challenge, finishedAt);
+  state.lastReleaseChallengeDuration = challenge.duration;
   state.releaseTiming = null;
   clearReleaseTimingAnimation();
   [els.strikeZone, els.mobileStrikeZone].filter(Boolean).forEach((zone) => zone.querySelector?.(".release-aim-target")?.classList.remove("show"));
@@ -4706,8 +5438,86 @@ function finishReleaseTiming() {
     release,
     true,
     challenge.targetX,
-    challenge.targetY
+    challenge.targetY,
+    instant
   );
+}
+
+function promoteReleaseResult(release) {
+  const nextGrade = release.grade === "perfect" ? "perfect" : release.grade === "good" ? "perfect" : "good";
+  const config = releaseGradeConfig(nextGrade);
+  return { ...release, grade: nextGrade, label: config.label, message: config.message, tone: config.tone, commandBonus: config.commandBonus, contactMod: config.contactMod, contactQualityMod: config.contactQualityMod, mistakeChance: config.mistakeChance, equipmentPromoted: true };
+}
+
+function applyEquipmentReleaseResult(pitch, plannedCourse, releaseResult) {
+  let release = { ...releaseResult };
+  const runtime = state.equipmentRuntime || {};
+  if (hasRunEquipment("high_speed_camera") && runtime.correctionByPitch?.[pitch.id]) {
+    release = promoteReleaseResult(release);
+    delete runtime.correctionByPitch[pitch.id];
+  }
+  const zone = courseZones[Number(plannedCourse.zone) || 5] || courseZones[5];
+  const commandOnlyPerfect = release.grade === "good" && (
+    (hasRunEquipment("electrolyte_bottle") && state.balls === 3) ||
+    (hasRunEquipment("catcher_mitt") && (zone.col === 0 || zone.col === 2))
+  );
+  if (commandOnlyPerfect) release.commandBonus = releaseGradeConfig("perfect").commandBonus;
+  return release;
+}
+
+function recordEquipmentRelease(pitch, plannedCourse, release) {
+  const runtime = state.equipmentRuntime || {};
+  runtime.inningPitchCount = (runtime.inningPitchCount || 0) + 1;
+  runtime.inningFamilies = [...new Set([...(runtime.inningFamilies || []), pitch.category])];
+  if (hasRunEquipment("high_speed_camera") && ["bad", "miss"].includes(release.grade)) {
+    runtime.correctionByPitch[pitch.id] = true;
+  }
+  if (["good", "perfect"].includes(release.grade)) {
+    runtime.releaseStreak = (runtime.releaseStreak || 0) + 1;
+    if (hasRunEquipment("pitching_rubber") && runtime.releaseStreak >= 3) runtime.routine = true;
+  } else {
+    runtime.releaseStreak = 0;
+    runtime.routine = false;
+  }
+  runtime.lastZone = Number(plannedCourse.zone) || 5;
+  runtime.lastReleaseDuration = state.lastReleaseChallengeDuration || null;
+  runtime.lastReleaseDirection = release.direction || null;
+  runtime.lastPitchId = pitch.id;
+  runtime.lastCategory = pitch.category;
+}
+
+function applyEquipmentMemoryProtection(pattern, pitch, plannedCourse, release) {
+  const runtime = state.equipmentRuntime || {};
+  const previousCategory = runtime.lastCategory;
+  const previousZone = runtime.lastZone;
+  const zone = courseZones[Number(plannedCourse.zone) || 5] || courseZones[5];
+  const previousCell = courseZones[Number(previousZone) || 5] || courseZones[5];
+  let multiplier = 1;
+  if (hasRunEquipment("first_pitch_plan") && (state.atBat?.pitchHistory || []).length === 0) multiplier = 0;
+  if (hasRunEquipment("grip_chart") && runtime.lastPitchId === pitch.id && previousZone !== Number(plannedCourse.zone)) multiplier = Math.min(multiplier, 0.5);
+  if (hasRunEquipment("radar_gun") && runtime.speedReady && pitch.category === "offspeed") {
+    multiplier = 0;
+    runtime.speedReady = false;
+  }
+  if (hasRunEquipment("tracking_radar") && previousZone === Number(plannedCourse.zone) && previousCategory && previousCategory !== pitch.category) multiplier = Math.min(multiplier, 0.5);
+  if (hasRunEquipment("design_tablet") && (runtime.linkedPitches || []).includes(runtime.lastPitchId) && (runtime.linkedPitches || []).includes(pitch.id) && runtime.lastPitchId !== pitch.id && (previousCell.row === zone.row || previousCell.col === zone.col)) multiplier = 0;
+  if (hasRunEquipment("sequence_board") && runtime.sequence?.length === 3) {
+    const expected = runtime.sequence[runtime.atBatSequenceIndex || 0];
+    runtime.atBatSequenceIndex = pitch.category === expected ? (runtime.atBatSequenceIndex || 0) + 1 : pitch.category === runtime.sequence[0] ? 1 : 0;
+    if (runtime.atBatSequenceIndex >= 3) {
+      multiplier = 0;
+      runtime.atBatSequenceIndex = 0;
+    }
+  }
+  if (hasRunEquipment("dugout_tactics") && runtime.tactic === "strikeout" && state.strikes === 2 && previousCategory && previousCategory !== pitch.category) multiplier = 0;
+  if (state.pitcher?.coreEvolutionId === "planned_core_breaking_maestro_2" && previousCategory && previousCategory !== "fast" && pitch.category !== "fast" && runtime.lastPitchId !== pitch.id) multiplier = Math.min(multiplier, 0.5);
+  if (multiplier < 1) {
+    pattern.suspicion *= multiplier;
+    if (multiplier === 0) pattern.memoryModifiers = createEmptyMemoryModifiers();
+  }
+  pattern.equipmentMemoryMultiplier = multiplier;
+  if (hasRunEquipment("radar_gun") && pitch.category === "fast" && release.grade === "perfect") runtime.speedReady = true;
+  return multiplier;
 }
 
 function resolvePitchLocation(pitch, plannedCourse) {
@@ -4813,7 +5623,8 @@ function throwPitch(
   releaseResult = null,
   force = false,
   targetX = null,
-  targetY = null
+  targetY = null,
+  instant = false
 ) {
   if (!force && pitchInputLocked()) return null;
   if (force) state.releaseTiming = null;
@@ -4821,22 +5632,25 @@ function throwPitch(
   const pitch = state.pitcher.repertoire.find((item) => item.id === pitchId);
   if (!pitch) return null;
 
-  const release = releaseResult || neutralReleaseResult();
+  let release = releaseResult || neutralReleaseResult();
   const plannedCourse = {
     zone: Number(zone) || 5,
     intent: state.pitchIntent,
     ballPlan: state.pitchBallPlan,
-    targetRow: Number.isFinite(Number(targetRow)) ? Number(targetRow) : null,
-    targetCol: Number.isFinite(Number(targetCol)) ? Number(targetCol) : null,
-    targetX: Number.isFinite(Number(targetX)) ? clamp(Number(targetX), 0, 1) : null,
-    targetY: Number.isFinite(Number(targetY)) ? clamp(Number(targetY), 0, 1) : null,
+    targetRow: targetRow != null && Number.isFinite(Number(targetRow)) ? Number(targetRow) : null,
+    targetCol: targetCol != null && Number.isFinite(Number(targetCol)) ? Number(targetCol) : null,
+    targetX: targetX != null && Number.isFinite(Number(targetX)) ? clamp(Number(targetX), 0, 1) : null,
+    targetY: targetY != null && Number.isFinite(Number(targetY)) ? clamp(Number(targetY), 0, 1) : null,
     release
   };
+  release = applyEquipmentReleaseResult(pitch, plannedCourse, release);
+  plannedCourse.release = release;
   state.lastReleaseResult = release;
 
   state.pitchCount += 1;
   const batter = currentBatter();
   const pattern = buildPitchMindContext(pitch, plannedCourse, batter);
+  const equipmentMemoryMultiplier = applyEquipmentMemoryProtection(pattern, pitch, plannedCourse, release);
   state.atBat.pitchHistory.push(pitch.category);
 
   hideTiming();
@@ -4848,37 +5662,59 @@ function throwPitch(
 
   const result = enrichPitchDisplay(applyMindGameResult(resolvePitch(pitch, batter, plannedCourse, pattern, balanceMeta), pattern));
   result.release = release;
+  result.evolutionEffects = activeEvolutionEffects(pitch, result.location, state.atBat, state.pitchIntent);
+  result.equipmentMemoryMultiplier = equipmentMemoryMultiplier;
+  recordEquipmentRelease(pitch, plannedCourse, release);
+  if (hasRunEquipment("scouting_binder") && state.atBat.pitchHistory.length >= 2 && !batter.equipmentPatternRevealed) {
+    batter.equipmentPatternRevealed = true;
+    batter.equipmentPattern = batter.tags?.[0] || batter.type;
+    addLog("스카우팅 리포트", `${batter.name} · ${batter.equipmentPattern}`);
+  }
   if (balanceMeta) result._balanceCapture = { balanceMeta, plannedCourse, pattern, pitch };
   const memoryLogLines = updateBatterMemoryAfterPitch(pitch, plannedCourse, result, batter);
   const mindLogLines = updateBatterMindAfterPitch(result, plannedCourse, pattern, batter);
   result.memoryLogLines = [...memoryLogLines, ...mindLogLines];
   enrichPitchDisplay(result);
   state.lastLocation = result.location;
-  animatePitch(result.location, result.pitch);
-  updateRead(result);
   const progressionSnapshot = { balls: state.balls, strikes: state.strikes, isBoss: !!batter?.isBoss };
   const previousPattern = state.lastPitchPattern;
-  state.lastPitchPattern = pattern;
   result.previousPattern = previousPattern;
-  if (MP.processPitchProgressionAfterPitch) MP.processPitchProgressionAfterPitch(result, progressionSnapshot, pattern);
-  recordPrePitchStageProgress(result, plannedCourse, pattern);
-  state.nextPitchControlBonus = 0;
-  applyPitchResult(result);
+  const finishPitch = () => {
+    MP.pitchResultTimer = null;
+    state.pitchInFlight = false;
+    updateRead(result);
+    state.lastPitchPattern = pattern;
+    if (MP.processPitchProgressionAfterPitch) MP.processPitchProgressionAfterPitch(result, progressionSnapshot, pattern);
+    recordPrePitchStageProgress(result, plannedCourse, pattern);
+    state.nextPitchControlBonus = 0;
+    if (pitch.category !== "fast") state.nextBreakingControlBonus = 0;
+    applyPitchResult(result);
+    processTagRewardCardsAfterPitch(result, Math.max(0, state.runs - runsBeforePitch));
+    processCoreEvolutionAfterPitch(result);
 
-  if (balanceLog.active && result._balanceCapture) {
-    const afterCardLog = state.cardTriggerLog || [];
-    const previousHeadIndex = beforeCardHead ? afterCardLog.findIndex((entry) => cardKey(entry) === beforeCardHead) : -1;
-    const cardTriggers = beforeCardHead
-      ? previousHeadIndex >= 0
-        ? afterCardLog.slice(0, previousHeadIndex).map((entry) => entry.cardName)
-        : []
-      : afterCardLog.map((entry) => entry.cardName);
-    recordBalancePitchEvent(result, plannedCourse, pattern, runsBeforePitch, Math.max(0, state.runs - runsBeforePitch), cardTriggers);
-    delete result._balanceCapture;
+    if (balanceLog.active && result._balanceCapture) {
+      const afterCardLog = state.cardTriggerLog || [];
+      const previousHeadIndex = beforeCardHead ? afterCardLog.findIndex((entry) => cardKey(entry) === beforeCardHead) : -1;
+      const cardTriggers = beforeCardHead
+        ? previousHeadIndex >= 0
+          ? afterCardLog.slice(0, previousHeadIndex).map((entry) => entry.cardName)
+          : []
+        : afterCardLog.map((entry) => entry.cardName);
+      recordBalancePitchEvent(result, plannedCourse, pattern, runsBeforePitch, Math.max(0, state.runs - runsBeforePitch), cardTriggers);
+      delete result._balanceCapture;
+    }
+    refreshRecommendationForNextPitch(batter);
+    recordPitchPattern(pitch, plannedCourse, result, pattern);
+    render();
+  };
+
+  if (instant) {
+    finishPitch();
+  } else {
+    state.pitchInFlight = true;
+    MP.pitchResultTimer = window.setTimeout(finishPitch, animatePitch(result.location, result.pitch));
+    render();
   }
-  refreshRecommendationForNextPitch(batter);
-  recordPitchPattern(pitch, plannedCourse, result, pattern);
-  render();
   return result;
 }
 
@@ -4944,8 +5780,118 @@ function pitchSpecialEffect(pitch, location, atBat) {
     effect.contactQuality -= 8;
     effect.label = "커터 빗맞힘 유도";
   }
+  const combo = state.comboRuntime?.setup || {};
+  if (hasRewardCard("TC01") && combo.highFast && lowCourse && pitch.category !== "fast") { effect.swing += 0.06; effect.contactQuality -= 4; }
+  if (hasRewardCard("TC03") && combo.slow && pitch.category === "fast") { effect.contact -= 0.04; effect.contactQuality -= 4; }
+  if (hasRewardCard("TC04") && combo.breakingTake && pitch.category === "fast") effect.contactQuality -= 3;
+  if (hasRewardCard("TC05") && combo.cornerSide && ((combo.cornerSide === "inside" && location.col === 0) || (combo.cornerSide === "outside" && location.col === 2))) effect.contactQuality -= 4;
+  if (hasRewardCard("TC09") && combo.firstStrikeCategory && combo.firstStrikeCategory !== pitch.category) { effect.quality += 3; effect.contactQuality -= 3; }
+  if (combo.activeNextContactPenalty) effect.contactQuality -= combo.activeNextContactPenalty;
+  const runtime = state.equipmentRuntime || {};
+  if (hasRunEquipment("dugout_tactics") && runtime.tactic === "groundball" && lowCourse && ["good", "perfect"].includes(state.lastReleaseResult?.grade)) {
+    effect.contactQuality -= 12;
+    effect.label = appendEffectLabel(effect.label, "땅볼 유도 전술");
+  }
+  if (hasRunEquipment("dugout_tactics") && runtime.tactic === "soft_contact") {
+    const currentZone = Number(location.zone || 0);
+    if (runtime.lastCategory && runtime.lastCategory !== pitch.category && runtime.lastZone && runtime.lastZone !== currentZone) {
+      effect.contactQuality -= 12;
+      effect.label = appendEffectLabel(effect.label, "약한 타구 유도 전술");
+    }
+  }
 
   return effect;
+}
+
+function reducePitchBurden(pitch, amount) {
+  if (!pitch || !amount) return;
+  pitch.burden = Math.max(0, (pitch.burden || 0) - amount);
+}
+
+function addComboPerformance(cardId) {
+  const runtime = state.comboRuntime || (state.comboRuntime = { setup: {}, scoreCounts: {} });
+  const count = runtime.scoreCounts[cardId] || 0;
+  if (count >= 2) return;
+  runtime.scoreCounts[cardId] = count + 1;
+  absorbCardPerformance(0, 0, { key: cardId, label: "COMBO!", score: 2, source: "COMBO!", limit: 2 });
+}
+
+function processTagRewardCardsAfterPitch(result, runsScored = 0) {
+  const pitch = result?.pitch;
+  if (!pitch) return;
+  const setup = state.comboRuntime?.setup || (state.comboRuntime = { setup: {}, scoreCounts: {} }).setup;
+  const previousSetup = { ...setup };
+  const low = result.location?.row >= 2;
+  const high = result.location?.row <= 0;
+  const edge = result.location?.col === 0 || result.location?.col === 2;
+  const strikeSuccess = ["calledStrike", "swingingStrike"].includes(result.result);
+  const strikeout = strikeSuccess && String(result.countBefore || "").endsWith("-2");
+  const out = ["inPlayOut", "doublePlay"].includes(result.result) || strikeout;
+  const success = strikeSuccess || ["foul", "inPlayOut", "doublePlay"].includes(result.result);
+  const whiff = result.result === "swingingStrike";
+  const hadRunners = result.runnersBefore && result.runnersBefore !== "none";
+  const previousChoice = state.atBat?.choiceHistory?.[state.atBat.choiceHistory.length - 1] || null;
+
+  if (hasRewardCard("T001") && high && pitch.category === "fast" && whiff) reducePitchBurden(pitch, 6);
+  if (hasRewardCard("T002") && low && result.outLabel === "GROUND OUT!") state.nextBatterSuspicionBonus -= 5;
+  if (hasRewardCard("T003") && whiff && result.previousPattern?.category && result.previousPattern.category !== pitch.category) reducePitchBurden(pitch, 5);
+  if (hasRewardCard("T004") && pitch.category !== "fast" && whiff) state.nextBreakingControlBonus += 3;
+  if (hasRewardCard("T005") && edge && result.result === "calledStrike") applyCardSuspicionDelta(-4, "코너 루킹", "코너 루킹으로 간파도를 낮췄습니다.");
+  if (hasRewardCard("T006") && !result.inZone && result.swung) applyCardSuspicionDelta(-4, "쫓아나온 배트", "유인 성공으로 간파도를 낮췄습니다.");
+  if (hasRewardCard("T007") && (result.previousPattern?.suspicion || 0) >= 60 && out) state.nextBatterSuspicionBonus -= 6;
+  if (hasRewardCard("T008") && hadRunners && out) reducePitchBurden(pitch, 5);
+  if (hasRewardCard("T009") && result.countBefore === "0-0" && strikeSuccess) applyCardSuspicionDelta(-3, "선점", "초구 스트라이크로 주도권을 잡았습니다.");
+  if (hasRewardCard("T010") && out && Number(result.contactQuality || 100) < 45) reducePitchBurden(pitch, 5);
+  if (hasRewardCard("T011") && strikeout) reducePitchBurden(pitch, 8);
+
+  if (hasRewardCard("TC01") && previousSetup.highFast && low && pitch.category !== "fast" && success) addComboPerformance("TC01");
+  if (hasRewardCard("TC02") && previousSetup.activeGroundOutNext && edge && strikeSuccess) addComboPerformance("TC02");
+  if (hasRewardCard("TC03") && previousSetup.slow && pitch.category === "fast" && success) addComboPerformance("TC03");
+  if (hasRewardCard("TC04") && previousSetup.breakingTake && pitch.category === "fast" && success) addComboPerformance("TC04");
+  if (hasRewardCard("TC05") && previousSetup.cornerSide && edge && ((previousSetup.cornerSide === "inside" && result.location.col === 0) || (previousSetup.cornerSide === "outside" && result.location.col === 2)) && success) addComboPerformance("TC05");
+  if (hasRewardCard("TC06") && previousSetup.intentionalBall && strikeSuccess) { applyCardSuspicionDelta(-6, "한 번 빼고 승부", "한 번 뺀 뒤 스트라이크를 잡았습니다."); addComboPerformance("TC06"); }
+  if (hasRewardCard("TC07") && previousSetup.highSuspicionCategory && previousSetup.highSuspicionCategory !== pitch.category && out) { state.nextBatterSuspicionBonus -= 8; addComboPerformance("TC07"); }
+  if (hasRewardCard("TC08") && previousSetup.activeAfterRun && result.countBefore === "0-0" && strikeSuccess) { reducePitchBurden(pitch, 5); addComboPerformance("TC08"); }
+  if (hasRewardCard("TC09") && previousSetup.firstStrikeCategory && previousSetup.firstStrikeCategory !== pitch.category && success) addComboPerformance("TC09");
+  if (hasRewardCard("TC10") && previousSetup.foulBatter === result.batter?.name && out) { setup.nextContactPenalty = 4; addComboPerformance("TC10"); }
+  const differentPreTwoStrike = (previousSetup.preTwoStrikeCategories || []).some((category) => category !== pitch.category);
+  if (hasRewardCard("TC11") && strikeout && differentPreTwoStrike) { reducePitchBurden(pitch, 8); addComboPerformance("TC11"); }
+  const usedPitchIds = [...new Set([...(previousSetup.usedPitchIds || []), pitch.id])];
+  if (hasRewardCard("TC12") && out && usedPitchIds.length >= 3) { state.pitcher.repertoire.forEach((other) => { if (other.id !== pitch.id) reducePitchBurden(other, 4); }); addComboPerformance("TC12"); }
+
+  setup.highFast = high && pitch.category === "fast" && success;
+  setup.slow = pitch.category === "offspeed" && success;
+  setup.breakingTake = pitch.category !== "fast" && !result.swung;
+  setup.cornerSide = edge && success ? (result.location.col === 0 ? "outside" : "inside") : "";
+  setup.intentionalBall = !!result.pattern?.ballIntent && result.result === "ball";
+  setup.highSuspicionCategory = (result.pattern?.suspicion || 0) >= 60 ? pitch.category : "";
+  setup.groundOutNext = result.outLabel === "GROUND OUT!";
+  setup.afterRun = runsScored > 0;
+  setup.firstStrikeCategory = result.countBefore === "0-0" && strikeSuccess ? pitch.category : "";
+  setup.foulBatter = result.result === "foul" ? result.batter?.name || "" : previousChoice?.result === "foul" ? result.batter?.name || "" : "";
+  setup.preTwoStrikeCategories = String(result.countBefore || "").endsWith("-0") || String(result.countBefore || "").endsWith("-1") ? [...new Set([...(previousSetup.preTwoStrikeCategories || []), pitch.category])] : previousSetup.preTwoStrikeCategories || [];
+  setup.usedPitchIds = usedPitchIds;
+}
+
+function processCoreEvolutionAfterPitch(result) {
+  const effects = result?.evolutionEffects || {};
+  if (!result?.pitch || !Object.keys(effects).length) return;
+  const strikeSuccess = ["calledStrike", "swingingStrike"].includes(result.result);
+  const strikeout = strikeSuccess && String(result.countBefore || "").endsWith("-2");
+  const out = ["inPlayOut", "doublePlay"].includes(result.result) || strikeout;
+  const success = strikeSuccess || ["foul", "inPlayOut", "doublePlay"].includes(result.result);
+  const previousChoice = state.atBat?.choiceHistory?.[state.atBat.choiceHistory.length - 1] || null;
+  if (effects.failBurden && !success) result.pitch.burden = Math.min(100, (result.pitch.burden || 0) + effects.failBurden);
+  if (effects.suspicionRecovery && success) applyCardSuspicionDelta(-effects.suspicionRecovery, coreEvolutionById(state.pitcher?.coreEvolutionId)?.name, "진화 효과로 간파도를 회수했습니다.");
+  if (effects.nextSuspicionRecovery && out) state.nextBatterSuspicionBonus -= effects.nextSuspicionRecovery;
+  if (effects.quickOutRecovery && out && (state.atBat?.pitchHistory?.length || 0) <= 3) reducePitchBurden(result.pitch, effects.quickOutRecovery);
+  if (effects.foulFollowupPenalty && previousChoice?.result === "foul" && out) {
+    state.comboRuntime.setup.nextContactPenalty = Math.max(state.comboRuntime.setup.nextContactPenalty || 0, effects.foulFollowupPenalty);
+  }
+  if (effects.burdenReduction && String(result.countBefore || "").endsWith("-2")) reducePitchBurden(result.pitch, effects.burdenReduction);
+  if (effects.otherPitchRecovery && previousChoice?.pitchId && previousChoice.pitchId !== result.pitch.id) {
+    state.pitcher?.repertoire?.forEach((pitch) => { if (pitch.id !== result.pitch.id) reducePitchBurden(pitch, effects.otherPitchRecovery); });
+  }
 }
 
 function rivalPitchEffect(pitch, batter, location) {
@@ -5205,6 +6151,10 @@ function applyTagLikeEffects(effect, effects, pitch, location) {
   if (state.atBat?.ballIntent === "brush" && effects.brushContactPenalty) effect.contactQuality -= effects.brushContactPenalty;
   if (effects.contactQuality) effect.contactQuality += effects.contactQuality;
   if (effects.doublePlayBonus) effect.doublePlayBonus += effects.doublePlayBonus;
+  if (effects.quality) effect.quality += effects.quality;
+  if (effects.swing) effect.swing += effects.swing;
+  if (effects.chase) effect.chase += effects.chase;
+  if (effects.contact) effect.contact += effects.contact;
 }
 
 function pitcherTagEffect(pitch, location, plannedCourse, atBat) {
@@ -5537,6 +6487,7 @@ function resolvePitch(pitch, batter, plannedCourse, pattern = {}, balanceMeta = 
       if (balanceMeta) balanceMeta.probabilities.takeBall = balanceRound(takeBallChance, 4);
       if (balanceChance(takeBallChance, "takeBall", balanceMeta)) noSwingResult = "ball";
     }
+    const takeType = !inZone && swingProbability >= 0.42 ? "check" : targetMatch ? "read" : "ignore";
     return {
       pitch,
       batter,
@@ -5548,6 +6499,7 @@ function resolvePitch(pitch, batter, plannedCourse, pattern = {}, balanceMeta = 
       impressionEffect: context.impressionEffect,
       timingValue: 0,
       timingLabel: inZone ? "지켜봄" : "참아냄",
+      takeType,
       result: noSwingResult,
       detail: inZone ? "타자가 그대로 얼어붙었습니다." : "존 밖 공을 끝까지 봤습니다.",
       clue: inZone && !targetMatch ? "노림과 다른 공이 들어간 듯합니다." : "유인구 반복은 신중해야 합니다."
@@ -5721,6 +6673,12 @@ function makeBallInPlayResult(base, balanceMeta = null) {
       detail: hitDetail(base, 4),
       clue: "방금 패턴은 완전히 읽혔습니다."
     };
+  }
+  if (contactQuality <= doubleThreshold && hasRunEquipment("infield_shift") && location.row >= 2 && balanceChance(0.5, "infieldShift", balanceMeta)) {
+    return { ...base, result: "inPlayOut", outLabel: "GROUND OUT!", detail: "수비 시프트 정면으로 향한 땅볼입니다.", clue: "낮은 코스와 내야 시프트가 맞물렸습니다." };
+  }
+  if (contactQuality <= doubleThreshold && hasRunEquipment("outfield_position") && location.row <= 0 && balanceChance(0.5, "outfieldPosition", balanceMeta)) {
+    return { ...base, result: "inPlayOut", outLabel: "FLY OUT!", detail: "미리 자리 잡은 외야수 정면의 뜬공입니다.", clue: "높은 코스와 외야 위치 선정이 맞물렸습니다." };
   }
   if (contactQuality > doubleThreshold) {
     return {
@@ -5979,7 +6937,7 @@ function recordPrePitchStageProgress(result, plannedCourse, pattern) {
   }
   if (pitchMatchesRevealedWeakness(result) && isStrikeLikeResult(result)) {
     stats.weaknessPitchSuccesses += 1;
-    if (result.weaknessFeedback !== "공략 성공") showEventBanner("약점 공략 성공", "reward", gameFlowDelay(900));
+
     result.weaknessFeedback = "공략 성공";
     if (state.atBat) state.atBat.suspicion = clamp((state.atBat.suspicion || 0) - 8, 0, 100);
     if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "약점 태그 활용", "약점 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
@@ -6027,17 +6985,17 @@ function recordPrePitchStageProgress(result, plannedCourse, pattern) {
 function shouldTriggerHighlight(result, runsScored) {
   if (!result || !isAtBatEndingResult(result)) return false;
   const suspicion = state.atBat?.suspicion || 0;
-  if (state.stageIndex < 1) return false;
+  if (currentGameInning() < 2) return false;
   const pressureFlags = [
     !!(result.batter?.isRival || result.batter?.isBoss),
-    suspicion >= (state.stageIndex === 2 ? 80 : 75),
+    suspicion >= (currentGameInning() === 3 ? 80 : 75),
     hasScoringPositionFromKey(result.runnersBefore),
     state.consecutiveOnBase >= 2,
     runsScored > 0
   ];
   const pressureCount = pressureFlags.filter(Boolean).length;
   if (pressureCount >= 3) return false;
-  if (state.stageIndex === 2 && state.inning === 5) return pressureCount <= 2;
+  if (currentGameInning() === 3) return pressureCount <= 2;
   return pressureCount > 0;
 }
 
@@ -6057,7 +7015,7 @@ function recordHighlightResult(result, runsScored) {
   } else {
     run.highlight.failures += 1;
     run.highlight.lastText = "하이라이트 실패";
-    state.nextBatterSuspicionBonus += state.stageIndex === 2 ? 15 : 10;
+    state.nextBatterSuspicionBonus += currentGameInning() === 3 ? 15 : 10;
     addLog("하이라이트 승부 실패", "위기 승부를 놓쳤습니다. 다음 타자가 같은 흐름을 더 빨리 기다립니다.");
   }
 }
@@ -6066,6 +7024,15 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
   const run = ensureStageRunState();
   const stats = currentInningTracking();
   stats.runs += runsScored;
+  if (runsScored > 0 && hasRunEquipment("mound_visit_note") && !state.equipmentRuntime?.firstRunUsed) {
+    state.equipmentRuntime.firstRunUsed = true;
+    (state.patternMemory?.pitches || []).forEach((entry) => { entry.memoryWeight = (entry.memoryWeight ?? 1) * 0.5; });
+    if (state.pitchProgression) {
+      state.pitchProgression.consecutivePitchId = null;
+      state.pitchProgression.consecutiveCount = 0;
+    }
+    addLog("마운드 방문 메모", "첫 실점 직후 팀 공유 기억을 절반으로 낮추고 연속 구종 기록을 초기화했습니다.");
+  }
   if (runsScored > 0 && hasScoringPositionFromKey(result.runnersBefore)) stats.scoringPositionRuns += runsScored;
   if (result.result === "walk") {
     run.walks += 1;
@@ -6103,7 +7070,7 @@ function recordStageOutcomeFromPitch(result, runsScored = 0) {
     if (isOutResult(result)) stats.weaknessOuts += 1;
     if (["calledStrike", "swingingStrike", "inPlayOut", "doublePlay"].includes(result.result)) {
       stats.weaknessPitchSuccesses += 1;
-      if (result.weaknessFeedback !== "공략 성공") showEventBanner("약점 공략 성공", "reward", gameFlowDelay(900));
+
       result.weaknessFeedback = "공략 성공";
       absorbCardPerformance(0.02, 0, { key: "weakness", label: "약점 태그 적중", score: 2, source: "공략", limit: 4 });
       if (hasRewardCard("R009")) applyCardSuspicionDelta(-10, "약점 태그 활용", "약점 승부 성공으로 다음 같은 흐름을 숨겼습니다.");
@@ -6160,11 +7127,13 @@ function applyPitchResult(result) {
 
   const swingFeedback = swingFeedbackText(result);
   const call = pitchCall(result);
-  if (!majorText && swingFeedback) queueTiming(swingFeedback, swingFeedbackTone(result));
-  else if (!majorText && call.label) queueTiming(call.label, call.type === "strike" ? "warn" : call.type === "ball" ? "good" : "danger");
+  if (!majorText && swingFeedback) setTiming(swingFeedback, swingFeedbackTone(result));
+  else if (!majorText && call.label) setTiming(call.label, call.type === "strike" ? "warn" : call.type === "ball" ? "good" : "danger");
   els.batterFigure.classList.toggle("swing", result.swung);
 
-  window.setTimeout(() => {
+  if (MP.pitchVisualCleanupTimer) window.clearTimeout(MP.pitchVisualCleanupTimer);
+  MP.pitchVisualCleanupTimer = window.setTimeout(() => {
+    MP.pitchVisualCleanupTimer = null;
     els.strikeZone.classList.remove("flash-danger", "flash-good");
     els.batterFigure.classList.remove("swing");
     hideBallSprite();
@@ -6329,26 +7298,40 @@ function queueTransitionBanner(text, tone = "inning", duration = 1600) {
 }
 
 function advanceStage(themeId = state.stageThemeId) {
+  const previousStageIndex = state.stageIndex;
+  const nextStageIndex = previousStageIndex + 1;
+  const startsNewGame = gameIndexForStage(nextStageIndex) !== gameIndexForStage(previousStageIndex);
+  const nextInning = (nextStageIndex % 3) + 1;
   const carriedDugoutEffects = (state.activeDugoutEffects || [])
     .filter((entry) => entry.nextStage)
-    .map((entry) => ({ ...entry, nextStage: false, expiresInning: 1 }));
-  state.stageIndex += 1;
+    .map((entry) => ({ ...entry, nextStage: false, expiresInning: nextInning }));
+  state.stageIndex = nextStageIndex;
   state.stageThemeId = themeId || state.stageThemeId;
   state.stageJustAdvanced = true;
-  state.inning = 1;
+  state.inning = nextInning;
   state.outs = 0;
   state.balls = 0;
   state.strikes = 0;
   state.consecutiveBalls = 0;
   state.bases = [false, false, false];
-  state.runs = 0;
   state.releaseTiming = null;
   state.lastReleaseResult = null;
   state.mobilePitchRecords = [];
-  if (els.runsText) els.runsText.textContent = "0";
-  state.batterIndex = 0;
-  state.lineup = generateLineup(state.stageIndex);
+  if (startsNewGame) {
+    state.runs = 0;
+    state.batterIndex = 0;
+    state.lineup = generateLineup(state.stageIndex);
+    state.patternMemory = createPatternMemory();
+    state.lastAtBatMemory = null;
+    if (MP.onGameStartPitchProgression) MP.onGameStartPitchProgression();
+    resetEquipmentRuntime();
+  } else {
+    state.batterIndex += 1;
+  }
+  state.atBat = null;
+  if (els.runsText) els.runsText.textContent = String(state.runs);
   state.stageRun = createStageRunState(state.stageIndex);
+  state.comboRuntime = { setup: state.comboRuntime?.setup || {}, scoreCounts: {} };
   resetStageGrowthSummary();
   state.currentInningStats = null;
   state.currentAtBatMeta = null;
@@ -6356,8 +7339,8 @@ function advanceStage(themeId = state.stageThemeId) {
   state.dugoutPending = false;
   state.activeDugoutEffects = carriedDugoutEffects;
   state.lastStageResult = null;
-  assignStageRival();
-  beginInningTracking(1);
+  assignStageRival(!startsNewGame);
+  beginInningTracking(state.inning);
   state.dugoutPending = false;
   state.dugoutBeforeAtBat = false;
   state.dugoutAdvanceBatterOnConfirm = false;
@@ -6367,12 +7350,12 @@ function advanceStage(themeId = state.stageThemeId) {
   state.pendingDugoutChoices = [];
   const themeName = MP.getStageTheme?.(state.stageThemeId)?.name || "";
   addLog(
-    "스테이지 클리어",
-    `${stageInnings[state.stageIndex - 1]}이닝 스테이지를 통과했습니다. ${themeName ? `${themeName} · ` : ""}다음은 ${currentStageInnings()}이닝 승부입니다.`
+    startsNewGame ? "새 GAME 진입" : "다음 STAGE 진입",
+    `${themeName ? `${themeName} · ` : ""}GAME ${currentGameNumber()} · STAGE ${currentStageNumber()} · ${currentGameInning()}회 승부입니다.`
   );
   state.pendingStageOverlay = {
     stageNumber: currentStageNumber(),
-    innings: currentStageInnings(),
+    innings: 1,
     themeId: state.stageThemeId
   };
   if (MP.onStageClearPitchProgression) MP.onStageClearPitchProgression();
@@ -6391,27 +7374,41 @@ function addOut(count = 1) {
       state.outs = 0;
       state.bases = [false, false, false];
       state.inning += 1;
+      decayTeamMemory();
+      if (MP.recoverPitchBurdenInning) MP.recoverPitchBurdenInning();
+      if (state.equipmentRuntime) {
+        state.equipmentRuntime.inningPitchCount = 0;
+        state.equipmentRuntime.inningFamilies = [];
+        state.equipmentRuntime.releaseStreak = 0;
+        state.equipmentRuntime.routine = false;
+      }
       if (state.inning > currentStageInnings()) {
         state.lastStageResult = calculateStageResult();
         recordBalanceStageClear(state.lastStageResult);
         ensureStageRunState().completed = true;
-        state.pendingCoreEvolutionReward = true;
+        if (isGameFinalStage()) unlockEquipmentLimitForGame(currentGameNumber());
+        state.pendingStageTransition = true;
+        state.pendingStageRewardKind = stageRewardKind();
+        state.pendingCoreEvolutionReward = false;
         if (state.stageIndex >= stageInnings.length - 1) {
           state.pendingRunComplete = true;
-          state.pendingRunCompleteMessage = "7이닝 최종 스테이지까지 버텨냈습니다. 마운드의 심리전에서 이겼습니다.";
+          state.pendingRunCompleteMessage = "4 GAME · 12 STAGE를 모두 버텨냈습니다. 마운드의 심리전에서 이겼습니다.";
           state.inning = currentStageInnings();
-          addLog("최종 스테이지 클리어", `${stageResultStarLabel(state.lastStageResult.stars)} · 마지막 카드 보상을 정산합니다.`);
+          addLog("최종 스테이지 클리어", `${stageResultStarLabel(state.lastStageResult.stars)} · RUN 결과를 정산합니다.`);
         } else {
-          state.pendingThemeChoices = MP.rollThemeChoices
+          const nextStageStartsGame = isGameFinalStage();
+          state.pendingThemeChoices = nextStageStartsGame && MP.rollThemeChoices
             ? MP.rollThemeChoices(state.stageIndex + 1, state.pitcher)
             : [];
-          state.awaitingThemeSelection = true;
+          state.awaitingThemeSelection = nextStageStartsGame;
           state.stageBreakDugoutDone = false;
           state.inning = currentStageInnings();
-          addLog("스테이지 클리어", `${currentStageInnings()}이닝을 막았습니다. ${stageResultStarLabel(state.lastStageResult.stars)} 보상을 정산합니다.`);
+          addLog(
+            "스테이지 클리어",
+            `GAME ${currentGameNumber()} ${currentGameInning()}회를 막았습니다. ${stageResultStarLabel(state.lastStageResult.stars)} · ${state.pendingStageRewardKind === "none" ? "빠른 요약" : "보상 정산"}`
+          );
         }
       } else {
-        if (MP.recoverPitchBurdenInning) MP.recoverPitchBurdenInning();
         state.mobilePitchRecords = [];
         beginInningTracking(state.inning);
         state.pendingDugoutChoices = generateDugoutChoices();
@@ -6431,10 +7428,58 @@ function addOut(count = 1) {
   }
 }
 
+function continueStageTransition() {
+  if (!state.pendingStageTransition) return;
+  state.pendingStageTransition = false;
+  state.pendingStageRewardKind = "";
+  if (state.pendingRunComplete) {
+    const message = state.pendingRunCompleteMessage || "최종 스테이지까지 클리어했습니다.";
+    state.pendingRunComplete = false;
+    endGame(true, message);
+    return;
+  }
+  if (state.awaitingThemeSelection) {
+    openThemeSelectOverlay();
+    return;
+  }
+  advanceStage(state.stageThemeId);
+  state.awaitingStageStart = true;
+  prepareStageStartDugout();
+  showStageThemeOverlay(currentStageNumber(), 1, state.stageThemeId);
+  if (currentGameInning() === 1) openEquipmentSetup();
+  state.pendingStageOverlay = null;
+  state.waitingNextBatter = false;
+  render();
+  saveRunCheckpoint();
+}
+
+function openScheduledStageReward() {
+  const kind = state.pendingStageRewardKind || stageRewardKind();
+  if (kind === "none" || kind === "settlement") {
+    continueStageTransition();
+    return;
+  }
+  if (kind === "finalImmediate") {
+    // ponytail: reuse the normal draft until the dedicated S11 catalog is finalized.
+    openRewardDraft("최종전 즉시효과", null, "normal");
+    return;
+  }
+  openRewardDraft("스테이지 보상", null, kind);
+}
+
 function finishAtBat(title, text, options = {}) {
-  const growthResult = processAtBatGrowth(options.result, title);
-  addLog(title, appendGrowthMark(text, growthResult));
-  recordMobileGrowthMark(growthResult);
+  if (hasRunEquipment("video_tablet") && options.result?.batter) {
+    const target = categoryNames[state.atBat?.target] || state.atBat?.target || "미확인";
+    options.result.batter.equipmentLastTarget = `${target} · ${options.result.location?.actualLabel || "코스 미확인"}`;
+  }
+  const inPlayResult = ["single", "double", "homerun", "inPlayOut", "doublePlay", "error"].includes(options.result?.result);
+  if (hasRunEquipment("spray_chart") && options.result?.batter && !options.result.batter.equipmentSpray && inPlayResult) {
+    const quality = Number(options.result.contactQuality ?? 50);
+    options.result.batter.equipmentSpray = quality >= 72 ? "장타 성향" : options.result.location?.row >= 2 ? "땅볼 성향" : "뜬공 성향";
+    addLog("스프레이 차트", `${options.result.batter.name} · ${options.result.batter.equipmentSpray}`);
+  }
+  // ponytail: growth now comes only from explicit reward choices.
+  addLog(title, text);
   state.lastAtBatMemory = atBatMemoryFrom(title, options.result);
   if (options.result && MP.processPitchProgressionAtBatEnd) {
     MP.processPitchProgressionAtBatEnd(options.result, title, state.lastPitchPattern);
@@ -6457,22 +7502,12 @@ function finishAtBat(title, text, options = {}) {
       if (!state.gameOver) showInningChangeOverlay(transition);
     }, GAME_TIMING.inningTransitionDelay);
   }
-  if (state.pendingRunComplete || state.awaitingThemeSelection) {
-    logStageGrowthSummaryOnce();
-  }
-  if (state.pendingRunComplete) {
+  if (state.pendingStageTransition) {
+    saveRunCheckpoint();
     clearRewardTimer();
     MP.rewardTimer = window.setTimeout(() => {
       MP.rewardTimer = null;
-      openStageTagReward();
-    }, delayAfterInningTransition(transition, gameFlowDelay(600)));
-    return;
-  }
-  if (state.awaitingThemeSelection) {
-    clearRewardTimer();
-    MP.rewardTimer = window.setTimeout(() => {
-      MP.rewardTimer = null;
-      openStageTagReward();
+      openScheduledStageReward();
     }, delayAfterInningTransition(transition, gameFlowDelay(600)));
     return;
   }
@@ -6523,10 +7558,20 @@ function queueStageEntryAndTagReward(stageOverlay, delay = GAME_TIMING.stageEntr
   }, delay + GAME_TIMING.stageTagRewardDelay);
 }
 
-function nextScheduledBatter() {
-  if (!state.lineup?.length) return null;
+function nextScheduledBatters(count = 3) {
+  if (!state.lineup?.length) return [];
   const offset = state.dugoutBeforeAtBat && !state.dugoutAdvanceBatterOnConfirm ? 0 : 1;
-  return state.lineup[(state.batterIndex + offset) % state.lineup.length] || null;
+  return Array.from({ length: count }, (_, index) => state.lineup[(state.batterIndex + offset + index) % state.lineup.length]).filter(Boolean);
+}
+
+function nextScheduledBatter() {
+  return nextScheduledBatters(1)?.[0] || null;
+}
+
+function dugoutEventDescription(event) {
+  if (event?.id !== "cleanup_warning") return event?.desc || "";
+  const order = nextScheduledBatters().map((batter) => batter.slot).filter(Boolean).join("·");
+  return `다음 타순은 ${order || "미확인"}번입니다. 벤치가 장타만 피하자고 못 박습니다.`;
 }
 
 function dugoutChoiceCanAppear(choice) {
@@ -6867,8 +7912,8 @@ const DUGOUT_EVENTS = [
     category: "수비",
     strength: "강함",
     performanceScore: 3,
-    title: "중심타선 경고",
-    desc: "다음 이닝은 3-4-5번으로 이어집니다. 벤치가 장타만 피하자고 못 박습니다.",
+    title: "다음 타순 경고",
+    desc: "다음 타순을 확인하고 장타를 피합니다.",
     choices: [
       {
         label: "낮게 눌러 장타를 지운다",
@@ -7128,7 +8173,7 @@ function generateDugoutReadEventChoices(options = {}) {
     dugoutEventId: selected.id,
     category: selected.category || "벤치",
     title: choice.label,
-    desc: selected.desc,
+    desc: dugoutEventDescription(selected),
     hint: "",
     resultText: choice.resultText,
     correct: !!choice.correct,
@@ -7527,7 +8572,7 @@ function finishDugoutChoice(startsInning, advanceBatter) {
   if (!startsInning || advanceBatter) state.batterIndex += 1;
   startAtBat();
   render();
-  showBatterEntryBanner();
+
 }
 
 function confirmDugoutChoice(index) {
@@ -7594,11 +8639,10 @@ function stagePerformanceEventsForReward() {
 }
 
 function stagePerformanceGrade(score = 0) {
-  if (score >= 19) return "핵심 후보 개방";
-  if (score >= 15) return "희귀 2장 보장";
-  if (score >= 11) return "희귀 2장 후보";
-  if (score >= 7) return "희귀 1장 보장";
-  if (score >= 4) return "희귀 후보 개방";
+  if (score >= 40) return "핵심 후보 개방";
+  if (score >= 30) return "희귀 3장 보장";
+  if (score >= 20) return "희귀 2장 보장";
+  if (score >= 10) return "희귀 1장 보장";
   return "일반 보상";
 }
 
@@ -7615,7 +8659,7 @@ function renderStagePerformanceAbsorbList(kind) {
     .map(
       (token) => `
         <span class="reward-performance-pill reward-performance-pill--card-${token.cardIndex}" style="--token-delay:${token.delayMs}ms;--absorb-x:${token.absorbX}px;--absorb-y:${token.absorbY}px;--start-x:${token.startX}px">
-          ${escapeHtml(token.label)}
+          ${escapeHtml(token.label)} <em>→ ${escapeHtml(token.target)}</em>
         </span>
       `
     )
@@ -7627,8 +8671,9 @@ function stageCardRewardReasonText() {
   const rival = result.rivalGoalMet ? "라이벌 과제 달성" : "라이벌 과제 미달성";
   const lines = [`${result.stageName} · ${result.starLabel}`, rival];
   if (result.highlightSuccesses) lines.push(`하이라이트 ${result.highlightSuccesses}회 성공`);
-  if (result.rewardBoost?.absorbed) lines.push("좋은 승부가 카드 등급을 끌어올렸습니다.");
-  lines.push("스테이지 카드 3장 중 하나를 선택합니다.");
+  const score = result.rewardBoost?.performanceScore || 0;
+  lines.push(`성과 ${score}점 · ${stageRewardUpgradePlan(result).map(cardRarityLabel).join(" / ")}`);
+  lines.push("태그 중심 보상 3장 중 하나를 선택합니다.");
   return lines.join("\n");
 }
 
@@ -7792,7 +8837,7 @@ function generateRewardChoices(reason, result) {
   if (themeEntries.length) rewards.push(...themeEntries);
 
   const unknownPitch =
-    state.pitcher.repertoire.length < 5
+    [1, 4].includes(currentStageNumber()) && state.pitcher.repertoire.length < 5
       ? sample(
           pitchLibrary.filter((pitch) => !state.pitcher.repertoire.some((owned) => owned.id === pitch.id)),
           1
@@ -7809,7 +8854,9 @@ function generateRewardChoices(reason, result) {
 
   const upgradeEntries = MP.collectPitchUpgradeCandidates ? MP.collectPitchUpgradeCandidates(reason, result) : [];
   const upgradePicks = MP.pickWeightedPitchUpgrades ? MP.pickWeightedPitchUpgrades(upgradeEntries, 1) : [];
-  const uniqueRewards = dedupeRewardChoices(rewards);
+  const uniqueRewards = dedupeRewardChoices(
+    rewards.filter((reward) => reward.type !== "stat" || (state.pitcher.stats[reward.stat] || 0) < 99)
+  );
   if (upgradePicks.length && chance(0.45)) {
     const pickedUpgradeKeys = new Set(upgradePicks.map(rewardIdentity));
     const filler = sample(uniqueRewards.filter((reward) => !pickedUpgradeKeys.has(rewardIdentity(reward))), Math.max(0, 3 - upgradePicks.length));
@@ -7893,7 +8940,7 @@ function generateStageTagChoices() {
 
 function coreEvolutionPoolForPitcher(pitcher = state.pitcher) {
   if (!pitcher?.coreTagId) return [];
-  return coreEvolutionCatalog.filter((item) => item.coreTagId === pitcher.coreTagId);
+  return plannedCoreEvolutionCatalog.filter((item) => item.coreTagId === pitcher.coreTagId);
 }
 
 function evolutionChoiceWeight(card, pitcher = state.pitcher) {
@@ -7955,8 +9002,38 @@ function generateCoreEvolutionChoices() {
   }));
 }
 
+function playRewardRarityUpgrade(card, badge, reward) {
+  if (!card) return;
+  card.dataset.upgradeAnimated = "true";
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || typeof card.animate !== "function") return;
+  const tone = reward.rarity === "core" ? "#ffcb42" : "#3c7ed6";
+  card.animate(
+    [
+      { transform: "scale(1)", filter: "saturate(0.55) brightness(0.88)", boxShadow: "5px 5px 0 #17120e" },
+      { transform: "scale(0.97)", filter: "saturate(0.7) brightness(0.92)", offset: 0.2 },
+      { transform: "scale(1.065)", filter: "saturate(1.35) brightness(1.55)", boxShadow: `5px 5px 0 #17120e, 0 0 0 7px ${tone}, 0 0 28px ${tone}`, offset: 0.48 },
+      { transform: "scale(1.018)", filter: "saturate(1.1) brightness(1.12)", boxShadow: `5px 5px 0 #17120e, 0 0 14px ${tone}`, offset: 0.76 },
+      { transform: "scale(1)", filter: "none", boxShadow: "5px 5px 0 #17120e" }
+    ],
+    { duration: 1150, easing: "cubic-bezier(0.18, 0.9, 0.22, 1)", fill: "none" }
+  );
+  [badge, card.querySelector(".reward-card-upgrade-badge"), card.querySelector(".reward-card-upgrade-text")]
+    .filter(Boolean)
+    .forEach((element, index) => {
+      element.animate(
+        [
+          { opacity: 0, transform: "translateY(8px) scale(0.72)" },
+          { opacity: 1, transform: "translateY(-3px) scale(1.14)", offset: 0.55 },
+          { opacity: 1, transform: "translateY(0) scale(1)" }
+        ],
+        { duration: 680, delay: index * 70, easing: "cubic-bezier(0.18, 0.9, 0.22, 1)", fill: "forwards" }
+      );
+    });
+}
 function startRewardRevealAnimation() {
   if (!els.rewardOverlay) return;
+  MP.rewardUpgradeRevealTimers.forEach((timer) => window.clearTimeout(timer));
+  MP.rewardUpgradeRevealTimers = [];
   if (MP.rewardRevealTimer) {
     window.clearTimeout(MP.rewardRevealTimer);
     MP.rewardRevealTimer = null;
@@ -7964,34 +9041,64 @@ function startRewardRevealAnimation() {
   els.rewardOverlay.classList.remove("is-revealing", "is-revealed");
   void els.rewardOverlay.offsetWidth;
   els.rewardOverlay.classList.add("is-revealing");
-  const revealMs = playChoiceRevealAnimation(els.rewardOverlay, ".reward-choice-card", {
-    duration: gameFlowDelay(state.rewardKind === "coreEvolution" ? 780 : 720),
-    startY: state.rewardKind === "coreEvolution" ? 72 : 68,
-    startScale: state.rewardKind === "coreEvolution" ? 0.86 : 0.88
-  });
+  const revealMs = state.rewardKind === "stageCard"
+    ? 0
+    : playChoiceRevealAnimation(els.rewardOverlay, ".reward-choice-card", {
+        duration: gameFlowDelay(state.rewardKind === "coreEvolution" ? 780 : 720),
+        startY: state.rewardKind === "coreEvolution" ? 72 : 68,
+        startScale: state.rewardKind === "coreEvolution" ? 0.86 : 0.88
+      });
+  if (state.rewardKind === "stageCard") {
+    state.rewardChoices.forEach((reward, index) => {
+      if (!reward.upgradedByPerformance) return;
+      const tokenDelays = (state.rewardUpgradeTokens || [])
+        .filter((token) => token.cardIndex === index)
+        .map((token) => token.delayMs);
+      const delay = tokenDelays.length ? Math.max(...tokenDelays) + 2050 : 900 + index * 220;
+      MP.rewardUpgradeRevealTimers.push(window.setTimeout(() => {
+        const card = els.rewardChoiceList?.querySelector(`[data-reward-index="${index}"]`);
+        const badge = card?.querySelector(".reward-rarity-badge");
+        if (!card || !badge) return;
+        card.classList.remove("reward-choice-card--common");
+        card.classList.add(`reward-choice-card--${reward.rarity}`, "is-rarity-upgraded");
+        badge.className = `reward-rarity-badge reward-rarity-badge--${reward.rarity}`;
+        badge.textContent = cardRarityLabel(reward.rarity);
+        playRewardRarityUpgrade(card, badge, reward);
+      }, delay));
+    });
+  }
   MP.rewardRevealTimer = window.setTimeout(() => {
     MP.rewardRevealTimer = null;
     els.rewardOverlay?.classList.remove("is-revealing");
     els.rewardOverlay?.classList.add("is-revealed");
     resetChoiceRevealAnimation(els.rewardOverlay, ".reward-choice-card");
-  }, revealMs || gameFlowDelay(1100));
+  }, Math.max(revealMs || gameFlowDelay(1100), ...(state.rewardUpgradeTokens || []).map((token) => token.delayMs + 3400)));
 }
 
-function openRewardDraft(reason, result, kind = "normal") {
+function openRewardDraft(reason, result, kind = "normal", preserveChoices = false) {
   if (!els.rewardOverlay || state.gameOver) return;
   clearAutoAdvance();
   hideEventBanner();
   if (kind === "stageCard") showTutorialStep("stageCards");
   state.rewardKind = kind;
+  state.rewardReason = reason || "보상";
   state.rewardPending = true;
-  if (kind === "stageCard") state.rewardChoices = generateStageCardChoices();
-  else if (kind === "stageTag") state.rewardChoices = generateStageTagChoices();
-  else if (kind === "coreEvolution") state.rewardChoices = generateCoreEvolutionChoices();
-  else state.rewardChoices = generateRewardChoices(reason, result);
+  if (!preserveChoices) {
+    state.rewardRerollUsed = false;
+    if (kind === "stageCard") state.rewardChoices = generateStageCardChoices();
+    else if (kind === "stageTag") state.rewardChoices = generateStageTagChoices();
+    else if (kind === "coreEvolution") state.rewardChoices = generateCoreEvolutionChoices();
+    else state.rewardChoices = generateRewardChoices(reason, result);
+  }
   if (!state.rewardChoices.length) {
     state.rewardPending = false;
     state.rewardKind = "normal";
+    state.rewardReason = "";
     state.rewardUpgradeTokens = [];
+    if (state.pendingStageTransition) {
+      continueStageTransition();
+      return;
+    }
     if (state.awaitingThemeSelection) {
       openThemeSelectOverlay();
       return;
@@ -8004,6 +9111,7 @@ function openRewardDraft(reason, result, kind = "normal") {
     return;
   }
   state.rewardUpgradeTokens = buildRewardUpgradeTokens(kind);
+  els.rewardOverlay.dataset.kind = kind;
   els.rewardTitle.textContent = rewardDraftTitle(reason, kind);
   els.rewardReason.textContent =
     kind === "coreEvolution"
@@ -8015,10 +9123,24 @@ function openRewardDraft(reason, result, kind = "normal") {
           : rewardReasonText(reason);
   renderStagePerformanceAbsorbList(kind);
   renderRewardChoices();
+  if (els.rewardRerollControls) els.rewardRerollControls.hidden = !hasRunEquipment("manager_clipboard") || kind !== "stageCard" || state.rewardRerollUsed;
   els.rewardOverlay.hidden = false;
   startRewardRevealAnimation();
   disablePitchButtons(true);
   syncGameOverlayUi();
+  saveRunCheckpoint();
+}
+
+function rerollStageRewards() {
+  if (!hasRunEquipment("manager_clipboard") || state.rewardKind !== "stageCard" || state.rewardRerollUsed) return;
+  const lockedIndex = clamp(Number(els.rewardLockSelect?.value) || 0, 0, 2);
+  const locked = state.rewardChoices[lockedIndex];
+  const fresh = generateStageCardChoices().filter((choice) => rewardIdentity(choice) !== rewardIdentity(locked));
+  state.rewardChoices = [0, 1, 2].map((index) => index === lockedIndex ? locked : fresh.shift()).filter(Boolean);
+  state.rewardRerollUsed = true;
+  renderRewardChoices();
+  if (els.rewardRerollControls) els.rewardRerollControls.hidden = true;
+  saveRunCheckpoint();
 }
 
 function openStageTagReward() {
@@ -8074,7 +9196,7 @@ function applyReward(index) {
   }
   if (reward.type === "supportUpgrade") {
     ensurePitcherTagFields(state.pitcher);
-    state.pitcher.bonusTagTiers[reward.tagId] = (state.pitcher.bonusTagTiers[reward.tagId] || 1) + (reward.tierBoost || 1);
+    state.pitcher.bonusTagTiers[reward.tagId] = Math.min(2, (state.pitcher.bonusTagTiers[reward.tagId] || 1) + (reward.tierBoost || 1));
   }
   if (reward.type === "weaknessMitigation") {
     const removeId = reward.weaknessTagId;
@@ -8089,6 +9211,7 @@ function applyReward(index) {
   if (reward.type === "rewardCard") {
     state.ownedRewardCards = [...(state.ownedRewardCards || []), reward.cardId];
   }
+  state.acquiredRewards = [...(state.acquiredRewards || []), { type: reward.type, title: reward.title || "보상" }];
   markConditionalCardType(reward);
 
   state.runStats.rewards += 1;
@@ -8100,6 +9223,7 @@ function applyReward(index) {
   );
   state.rewardPending = false;
   state.rewardKind = "normal";
+  state.rewardReason = "";
   state.afterRewardStageOverlay = null;
   state.rewardChoices = [];
   state.rewardUpgradeTokens = [];
@@ -8107,10 +9231,16 @@ function applyReward(index) {
     window.clearTimeout(MP.rewardRevealTimer);
     MP.rewardRevealTimer = null;
   }
+  MP.rewardUpgradeRevealTimers.forEach((timer) => window.clearTimeout(timer));
+  MP.rewardUpgradeRevealTimers = [];
   resetChoiceRevealAnimation(els.rewardOverlay, ".reward-choice-card");
   els.rewardOverlay.hidden = true;
   els.rewardOverlay.classList.remove("is-revealing", "is-revealed");
   render();
+  if (state.pendingStageTransition) {
+    continueStageTransition();
+    return;
+  }
   if ((rewardKind === "coreEvolution" || rewardKind === "stageTag") && state.pendingRewardKindAfterCurrent) {
     const nextKind = state.pendingRewardKindAfterCurrent;
     state.pendingRewardKindAfterCurrent = null;
@@ -8219,15 +9349,19 @@ function rewardChoiceMetaHtml(reward) {
 
 function buildRewardUpgradeTokens(kind) {
   if (kind !== "stageCard" || !state.rewardChoices?.length) return [];
-  const targetIndexes = state.rewardChoices.map((_, index) => index);
+  const targetIndexes = state.rewardChoices
+    .map((reward, index) => reward.upgradedByPerformance ? index : -1)
+    .filter((index) => index >= 0);
+  if (!targetIndexes.length) return [];
   const absorbXByCard = [-220, 0, 220];
   return stagePerformanceEventsForReward().map((event, index) => {
-    const cardIndex = targetIndexes[Math.floor(Math.random() * targetIndexes.length)];
+    const cardIndex = targetIndexes[index % targetIndexes.length];
     return {
       label: event.label,
+      target: `${cardIndex + 1}번 ${state.rewardChoices[cardIndex]?.title || "보상 카드"}`,
       cardIndex,
       delayIndex: index,
-      delayMs: 520 + index * 150,
+      delayMs: 650 + index * 260,
       startX: [-56, -20, 24, 58][index % 4],
       absorbX: absorbXByCard[cardIndex] || 0,
       absorbY: -196
@@ -8342,18 +9476,22 @@ function rewardDisplayTitle(reward) {
 
 function renderCoreEvolutionRewardCard(reward, index) {
   const rarity = reward.rarity || (reward.type === "coreEvolution" ? "core" : "common");
-  const subtitle = rewardUnifiedSubtitle(reward);
+  const visibleRarity = state.rewardKind === "stageCard" && reward.upgradedByPerformance ? "common" : rarity;
+  const subtitle = reward.combo && rewardUnifiedSubtitle(reward) === "COMBO!" ? "" : rewardUnifiedSubtitle(reward);
   const title = rewardDisplayTitle(reward);
-  const hasUpgradeToken = reward.upgradedByPerformance || (state.rewardUpgradeTokens || []).some((token) => token.cardIndex === index);
+  const hasUpgradeToken = Boolean(reward.upgradedByPerformance);
   return `
-    <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(rarity)}${hasUpgradeToken ? " is-upgraded-by-performance" : ""}" type="button" data-reward-index="${index}">
+    <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(visibleRarity)}${hasUpgradeToken ? " is-upgraded-by-performance" : ""}" type="button" data-reward-index="${index}">
       ${rewardUpgradeTokensHtml(index)}
       <header class="core-evo-head">
         <div class="core-evo-titles">
           <strong class="core-evo-name">${escapeHtml(title)}</strong>
           ${subtitle ? `<span class="core-evo-sub">${escapeHtml(subtitle)}</span>` : ""}
         </div>
-        <span class="reward-rarity-badge reward-rarity-badge--${escapeHtml(rarity)}">${escapeHtml(cardRarityLabel(rarity))}</span>
+        <span class="reward-badge-row">
+          <span class="reward-rarity-badge reward-rarity-badge--${escapeHtml(visibleRarity)}">${escapeHtml(cardRarityLabel(visibleRarity))}</span>
+          ${reward.combo ? '<span class="reward-combo-badge">COMBO</span>' : ""}
+        </span>
       </header>
       <div class="core-evo-body">
         ${rewardRowHtml("조건", rewardUnifiedCondition(reward))}
@@ -8383,7 +9521,7 @@ function nextBatter() {
   if (state.waitingNextBatter) state.batterIndex += 1;
   startAtBat();
   render();
-  showBatterEntryBanner();
+
 }
 
 function clearAutoAdvance() {
@@ -8417,8 +9555,8 @@ function clearCourseFlash() {
 
 function flashCourse(zone, targetRow = null, targetCol = null) {
   clearCourseFlash();
-  const row = Number.isFinite(Number(targetRow)) ? Number(targetRow) : courseZones[zone]?.row ?? 1;
-  const col = Number.isFinite(Number(targetCol)) ? Number(targetCol) : courseZones[zone]?.col ?? 1;
+  const row = targetRow != null && Number.isFinite(Number(targetRow)) ? Number(targetRow) : courseZones[zone]?.row ?? 1;
+  const col = targetCol != null && Number.isFinite(Number(targetCol)) ? Number(targetCol) : courseZones[zone]?.col ?? 1;
   state.flashZone = `${row}:${col}`;
   MP.courseFlashTimer = window.setTimeout(() => {
     state.flashZone = null;
@@ -8440,7 +9578,7 @@ function scheduleAutoAdvance(delay = GAME_TIMING.autoAdvanceDefault) {
     }
     startAtBat();
     render();
-    showBatterEntryBanner();
+
   }, delay);
 }
 
@@ -8460,27 +9598,38 @@ function queueGameOverAfterResult(result, message) {
 
 function gameSummaryHtml(message) {
   const stats = state.runStats;
+  const lastPitch = (state.mobilePitchRecords || []).find((item) => item.type !== "batter");
+  const lastPitchHtml = lastPitch
+    ? `
+      <span class="result-last-pitch">
+        <small>마지막 승부</small>
+        <b>${escapeHtml(lastPitch.pitch || "투구")}</b>
+        <span>${escapeHtml(lastPitch.zone || "-")} · ${escapeHtml(lastPitch.outcome || lastPitch.mark || "결과")}</span>
+      </span>
+    `
+    : "";
   return `
-    <span class="result-copy">${message} 최종 실점: ${state.runs}</span>
+    <span class="result-copy">${escapeHtml(message)} 최종 실점 ${state.runs}</span>
     <span class="result-summary">
       <span><b>${pitchedInningsText()}</b>투구 이닝</span>
+      <span><b>${state.runs}</b>실점</span>
       <span><b>${stats.strikeouts}</b>삼진</span>
-      <span><b>${stats.doublePlays}</b>병살</span>
       <span><b>${stats.hits}</b>피안타</span>
-      <span><b>${stats.walks}</b>볼넷</span>
-      <span><b>${stats.rewards}</b>보상</span>
-      <span><b>${stats.bossOuts}</b>보스 제압</span>
+    </span>
+    ${lastPitchHtml}
+    <span class="result-earned">
+      <strong>획득 보상</strong>
+      <span><b>CP</b><em>+${state.runCpAwarded || 0}</em></span>
+      <span><b>선택한 보상</b><em>${stats.rewards}개</em></span>
+      <span><b>보스 제압</b><em>${stats.bossOuts}회</em></span>
     </span>
   `;
 }
 
 function pitchedInningsText() {
-  const completedBeforeStage = stageInnings
-    .slice(0, state.stageIndex)
-    .reduce((sum, innings) => sum + innings, 0);
-  const stageCompleted = clamp(state.inning - 1, 0, currentStageInnings());
-  const currentOuts = state.inning > currentStageInnings() ? 0 : clamp(state.outs, 0, 2);
-  return `${completedBeforeStage + stageCompleted}.${currentOuts}`;
+  const completedStages = state.stageIndex + (state.stageRun?.completed ? 1 : 0);
+  const currentOuts = state.stageRun?.completed ? 0 : clamp(state.outs, 0, 2);
+  return `${completedStages}.${currentOuts}`;
 }
 
 function endGame(won, message) {
@@ -8492,16 +9641,21 @@ function endGame(won, message) {
   state.waitingNextBatter = false;
   state.rewardPending = false;
   state.rewardKind = "normal";
+  state.rewardReason = "";
   state.afterRewardStageOverlay = null;
   if (els.rewardOverlay) els.rewardOverlay.hidden = true;
   if (els.dugoutOverlay) els.dugoutOverlay.hidden = true;
   els.nextBatterButton.hidden = true;
-  els.resultTitle.textContent = won ? "클리어" : "경기 종료";
+  settleRunCp(won);
+  els.resultOverlay.classList.toggle("is-win", won);
+  els.resultOverlay.classList.toggle("is-loss", !won);
+  els.resultTitle.textContent = won ? "승리!" : "RUN 종료";
   els.resultMessage.innerHTML = gameSummaryHtml(message);
   els.resultOverlay.hidden = false;
   if (els.stageThemeBadge) els.stageThemeBadge.hidden = true;
   disablePitchButtons(true);
   if (balanceLog.active) balanceLog.active.summary = buildBalanceRunSummary(won, message);
+  clearRunCheckpoint();
 }
 
 function addLog(title, text) {
@@ -8696,11 +9850,21 @@ function pitcherNameParts(pitcher) {
 
 function pitcherChoiceStatsHtml(pitcher) {
   return pitcherStatOrder
+    .slice(0, 3)
     .map((label) => {
       const value = clampStat(pitcher?.stats?.[label] ?? 50);
-      return `<span class="choice-stat"><b>${escapeHtml(label)}</b><i style="--stat:${value}%"></i><span>${value}</span></span>`;
+      return `<span class="choice-stat"><b>${escapeHtml(label)}</b><span>${value}</span></span>`;
     })
     .join("");
+}
+
+function pitcherChoiceArchetype(pitcher) {
+  return {
+    power: { id: "power", label: "파워형", style: "파워형 투수" },
+    balanced: { id: "balanced", label: "균형형", style: "균형형 투수" },
+    command: { id: "command", label: "기교형", style: "기교형 투수" },
+    breaking: { id: "breaking", label: "변화구형", style: "변화구형 투수" }
+  }[pitcher?.profileId] || { id: "balanced", label: "균형형", style: "균형형 투수" };
 }
 
 function pitcherChoicePitchesHtml(pitcher) {
@@ -8715,16 +9879,20 @@ function pitcherChoicePitchesHtml(pitcher) {
 
 function renderPitcherChoices() {
   if (!els.pitcherSelectOverlay || !els.pitcherChoiceList) return;
+  pendingPitcherChoiceIndex = -1;
+  if (els.pitcherChoiceSelectedName) els.pitcherChoiceSelectedName.textContent = "선택 전";
+  if (els.pitcherChoiceConfirm) els.pitcherChoiceConfirm.disabled = true;
   els.pitcherChoiceList.innerHTML = state.pitcherChoices
     .map((pitcher, index) => {
       const display = pitcherNameParts(pitcher);
+      const archetype = pitcherChoiceArchetype(pitcher);
       return `
-        <button class="pitcher-choice-card" type="button" data-pitcher-index="${index}">
-          <img class="choice-portrait" src="${pitcher.portrait}" alt="" aria-hidden="true" />
+        <button class="pitcher-choice-card pitcher-choice-card--${archetype.id}" type="button" data-pitcher-index="${index}" aria-pressed="false">
           <span class="choice-copy">
-            <span class="choice-number">${index + 1}</span>
+            <span class="choice-number">${escapeHtml(archetype.label)}</span>
             <strong>${escapeHtml(display.name)}</strong>
-            <em class="choice-style">${escapeHtml(display.style)}</em>
+            <em class="choice-style">${escapeHtml(archetype.style)}</em>
+            <em class="choice-core-tag">${escapeHtml(coreTagNameById(pitcher.coreTagId))}</em>
           </span>
           <span class="choice-stats">${pitcherChoiceStatsHtml(pitcher)}</span>
           <span class="choice-pitches">${pitcherChoicePitchesHtml(pitcher)}</span>
@@ -8733,7 +9901,23 @@ function renderPitcherChoices() {
     })
     .join("");
   els.pitcherSelectOverlay.hidden = false;
+  els.pitcherSelectOverlay.scrollTop = 0;
+  const pitcherSelectBox = els.pitcherSelectOverlay.querySelector(".pitcher-select-box");
+  if (pitcherSelectBox) pitcherSelectBox.scrollTop = 0;
   startPitcherRevealAnimation();
+}
+
+function selectPitcherChoice(index) {
+  const pitcher = state.pitcherChoices[index];
+  if (!pitcher) return;
+  pendingPitcherChoiceIndex = index;
+  els.pitcherChoiceList?.querySelectorAll("[data-pitcher-index]").forEach((card) => {
+    const selected = Number(card.dataset.pitcherIndex) === index;
+    card.classList.toggle("is-selected", selected);
+    card.setAttribute("aria-pressed", String(selected));
+  });
+  if (els.pitcherChoiceSelectedName) els.pitcherChoiceSelectedName.textContent = pitcher.name || "선택 완료";
+  if (els.pitcherChoiceConfirm) els.pitcherChoiceConfirm.disabled = false;
 }
 
 function pitchInputLocked(options = {}) {
@@ -8749,6 +9933,7 @@ function pitchInputLocked(options = {}) {
     state.awaitingThemeSelection ||
     state.awaitingStageStart ||
     state.pendingGameOver ||
+    state.pitchInFlight ||
     (includeRelease && !!state.releaseTiming?.active)
   );
 }
@@ -8834,7 +10019,7 @@ function renderRunStatusCard() {
   }
   if (!els.runStatusCard) return;
   els.runStatusCard.hidden = false;
-  if (els.runStageName) els.runStageName.textContent = `STAGE ${currentStageNumber()} · ${config.name}`;
+  if (els.runStageName) els.runStageName.textContent = `GAME ${currentGameNumber()} · STAGE ${currentStageNumber()} · ${config.name}`;
   if (els.runMissionText) {
     els.runMissionText.textContent = mission ? `이번 이닝 미션: ${missionText} · ${missionStatus}` : "이번 이닝에는 추가 미션이 없습니다";
   }
@@ -8852,22 +10037,16 @@ function renderRunStatusCard() {
 function renderOwnedCardSummary() {
   if (!els.ownedCardSummary) return;
   const stacks = ownedRewardCardEntries();
-  const counts = stacks.reduce(
-    (acc, entry) => {
-      acc[entry.card.rarity] += entry.stack;
-      return acc;
-    },
-    { common: 0, rare: 0, core: 0 }
-  );
-  const latest = stacks
-    .slice(0, 4)
-    .map((entry) => `${entry.card.name}${entry.stack > 1 ? ` x${entry.stack}` : ""}`)
+  const rewards = state.acquiredRewards || [];
+  const tagCount = rewards.filter((reward) => ["tag", "supportUpgrade", "coreEvolution"].includes(reward.type)).length;
+  const growthCount = rewards.filter((reward) => !["rewardCard", "tag", "supportUpgrade", "coreEvolution"].includes(reward.type)).length;
+  const latest = (rewards.length ? rewards.slice(-4).reverse().map((reward) => reward.title) : stacks.map((entry) => entry.card.name))
     .join(" · ");
   els.ownedCardSummary.innerHTML = `
-    <span>일반 ${counts.common}</span>
-    <span>희귀 ${counts.rare}</span>
-    <span>핵심 ${counts.core}</span>
-    <small>${escapeHtml(latest || "보유 카드 없음")}</small>
+    <span>카드 ${stacks.reduce((sum, entry) => sum + entry.stack, 0)}</span>
+    <span>태그·진화 ${tagCount}</span>
+    <span>성장 ${growthCount}</span>
+    <small>${escapeHtml(latest || "보유 보상 없음")}</small>
   `;
 }
 
@@ -8947,7 +10126,7 @@ function render() {
     state.batterCardExpanded = false;
   }
   const batter = currentBatter();
-  const stageTarget = currentStageInnings();
+  const stageTarget = 3;
   els.inningText.textContent = `${Math.min(state.inning, stageTarget)} / ${stageTarget}`;
   els.runsText.textContent = state.runs;
   if (els.targetText) els.targetText.textContent = `실점 제한 ${currentStageRunLimit()}`;
@@ -9035,6 +10214,7 @@ function updateCardToggle(button, expanded, label) {
 const MOBILE_PORTRAIT_QUERY = "(min-width: 0px)";
 let mobilePanelMode = "";
 let mobileSelectedCard = "";
+let pendingPitcherChoiceIndex = -1;
 
 function isMobilePortraitLayout() {
   return true;
@@ -9050,6 +10230,8 @@ function syncGameOverlayUi() {
       (els.stageOverlay && !els.stageOverlay.hidden) ||
       (els.themeSelectOverlay && !els.themeSelectOverlay.hidden) ||
       (els.resultOverlay && !els.resultOverlay.hidden) ||
+      (els.clubhouseOverlay && !els.clubhouseOverlay.hidden) ||
+      (els.equipmentSetupOverlay && !els.equipmentSetupOverlay.hidden) ||
       (els.stageThemeDetailOverlay && !els.stageThemeDetailOverlay.hidden)
   );
   document.body.classList.toggle("game-overlay-open", overlayOpen);
@@ -9096,14 +10278,16 @@ function renderMobileZones() {
 
 function renderMobilePitchButtons() {
   if (!els.mobilePitchButtons || !state.pitcher) return;
+  els.mobilePitchButtons.style.setProperty("--pitch-count", Math.min(5, state.pitcher.repertoire.length));
   els.mobilePitchButtons.innerHTML = state.pitcher.repertoire.slice(0, 5).map((pitch) => {
     if (MP.ensurePitchRuntime) MP.ensurePitchRuntime(pitch);
     const burdenValue = Math.min(100, Math.max(0, pitch.burden || 0));
-    const burdenLabel = MP.burdenLabel ? MP.burdenLabel(burdenValue) : "안정";
     const burdenTone = burdenValue >= 70 ? "danger" : burdenValue >= 45 ? "warn" : "stable";
     const levelTier = pitchLevelTierId(pitch);
     return `<button class="mobile-pitch-button${state.selectedPitchId === pitch.id ? " is-selected" : ""}" type="button" data-mobile-pitch="${escapeHtml(pitch.id)}" data-burden="${burdenTone}" data-pitch-tier="${escapeHtml(levelTier)}" ${pitchInputLocked({ includeRelease: false }) ? "disabled" : ""}>
-      <img src="${pitchIconUrl(pitch)}" alt=""><strong>${escapeHtml(pitch.name)}</strong><small>${pitchVelocityKmh(pitch)}km/h</small><em>${escapeHtml(burdenLabel)}</em>
+      <strong>${escapeHtml(pitch.name)}</strong>
+      <small>피로 ${Math.round(burdenValue)}%</small>
+      <span class="mobile-pitch-fatigue" aria-hidden="true"><i style="width:${burdenValue}%"></i></span>
     </button>`;
   }).join("");
 }
@@ -9158,12 +10342,15 @@ function mobilePitcherTagItems() {
   ensurePitcherTagFields(state.pitcher);
   const items = [];
   const core = state.pitcher.coreTagId ? tagById(state.pitcher.coreTagId) : null;
-  if (core?.name) items.push({ label: core.name, tier: state.pitcher.coreTier || "bronze", section: "core", text: tagDescriptionForPitcher(core) });
+  if (core?.name) items.push({ id: core.id, label: core.name, family: core.family, effects: tagEffectsForPitcher(core), tier: state.pitcher.coreTier || "bronze", section: "core", text: tagDescriptionForPitcher(core) });
   (state.pitcher.bonusTags || []).forEach((id) => {
     const tag = tagById(id);
     const label = supportTagDisplayName(id);
     items.push({
+      id,
       label,
+      family: supportTagFamily(id),
+      effects: tagEffectsForPitcher(tag),
       tier: mobileTagTierFromNumber(supportTagTier(state.pitcher, id)),
       section: "support",
       text: tag?.description || pitcherTagDetailText(label)
@@ -9175,9 +10362,10 @@ function mobilePitcherTagItems() {
 function mobileBatterTagItems(batter) {
   return batterVisibleTagItems(batter).map((item, index) => {
     const label = item.label;
+    const source = batterCatalogTag(label) || batterWeaknessById(item.weaknessTagId);
     const tier = batterDisplayTagTier(batter, label, index);
     const role = item.role || batterDisplayTagRole(label, index);
-    return { label, tier, role, text: tagDetailText(label, batter) };
+    return { id: source?.id || label, label, tier, role, family: role === "weakness" ? "약점 태그" : "타자 성향", effects: source?.effects || {}, text: tagDetailText(label, batter) };
   });
 }
 
@@ -9197,8 +10385,8 @@ function mobileBatterMetaText(batter) {
   return labels.join(" · ");
 }
 
-function mobileModalTagButtonsHtml(items) {
-  return (items || []).map((tag) => `<button type="button" data-tier="${escapeHtml(tag.tier || "bronze")}" data-mobile-modal-tag="${escapeHtml(tag.label)}" data-mobile-modal-tag-text="${escapeHtml(tag.text || tag.label)}" data-mobile-modal-tag-section="${escapeHtml(tag.section || "tag")}">${escapeHtml(tag.label)}</button>`).join("");
+function mobileModalTagButtonsHtml(items, className = "") {
+  return (items || []).map((tag) => `<button class="${className}" type="button" data-tier="${escapeHtml(tag.tier || "bronze")}" data-role="${escapeHtml(tag.role || tag.section || "tag")}" data-mobile-modal-tag="${escapeHtml(tag.label)}" data-mobile-modal-tag-section="${escapeHtml(tag.section || "tag")}">${escapeHtml(tag.label)}</button>`).join("");
 }
 
 function mobilePitcherStatusHtml() {
@@ -9208,6 +10396,93 @@ function mobilePitcherStatusHtml() {
   const mentalLabel = mental >= 70 ? "안정" : mental >= 55 ? "보통" : "주의";
   const burdenLabel = maxBurden >= 70 ? "관리 필요" : maxBurden >= 45 ? "주의" : "안정";
   return `<div class="mobile-detail-status"><span><b>릴리즈</b><em>${escapeHtml(releaseLabel)}</em></span><span><b>멘탈</b><em>${escapeHtml(mentalLabel)}</em></span><span><b>구종 피로도</b><em>${escapeHtml(burdenLabel)}</em></span></div>`;
+}
+
+function mobileBatterStatusHtml(batter) {
+  const suspicion = clamp(Math.round(state.atBat?.suspicion || 0), 0, 100);
+  return `<div class="mobile-detail-status"><span><b>노림수</b><em>${escapeHtml(batter?.tendency?.label || batter?.type || "탐색 중")}</em></span><span><b>멘탈</b><em>${escapeHtml(batter?.mind?.label || "안정")}</em></span><span><b>간파도</b><em>${suspicion}%</em></span></div>`;
+}
+
+function mobileOverall(stats) {
+  const values = Object.values(stats || {}).filter(Number.isFinite);
+  return values.length ? Math.round(values.reduce((sum, value) => sum + value, 0) / values.length) : 0;
+}
+
+function mobileGrade(stats) {
+  const overall = mobileOverall(stats);
+  return overall >= 82 ? "S" : overall >= 74 ? "A" : overall >= 66 ? "B" : "C";
+}
+
+function mobileStatRowsHtml(stats) {
+  return Object.entries(stats || {}).slice(0, 5).map(([label, rawValue]) => {
+    const value = clampStat(rawValue);
+    return `<div class="mobile-detail-stat"><b>${escapeHtml(label)}</b><i><u style="width:${value}%"></u></i><strong>${value}</strong></div>`;
+  }).join("");
+}
+
+function mobileCoreTagCardHtml(tag) {
+  if (!tag) return '<span class="mobile-detail-empty">핵심 태그 없음</span>';
+  return `<button class="mobile-detail-core-card" type="button" data-tier="${escapeHtml(tag.tier || "bronze")}" data-mobile-modal-tag="${escapeHtml(tag.label)}" data-mobile-modal-tag-section="${escapeHtml(tag.section || "tag")}"><small>핵심</small><strong>${escapeHtml(tag.label)}</strong><span>${escapeHtml(tag.text || "자세히 보기")}</span></button>`;
+}
+
+const mobileEffectLabels = {
+  fastQualityBonus: "빠른 공 위력",
+  secondaryQualityBonus: "변화구 위력",
+  whiffBonus: "헛스윙 확률",
+  chaseBonus: "유인 스윙",
+  strikeControlBonus: "스트 제구",
+  outsideControlBonus: "바깥 제구",
+  lowZoneControlBonus: "낮은 공 제구",
+  groundballBonus: "땅볼 유도",
+  brushContactPenalty: "정타 억제",
+  lowContactQualityPenalty: "낮은 공 타구 억제",
+  counterContactPenalty: "역노림 타구 억제",
+  mixSuspicionBonus: "배합 교란",
+  firstPitchControlBonus: "초구 제구",
+  firstPitchQualityBonus: "초구 위력",
+  evenCountQualityBonus: "균형 카운트 위력",
+  fullCountWalkReduce: "풀카운트 볼넷 억제",
+  fullCountPenalty: "풀카운트 불리함",
+  highFastQualityBonus: "높은 빠른 공 위력",
+  highFastWhiffBonus: "높은 빠른 공 헛스윙",
+  insideControlBonus: "몸쪽 제구",
+  mistakeHomerunRisk: "실투 장타 위험",
+  pressurePenalty: "압박 페널티",
+  texasHitSuppress: "빗맞은 안타 억제",
+  walkPressure: "볼넷 압박",
+  pressureReduce: "압박 감소",
+  fullCountControlBonus: "풀카운트 제구",
+  twoStrikeQualityBonus: "2스트 결정구",
+  twoStrikeContactPenalty: "2스트 컨택 억제"
+};
+
+function mobileEffectValue(value) {
+  if (!Number.isFinite(value)) return String(value || "적용");
+  if (Math.abs(value) < 1) return `${value >= 0 ? "+" : ""}${Math.round(value * 100)}%`;
+  return `${value >= 0 ? "+" : ""}${value}`;
+}
+
+function renderMobileTagDetail(label, section = "tag") {
+  if (!els.mobilePlayerDetailPanel) return;
+  const items = mobileSelectedCard === "pitcher" ? mobilePitcherTagItems() : mobileBatterTagItems(currentBatter());
+  const tag = items.find((item) => item.label === label) || { label, section, text: mobileSelectedCard === "pitcher" ? pitcherTagDetailText(label) : tagDetailText(label, currentBatter()), effects: {} };
+  const effects = Object.entries(tag.effects || {});
+  const synergy = items.filter((item) => item.label !== tag.label && item.family && item.family === tag.family).map((item) => item.label);
+  els.mobilePlayerDetailPanel.dataset.kind = mobileSelectedCard;
+  els.mobilePlayerDetailPanel.dataset.view = "tag";
+  els.mobilePlayerDetailPanel.innerHTML = `
+    <div class="mobile-tag-hero">
+      <div class="mobile-tag-actions"><button type="button" data-mobile-detail-back aria-label="선수 상세로 돌아가기">←</button><button type="button" data-mobile-detail-close aria-label="닫기">×</button></div>
+      <small>${escapeHtml(section === "core" ? "핵심 태그" : section === "support" ? "보조 태그" : tag.family || "성향 태그")}</small>
+      <h2>${escapeHtml(tag.label)}</h2>
+      <p>${escapeHtml(`${String(tag.id || tag.label).replace(/_/g, " ")} · ${tag.family || "운영 계열"}`)}</p>
+    </div>
+    <div class="mobile-tag-body">
+      <p class="mobile-tag-description">${escapeHtml(tag.text || "승부 운영에 영향을 주는 태그입니다.")}</p>
+      <section><h3>효과</h3><div class="mobile-tag-effects">${effects.length ? effects.map(([key, value]) => `<span><b>${escapeHtml(mobileEffectLabels[key] || key)}</b><em>${escapeHtml(mobileEffectValue(value))}</em></span>`).join("") : "<span><b>승부 영향</b><em>적용</em></span>"}</div></section>
+      <section class="mobile-tag-condition"><h3>발동 조건</h3><p>${section === "support" ? "장착 후 관련 승부 상황에서 자동 적용" : "관련 구종·코스 조건을 만족하면 자동 발동"}</p></section>
+      <section><h3>시너지 태그</h3><div class="mobile-tag-synergy">${synergy.length ? synergy.map((name) => `<b>${escapeHtml(name)}</b>`).join("") : "<span>현재 연결된 태그 없음</span>"}</div></section>
+    </div>`;
 }
 
 function pitcherTagDetailText(label) {
@@ -9254,32 +10529,33 @@ function renderMobilePlayerDetail() {
   const batter = currentBatter();
   if (mobileSelectedCard === "pitcher") {
     const tags = mobilePitcherTagItems();
-    const coreTags = mobileModalTagButtonsHtml(tags.filter((tag) => tag.section === "core"));
+    const coreTag = tags.find((tag) => tag.section === "core");
     const supportTagsHtml = mobileModalTagButtonsHtml(tags.filter((tag) => tag.section !== "core"));
     els.mobilePlayerDetailPanel.innerHTML = `
-      <header><div><strong>${escapeHtml(state.pitcher.name || "-")}</strong></div><button class="mobile-detail-close" type="button" data-mobile-detail-close>×</button></header>
-      <section class="mobile-detail-section"><strong>주요 능력</strong><div class="mobile-detail-grid">${mobileStatsGridHtml(state.pitcher.stats, 5)}</div></section>
-      <section class="mobile-detail-section"><strong>핵심태그</strong><div class="mobile-detail-tags">${coreTags || "<span>태그 없음</span>"}</div><div class="mobile-detail-tag-text" data-mobile-detail-tag-text="core" hidden></div></section>
-      <section class="mobile-detail-section"><strong>보조태그</strong><div class="mobile-detail-tags">${supportTagsHtml || "<span>태그 없음</span>"}</div><div class="mobile-detail-tag-text" data-mobile-detail-tag-text="support" hidden></div></section>
+      <header class="mobile-detail-hero"><div><span>내 선수</span><strong>${escapeHtml(state.pitcher.name || "-")}</strong><small>${escapeHtml(state.pitcher.style || "투수")} · ${mobileGrade(state.pitcher.stats)}등급</small></div><button class="mobile-detail-close" type="button" data-mobile-detail-close>×</button></header>
+      <section class="mobile-detail-section"><strong>주요 능력 <small>OVR ${mobileOverall(state.pitcher.stats)}</small></strong><div class="mobile-detail-stat-list">${mobileStatRowsHtml(state.pitcher.stats)}</div></section>
+      <section class="mobile-detail-section"><strong>태그</strong>${mobileCoreTagCardHtml(coreTag)}<div class="mobile-detail-tags mobile-detail-support-tags">${supportTagsHtml || "<span>보조 태그 없음</span>"}</div></section>
       <section class="mobile-detail-section"><strong>현재 상태</strong>${mobilePitcherStatusHtml()}</section>
     `;
   } else {
-    const tags = mobileBatterTagItems(batter)
-      .map((tag) => `<button type="button" data-tier="${escapeHtml(tag.tier || "bronze")}" data-mobile-modal-tag="${escapeHtml(tag.label)}" data-mobile-modal-tag-text="${escapeHtml(tag.text)}">${escapeHtml(tag.label)}</button>`)
-      .join("");
+    const tagItems = mobileBatterTagItems(batter);
+    const coreTag = tagItems.find((tag) => tag.role !== "weakness") || tagItems[0];
+    const supportTagsHtml = mobileModalTagButtonsHtml(tagItems.filter((tag) => tag !== coreTag));
     const recent = (state.mobilePitchRecords || [])
       .filter((item) => item.type !== "batter")
       .slice(0, 2)
       .map((item) => `<span>${escapeHtml(item.pitch)} ${item.speed}km/h / ${escapeHtml(item.outcome)}</span>`)
       .join("");
     els.mobilePlayerDetailPanel.innerHTML = `
-      <header><div><strong>${escapeHtml(batter?.name || "-")}</strong></div><button class="mobile-detail-close" type="button" data-mobile-detail-close>×</button></header>
-      <section class="mobile-detail-section"><strong>주요 능력</strong><div class="mobile-detail-grid">${mobileStatsGridHtml(batter?.stats, 5)}</div></section>
-      <section class="mobile-detail-section"><strong>태그</strong><div class="mobile-detail-tags">${tags}</div><div class="mobile-detail-tag-text" data-mobile-detail-tag-text="tag" hidden></div></section>
+      <header class="mobile-detail-hero"><div><span>상대</span><strong>${escapeHtml(batter?.name || "-")}</strong><small>${escapeHtml(mobileBatterMetaText(batter))} · ${escapeHtml(batter?.type || "타자")}</small></div><button class="mobile-detail-close" type="button" data-mobile-detail-close>×</button></header>
+      <section class="mobile-detail-section"><strong>주요 능력 <small>OVR ${mobileOverall(batter?.stats)}</small></strong><div class="mobile-detail-stat-list">${mobileStatRowsHtml(batter?.stats)}</div></section>
+      <section class="mobile-detail-section"><strong>태그</strong>${mobileCoreTagCardHtml(coreTag)}<div class="mobile-detail-tags mobile-detail-support-tags">${supportTagsHtml || "<span>보조 태그 없음</span>"}</div></section>
+      <section class="mobile-detail-section"><strong>현재 상태</strong>${mobileBatterStatusHtml(batter)}</section>
       <section class="mobile-detail-section"><strong>최근 승부 기록</strong><div class="mobile-detail-pitches">${recent || "<span>기록 없음</span>"}</div></section>
     `;
   }
   els.mobilePlayerDetailPanel.dataset.kind = mobileSelectedCard;
+  els.mobilePlayerDetailPanel.dataset.view = "player";
   els.mobilePlayerDetailPanel.hidden = false;
   if (els.mobilePanelBackdrop) els.mobilePanelBackdrop.hidden = false;
 }
@@ -9313,6 +10589,59 @@ function renderMobileRelease() {
   if (els.mobileThrowButton) {
     els.mobileThrowButton.disabled = !active;
     els.mobileThrowButton.classList.toggle("is-ready", !!active);
+  }
+}
+
+function equipmentIntelSummary() {
+  const batter = currentBatter();
+  const runtime = state.equipmentRuntime || {};
+  let title = "";
+  let detail = "";
+  if (hasRunEquipment("lineup_card")) {
+    title = "라인업";
+    detail = [1, 2, 3]
+      .map((offset) => state.lineup[(state.batterIndex + offset) % state.lineup.length])
+      .filter(Boolean)
+      .map((item) => `${item.slot}번 ${item.type}`)
+      .join(" · ");
+  } else if (hasRunEquipment("pitch_chart")) {
+    title = "팀 기억";
+    const counts = {};
+    (state.patternMemory?.pitches || []).forEach((entry) => {
+      const key = `${categoryNames[entry.category] || entry.category}·${entry.zone}번`;
+      counts[key] = (counts[key] || 0) + (entry.memoryWeight ?? 1);
+    });
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 2);
+    detail = top.length ? top.map(([key, value]) => `${key} ${balanceRound(value, 1)}`).join(" / ") : "누적 정보 없음";
+  } else if (hasRunEquipment("scouting_binder")) {
+    title = "스카우팅";
+    detail = batter?.equipmentPatternRevealed ? (batter.equipmentPattern || batter.tags?.[0] || batter.type) : "현재 타자 2구 뒤 패턴 공개";
+  } else if (hasRunEquipment("spray_chart")) {
+    title = "타구 성향";
+    detail = batter?.equipmentSpray || "현재 타자 첫 인플레이 뒤 공개";
+  } else if (hasRunEquipment("video_tablet")) {
+    title = "직전 영상";
+    detail = batter?.equipmentLastTarget || "재등장 타자부터 노림수 공개";
+  }
+  const active = [];
+  if (hasRunEquipment("blister_kit")) active.push(`물집 키트 ${runtime.blisterUsed ? "소모" : "사용 가능"}`);
+  if (hasRunEquipment("mound_visit_note")) active.push(`마운드 메모 ${runtime.firstRunUsed ? "소모" : "사용 가능"}`);
+  if (!title && active.length) {
+    title = "장비";
+    detail = active.join(" · ");
+  } else if (active.length) {
+    detail = `${detail} · ${active.join(" · ")}`;
+  }
+  return title ? { title, detail } : null;
+}
+
+function renderMobileEquipmentIntel() {
+  if (!els.mobileEquipmentIntel) return;
+  const intel = equipmentIntelSummary();
+  els.mobileEquipmentIntel.hidden = !intel;
+  els.mobileEquipmentIntel.closest(".mobile-mid-panel")?.classList.toggle("has-equipment-intel", !!intel);
+  if (intel) {
+    els.mobileEquipmentIntel.innerHTML = `<strong>${escapeHtml(intel.title)}</strong><span>${escapeHtml(intel.detail)}</span>`;
   }
 }
 
@@ -9377,6 +10706,7 @@ function recordMobilePitchResult(result) {
   const cause = [...new Set([result.weaknessFeedback, mainCause].filter(Boolean))].join(" · ");
   if (dugoutCue && mainCause === dugoutCue) state.mobileDugoutCue = "";
   const note = cause || result.clue || result.detail || result.mindEffect?.label || result.timingLabel || result.location?.label || "";
+  const outcome = mobilePitchResultShortLabel(result);
   records.unshift({
     no: state.atBat?.pitchHistory?.length || state.pitchCount || records.length + 1,
     pitch: pitch.name || "투구",
@@ -9387,7 +10717,15 @@ function recordMobilePitchResult(result) {
     note,
     detail: mobilePitchDetailText(result, note),
     reaction: mobilePitchReactionText(result),
-    outcome: mobilePitchResultShortLabel(result),
+    mark:
+      result.result === "ball"
+        ? "B"
+        : ["calledStrike", "swingingStrike", "foul"].includes(result.result)
+          ? "S"
+          : ["inPlayOut", "doublePlay"].includes(result.result)
+            ? "아웃"
+            : outcome,
+    outcome,
     outLabel: result.outLabel || "",
     result: result.result || ""
   });
@@ -9402,10 +10740,10 @@ function mobilePitchZoneLabel(location) {
   const low = row >= 2;
   const inside = col >= 2;
   const outside = col <= 0;
-  if (inside && high) return "몸쪽높게";
-  if (inside && low) return "몸쪽낮게";
-  if (outside && high) return "바깥높게";
-  if (outside && low) return "바깥낮게";
+  if (inside && high) return "몸쪽 높게";
+  if (inside && low) return "몸쪽 낮게";
+  if (outside && high) return "바깥쪽 높게";
+  if (outside && low) return "바깥쪽 낮게";
   if (inside) return "몸쪽";
   if (outside) return "바깥";
   if (high) return "높게";
@@ -9417,8 +10755,8 @@ function mobilePitchResultShortLabel(result) {
   if (result.result === "ball") return state.balls >= 3 ? "볼넷" : "볼";
   if (result.result === "calledStrike") return state.strikes >= 2 ? "삼진" : "스트라이크";
   if (result.result === "swingingStrike") return state.strikes >= 2 ? "삼진" : "헛스윙";
-  if (result.displayResult) return result.displayResult;
   if (result.result === "inPlayOut") return mobilePitchOutLabel(result);
+  if (result.displayResult) return result.displayResult;
   return {
     foul: "파울",
     doublePlay: "병살",
@@ -9445,34 +10783,46 @@ function mobilePitchTimingSide(result) {
 }
 
 function mobilePitchReactionText(result) {
-  if (result.result === "calledStrike") return "그대로 지켜봤습니다";
-  if (result.result === "ball") return "끝까지 보고 골랐습니다";
+  if (result.result === "calledStrike") {
+    if (state.strikes >= 2) return "공을 지켜보며 삼진";
+    if (!result.targetMatch) return "공에 반응하지 못했습니다";
+    if (Number(result.location?.row) !== 1 || Number(result.location?.col) !== 1) return "존 끝의 공을 놓쳤습니다";
+    return "공을 지켜봤습니다";
+  }
+  if (result.result === "ball") {
+    if (state.balls >= 3) return "볼넷을 허용했습니다";
+    if (result.takeType === "check") return "체크스윙으로 참았습니다";
+    if (result.takeType === "ignore") return "처음부터 반응하지 않았습니다";
+    return "볼을 읽고 참았습니다";
+  }
   if (result.result === "swingingStrike") {
+    if (state.strikes >= 2) return "헛스윙 삼진";
     const side = mobilePitchTimingSide(result);
-    if (side === "early") return "배트가 먼저 나왔습니다";
-    if (side === "late") return "배트가 늦게 나왔습니다";
-    return "배트가 공을 놓쳤습니다";
+    if (side === "early") return "스윙이 빨랐습니다";
+    if (side === "late") return "스윙이 늦었습니다";
+    if (!result.inZone) return "유인구에 배트가 나왔습니다";
+    return "공을 따라가지 못했습니다";
   }
   if (result.result === "foul") {
-    if (String(result.countBefore || "").endsWith("-2")) return "가까스로 걷어냈습니다";
+    if (String(result.countBefore || "").endsWith("-2")) return "파울로 버텼습니다";
     const side = mobilePitchTimingSide(result);
-    if (side === "early") return "배트가 먼저 나왔습니다";
-    if (side === "late") return "배트가 늦게 나왔습니다";
-    return "배트에 걸렸습니다";
+    if (side === "early") return "스윙이 빨랐습니다";
+    if (side === "late") return "스윙이 늦었습니다";
+    if (result.targetMatch && result.timingValue >= 0.5 && result.timingValue <= 0.72) return "정타에 가까웠습니다";
+    return "정확히 맞히지 못했습니다";
   }
   if (result.result === "inPlayOut") {
-    if (/GROUND/i.test(result.outLabel || "")) return "땅볼을 쳤습니다";
-    if (/FLY/i.test(result.outLabel || "")) return "뜬공을 쳤습니다";
-    return "약한 타구를 쳤습니다";
+    if (/GROUND/i.test(result.outLabel || "")) return "약한 땅볼을 유도했습니다";
+    if (/FLY/i.test(result.outLabel || "")) return "힘없는 뜬공을 유도했습니다";
+    return "정타를 피했습니다";
   }
-  if (result.result === "doublePlay") return "땅볼을 쳤습니다";
-  if (result.result === "single") return "타구를 정확히 맞혔습니다";
+  if (result.result === "doublePlay") return "땅볼로 병살을 잡았습니다";
+  if (result.result === "single") return "정확히 맞혔습니다";
   if (result.result === "double") return "강하게 받아쳤습니다";
   if (result.result === "homerun") return "완벽하게 받아쳤습니다";
   if (result.result === "error") return "수비가 처리하지 못했습니다";
   return "타구 결과를 확인했습니다";
 }
-
 function mobilePitchResultTone(result) {
   return {
     ball: "ball",
@@ -9489,51 +10839,85 @@ function mobilePitchResultTone(result) {
 }
 
 function mobilePitchDetailText(result, note = "") {
-  const pitchName = result.pitch?.name || "공";
-  const zone = mobilePitchZoneLabel(result.location);
   const weaknessText =
     result.weaknessFeedback === "공략 성공"
       ? " 약점 공략 성공."
       : result.weaknessFeedback === "공략 시도"
         ? " 약점 공략 시도."
         : "";
-  if (result.result === "ball") return `${zone} ${pitchName}. 타자가 골라냈습니다. 존 밖 공은 더 아낍니다.${weaknessText}`;
-  if (result.result === "calledStrike") return `${zone} ${pitchName}. 지켜보기만 했습니다. 같은 코스 반복은 조심합니다.${weaknessText}`;
+
+  if (result.result === "ball") {
+    const message =
+      state.balls >= 3
+        ? "타자가 볼 네 개를 골라내 출루했습니다."
+        : result.takeType === "check"
+          ? "배트가 나오다 멈췄습니다."
+          : result.takeType === "ignore"
+            ? "타자가 처음부터 이 공에 배트를 내지 않았습니다."
+            : "타자가 공이 존을 벗어나는 것을 보고 배트를 내지 않았습니다.";
+    return `${message}${weaknessText}`;
+  }
+
+  if (result.result === "calledStrike") {
+    const message =
+      state.strikes >= 2
+        ? "타자가 마지막 공에 배트를 내지 못했습니다."
+        : !result.targetMatch
+          ? "타자가 예상하지 못한 공에 배트를 내지 못했습니다."
+          : Number(result.location?.row) !== 1 || Number(result.location?.col) !== 1
+            ? "타자가 스트라이크존 끝에 걸친 공을 지켜봤습니다."
+            : "타자가 배트를 내지 않았고 공은 존 안에 들어갔습니다.";
+    return `${message}${weaknessText}`;
+  }
+
   if (result.result === "swingingStrike") {
     const side = mobilePitchTimingSide(result);
-    const next =
-      side === "early"
-        ? "느린 공이나 낮은 코스로 더 뺄 만합니다."
-        : side === "late"
-          ? "빠른 공이나 높은 코스가 아직 먹힙니다."
-          : "먹힌 배합입니다. 반복만 피합니다.";
-    return `${zone} ${pitchName}. ${mobilePitchReactionText(result)}. ${next}${weaknessText}`;
+    const message =
+      state.strikes >= 2
+        ? "타자가 마지막 공을 맞히지 못했습니다."
+        : side === "early"
+          ? "배트가 공보다 먼저 나왔습니다."
+          : side === "late"
+            ? "배트가 공보다 늦게 나왔습니다."
+            : !result.inZone
+              ? "타자가 존 밖으로 빠지는 공에 배트를 냈습니다."
+              : "타자가 공의 움직임을 따라오지 못했습니다.";
+    return `${message}${weaknessText}`;
   }
+
   if (result.result === "foul") {
-    const next =
-      result.foulRead?.id === "late"
-        ? "빠른 공은 아직 유효합니다. 느린 공은 조심합니다."
-        : result.foulRead?.id === "early"
-          ? "느린 공이나 바깥쪽으로 더 끌어냅니다."
-          : result.foulRead?.id === "protect"
-            ? "보호 스윙입니다. 유인구 한 번 더 가능합니다."
-            : "같은 계열 반복은 위험합니다.";
-    return `${zone} ${pitchName} 파울. ${mobilePitchReactionText(result)}. ${next}${weaknessText}`;
+    const side = mobilePitchTimingSide(result);
+    const message =
+      String(result.countBefore || "").endsWith("-2")
+        ? "타자가 배트를 짧게 내밀어 공을 걷어냈습니다."
+        : side === "early"
+          ? "배트가 먼저 나와 파울이 됐습니다."
+          : side === "late"
+            ? "배트가 늦게 따라와 파울이 됐습니다."
+            : result.targetMatch && result.timingValue >= 0.5 && result.timingValue <= 0.72
+              ? "타자가 타이밍을 맞혔지만 공은 파울이 됐습니다."
+              : "배트에 걸렸지만 정타는 만들지 못했습니다.";
+    return `${message}${weaknessText}`;
   }
-  if (result.result === "inPlayOut") return `${zone} ${pitchName}. 정타는 아닙니다. 다음은 높이나 계열을 바꿉니다.${weaknessText}`;
-  if (result.result === "doublePlay") return `${zone} ${pitchName}. 땅볼 유도 성공. 주자까지 지웠습니다.${weaknessText}`;
-  if (result.result === "single") return `${zone} ${pitchName}. 타자가 맞혔습니다. 다음은 반대 코스나 높이 변화입니다.${weaknessText}`;
-  if (result.result === "double") return `${zone} ${pitchName}. 강한 타구입니다. 낮은 코스나 완급으로 끊습니다.`;
-  if (result.result === "homerun") return `${zone} ${pitchName}. 완전히 읽혔습니다. 같은 패턴은 버립니다.`;
-  if (result.result === "error") return `${zone} ${pitchName}. 수비가 놓쳤습니다. 타자 반응만 기억합니다.`;
+
+  if (result.result === "inPlayOut") {
+    if (/GROUND/i.test(result.outLabel || "")) return `배트 중심을 피하며 약한 땅볼을 만들었습니다.${weaknessText}`;
+    if (/FLY/i.test(result.outLabel || "")) return `타자가 공에 힘을 싣지 못하고 뜬공을 쳤습니다.${weaknessText}`;
+    return `타자의 배트 중심을 피하고 아웃을 잡았습니다.${weaknessText}`;
+  }
+  if (result.result === "doublePlay") return `약한 땅볼을 유도해 주자와 타자를 함께 잡았습니다.${weaknessText}`;
+  if (result.result === "single") return `타자가 배트 중심에 공을 맞혔습니다.${weaknessText}`;
+  if (result.result === "double") return "타자가 공을 강하게 받아쳐 장타를 만들었습니다.";
+  if (result.result === "homerun") return "타자가 공을 완벽하게 맞혀 홈런을 만들었습니다.";
+  if (result.result === "error") return "정타는 피했지만 수비가 타구를 처리하지 못했습니다.";
   return note || "타자 반응을 확인했습니다.";
 }
-
 function recordMobileBatterStart(batter) {
   const records = state.mobilePitchRecords || [];
   const key = `${state.inning}:${state.batterIndex}:${batter?.name || ""}`;
   if (records.some((item) => item.type === "batter" && item.key === key)) return;
-  records.unshift({ type: "batter", key, slot: batter?.slot || state.batterIndex + 1, batter: batter?.name || "타자" });
+  const changed = records.some((item) => item.type === "batter");
+  records.unshift({ type: "batter", key, changed, slot: batter?.slot || state.batterIndex + 1, batter: batter?.name || "타자" });
   state.mobilePitchRecords = records;
 }
 
@@ -9565,7 +10949,7 @@ function renderMobileRecentLog() {
         count.className = "mobile-count-badge";
         header.insertBefore(count, els.mobileRecentLogMore || null);
       }
-      count.textContent = `${state.balls}-${state.strikes}`;
+      count.textContent = `${current?.name || "타자"} ${state.balls}-${state.strikes}`;
       header.querySelector(".mobile-suspicion-chip")?.remove();
     }
     const suspicionValue = Math.round(clamp(state.atBat?.suspicion || 0, 0, 100));
@@ -9585,19 +10969,23 @@ function renderMobileRecentLog() {
     els.mobileRecentLog.innerHTML = '<p class="mobile-recent-log-empty">아직 투구 기록 없음</p>';
     return;
   }
-  const visibleItems = items.filter((item) => item.type !== "growth").slice(0, 4);
+  const visibleItems = items
+    .filter((item) => item.type !== "growth" && (item.type !== "batter" || item.changed))
+    .slice(0, 8);
   els.mobileRecentLog.innerHTML = `
     <div class="mobile-pitch-compact-list">
       ${visibleItems
         .map(
           (item) => item.type === "batter"
-            ? `<div class="mobile-recent-log-row is-batter-marker"><span>${escapeHtml(item.slot || "-")}번 타자 ${escapeHtml(item.batter)}</span></div>`
+            ? `<div class="mobile-recent-log-row mobile-pitch-compact-row" data-record-kind="batter">
+                <span class="mobile-pitch-order">교체</span>
+                <em class="mobile-result-badge">${escapeHtml(item.slot || "-")}번</em>
+                <span class="mobile-log-copy"><b>${escapeHtml(item.batter)}</b></span>
+              </div>`
             : `<div class="mobile-recent-log-row mobile-pitch-compact-row" data-result="${escapeHtml(item.result)}">
             <span class="mobile-pitch-order">${item.no}구</span>
-            <span class="mobile-pitch-zone">${escapeHtml(item.zone || "-")}</span>
-            <b>${escapeHtml(item.pitch)}</b>
-            <em class="mobile-result-badge mobile-result-badge--${escapeHtml(mobilePitchResultTone(item))}">${escapeHtml(item.outcome)}</em>
-            <small>${escapeHtml(item.reaction || item.detail || "타자 반응을 확인했습니다")}</small>
+            <em class="mobile-result-badge mobile-result-badge--${escapeHtml(mobilePitchResultTone(item))}">${escapeHtml(item.mark || item.outcome)}</em>
+            <span class="mobile-log-copy"><b>${escapeHtml(item.pitch)}</b><span class="mobile-pitch-zone">${escapeHtml(item.zone || "-")}</span><small>${escapeHtml(item.reaction || item.detail || "타자 반응을 확인했습니다")}</small></span>
           </div>`
         )
         .join("")}
@@ -9606,19 +10994,35 @@ function renderMobileRecentLog() {
 
 function renderMobileInfoPanel() {
   if (!els.mobileInfoPanelBody || !mobilePanelMode) return;
+  els.mobileInfoPanel.dataset.mode = mobilePanelMode;
   if (mobilePanelMode === "tag") return;
   if (mobilePanelMode === "log") {
-    els.mobileInfoPanelTitle.textContent = "승부기록";
-    const pitchItems = (state.mobilePitchRecords || []).filter((item) => item.type !== "batter");
+    const current = currentBatter();
+    const records = state.mobilePitchRecords || [];
+    const pitchItems = records.filter((item) => item.type !== "batter");
+    els.mobileInfoPanelTitle.innerHTML = `승부기록<small>현재 타석 · ${escapeHtml(current?.slot || "-")}번 ${escapeHtml(current?.name || "타자")}</small>`;
     els.mobileInfoPanelBody.innerHTML = pitchItems.length
-      ? `<div class="mobile-pitch-detail-list">${pitchItems
+      ? `<section class="mobile-log-sheet">
+          <div class="mobile-log-counts">
+            <b class="is-strike">S <em>${state.strikes}</em></b>
+            <b class="is-ball">B <em>${state.balls}</em></b>
+            <span>투구수 <strong>${pitchItems.length}</strong></span>
+            <small>최신순</small>
+          </div>
+          <div class="mobile-pitch-detail-list">${records
           .map(
-            (item) => `<article class="log-item mobile-pitch-detail-row" data-result="${escapeHtml(item.result)}">
-              <strong>결과 · ${item.no}구 ${escapeHtml(item.zone || "-")} ${escapeHtml(item.pitch)} ${escapeHtml(item.outcome)}</strong>
-              <p><span>설명</span>${escapeHtml(item.detail || item.note || "타자 반응을 확인했습니다.")}</p>
-            </article>`
+            (item) => item.type === "batter"
+              ? `<div class="mobile-log-at-bat-start">— ${item.changed ? `${escapeHtml(item.slot || "-")}번 ${escapeHtml(item.batter)} 타석 시작` : "타석 시작"} —</div>`
+              : `<article class="log-item mobile-pitch-detail-row" data-result="${escapeHtml(item.result)}">
+                  <span class="mobile-log-pitch-no mobile-log-pitch-no--${escapeHtml(mobilePitchResultTone(item))}"><b>${item.no}</b><small>구째</small></span>
+                  <div>
+                    <header><strong>${escapeHtml(item.zone || "-")} ${escapeHtml(item.pitch)}</strong><em class="mobile-result-badge mobile-result-badge--${escapeHtml(mobilePitchResultTone(item))}">${escapeHtml(item.outcome)}</em></header>
+                    <p>${escapeHtml(item.detail || item.note || "타자 반응을 확인했습니다.")}</p>
+                  </div>
+                </article>`
           )
-          .join("")}</div>`
+          .join("")}</div>
+        </section>`
       : '<p class="mobile-empty-info">아직 승부기록이 없습니다.</p>';
     return;
   }
@@ -9685,11 +11089,11 @@ function renderMobileGameUi() {
   const catcherSign = currentCatcherSign();
 
   if (els.mobileStageThemeSummary) {
-    els.mobileStageThemeSummary.innerHTML = `<span>STAGE ${currentStageNumber()}</span><strong>${escapeHtml(theme?.name || stageConfig().name || "테마")}</strong>`;
+    els.mobileStageThemeSummary.innerHTML = `<span>GAME ${currentGameNumber()} · STAGE ${currentStageNumber()}</span><strong>${escapeHtml(theme?.name || stageConfig().name || "테마")}</strong>`;
   }
-  els.mobileInningText.textContent = `${Math.min(state.inning, currentStageInnings())} / ${currentStageInnings()}`;
+  els.mobileInningText.textContent = `${Math.min(state.inning, 3)} / 3`;
   els.mobileRunsText.textContent = state.runs;
-  els.mobileTargetText.textContent = `실점 제한 ${currentStageRunLimit()}`;
+  els.mobileTargetText.textContent = currentStageRunLimit();
   renderMobileCountDots(els.mobileBallsDots, state.balls, 3);
   renderMobileCountDots(els.mobileStrikesDots, state.strikes, 2);
   renderMobileCountDots(els.mobileOutsDots, state.outs, 2);
@@ -9717,6 +11121,7 @@ function renderMobileGameUi() {
   renderMobilePitchButtons();
   renderMobileRelease();
   renderMobileDuelRead();
+  renderMobileEquipmentIntel();
   renderMobileRecentLog();
   renderMobilePlayerDetail();
   els.mobileRecommendConfidence.textContent = "힌트";
@@ -10224,61 +11629,61 @@ function currentCatcherSign() {
   if (impression?.id === "fast_timing") {
     return {
       title: `${catcher.label} · 이전 공 활용`,
-      text: "직구 기준이 남았습니다. 체인지업이나 스플리터로 타이밍을 배신할 수 있습니다."
+      text: "직구에 타이밍을 맞추고 있습니다. 체인지업이나 스플리터가 좋습니다."
     };
   }
   if (impression?.id === "inside_fast") {
     return {
       title: `${catcher.label} · 바깥쪽 속임`,
-      text: "몸쪽 의식이 남았습니다. 바깥쪽 변화구나 바깥 유인구가 살아납니다."
+      text: "몸쪽을 의식하고 있습니다. 바깥쪽 변화구로 시선을 돌립니다."
     };
   }
   if (impression?.id === "high_fast") {
     return {
       title: `${catcher.label} · 눈높이 함정`,
-      text: "높은 공 의식이 남았습니다. 낮은 변화구로 시선을 떨어뜨릴 수 있습니다."
+      text: "눈이 높아졌습니다. 낮은 변화구로 떨어뜨립니다."
     };
   }
   if (impression?.id === "low_slow") {
     return {
       title: `${catcher.label} · 낮은 공 의식`,
-      text: "낮은 변화구 의식이 남았습니다. 높은 빠른 공으로 반응을 늦출 수 있습니다."
+      text: "낮은 변화구를 기다립니다. 높은 빠른 공으로 반응을 늦춥니다."
     };
   }
   if (impression?.id === "outside_slow") {
     return {
       title: `${catcher.label} · 바깥쪽 의식`,
-      text: "바깥쪽 변화구 의식이 남았습니다. 몸쪽 빠른 공으로 타이밍을 찌를 수 있습니다."
+      text: "바깥쪽을 보고 있습니다. 몸쪽 빠른 공으로 붙습니다."
     };
   }
   if ((mind?.confidence || 0) >= 70) {
     return {
       title: `${catcher.label} · 노림수 경계`,
-      text: "타자가 같은 계열을 기다립니다. 이번 공은 배합을 깹니다."
+      text: "같은 구종 계열을 기다리고 있습니다. 이번에는 다른 공으로 갑니다."
     };
   }
 
   if (catcher.id === "safe") {
     return {
       title: `${catcher.label} · ${catcher.tone}`,
-      text: suspicion >= 65 ? "읽혔습니다. 반대 코스나 다른 계열로 갑니다." : `${pitchName}를 존 끝에 붙입니다.`
+      text: suspicion >= 65 ? "배합이 읽혔습니다. 반대 코스로 갑니다." : `${pitchName}를 존 끝에 붙입니다.`
     };
   }
   if (catcher.id === "attack") {
     return {
       title: `${catcher.label} · ${catcher.tone}`,
-      text: state.strikes >= 2 ? `${pitchName} 결정구. 반복만 피합니다.` : "첫 공부터 스트라이크를 잡습니다."
+      text: state.strikes >= 2 ? `${pitchName}로 끝냅니다.` : "초구부터 스트라이크로 갑니다."
     };
   }
   if (catcher.id === "analysis") {
     return {
       title: `${catcher.label} · ${catcher.tone}`,
-      text: `타자가 기다리는 반대편. ${pitchName}로 찌릅니다.`
+      text: `타자가 기다리는 쪽을 피해서 ${pitchName}로 승부합니다.`
     };
   }
   return {
     title: `${catcher.label} · ${catcher.tone}`,
-    text: state.bases.some(Boolean) ? "주자 있어도 승부구입니다." : `${pitchName}로 존을 찌릅니다.`
+    text: state.bases.some(Boolean) ? "주자가 있어도 승부합니다." : `${pitchName}로 존을 공략합니다.`
   };
 }
 
@@ -10306,7 +11711,17 @@ function renderRecommendation() {
   els.recommendConfidence.textContent =
     recommendation.confidence >= 76 ? "높음" : recommendation.confidence >= 58 ? "보통" : "불명";
   els.recommendTitle.textContent = recommendation.title;
-  els.recommendText.textContent = recommendation.text;
+  let recommendationText = recommendation.text;
+  if (hasRunEquipment("pitch_chart")) {
+    const counts = {};
+    (state.patternMemory?.pitches || []).forEach((entry) => {
+      const key = `${categoryNames[entry.category] || entry.category}·${entry.zone}번`;
+      counts[key] = (counts[key] || 0) + (entry.memoryWeight ?? 1);
+    });
+    const top = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 2);
+    if (top.length) recommendationText += ` · 팀 기억 ${top.map(([key, value]) => `${key} ${Math.round(value * 10) / 10}`).join(" / ")}`;
+  }
+  els.recommendText.textContent = recommendationText;
   const catcherSign = currentCatcherSign();
   if (els.catcherTitle) els.catcherTitle.textContent = catcherSign.title;
   if (els.catcherText) els.catcherText.textContent = catcherSign.text;
@@ -10451,10 +11866,10 @@ function handleCourseClick(zone, targetRow = null, targetCol = null, intent = "s
       zone: Number(zone) || 5,
       intent: state.pitchIntent,
       ballPlan: state.pitchBallPlan,
-      targetRow: Number.isFinite(Number(targetRow)) ? Number(targetRow) : null,
-      targetCol: Number.isFinite(Number(targetCol)) ? Number(targetCol) : null,
-      targetX: Number.isFinite(Number(targetX)) ? clamp(Number(targetX), 0, 1) : null,
-      targetY: Number.isFinite(Number(targetY)) ? clamp(Number(targetY), 0, 1) : null
+      targetRow: targetRow != null && Number.isFinite(Number(targetRow)) ? Number(targetRow) : null,
+      targetCol: targetCol != null && Number.isFinite(Number(targetCol)) ? Number(targetCol) : null,
+      targetX: targetX != null && Number.isFinite(Number(targetX)) ? clamp(Number(targetX), 0, 1) : null,
+      targetY: targetY != null && Number.isFinite(Number(targetY)) ? clamp(Number(targetY), 0, 1) : null
     };
     beginReleaseTiming(pitch, plannedCourse);
   }
@@ -10516,7 +11931,7 @@ function resultToastAsset(text) {
 function resultToastJudgement(text) {
   const key = String(text || "").trim().toUpperCase();
   if (["STRIKE", "MISS", "STRIKE OUT!", "DOUBLE PLAY!", "GROUND OUT!", "FLY OUT!", "OUT!"].includes(key)) return "toast-positive";
-  if (["BALL", "WALK!", "BASE HIT!", "TEXAS HIT!", "DOUBLE!", "HOME RUN!", "ERROR!"].includes(key)) return "toast-negative";
+  if (["WALK!", "BASE HIT!", "TEXAS HIT!", "DOUBLE!", "HOME RUN!", "ERROR!"].includes(key)) return "toast-negative";
   return "toast-neutral";
 }
 
@@ -10558,14 +11973,6 @@ function setTiming(text, tone) {
     if (MP.timingDismissHandler) window.addEventListener("pointerdown", MP.timingDismissHandler, { once: true });
   }, 0);
   MP.timingTimer = window.setTimeout(hideTiming, GAME_TIMING.pitchResultToast);
-}
-
-function queueTiming(text, tone) {
-  if (MP.timingTimer) window.clearTimeout(MP.timingTimer);
-  MP.timingTimer = window.setTimeout(() => {
-    MP.timingTimer = null;
-    setTiming(text, tone);
-  }, GAME_TIMING.timingFeedbackDelay);
 }
 
 function hideTiming() {
@@ -10701,11 +12108,11 @@ function showStageThemeOverlay(stageNumber, innings, themeId = state.stageThemeI
   els.stageOverlay.classList.add("is-stage-intro");
   els.stageTitle.classList.add("stage-title-split");
   els.stageTitle.innerHTML = `
-    <span class="stage-number-line">STAGE ${stageNumber || currentStageNumber()}</span>
+    <span class="stage-number-line">GAME ${currentGameNumber()} · STAGE ${stageNumber || currentStageNumber()}</span>
     <em class="stage-lineup-line">${escapeHtml(config.name)}</em>
   `;
   els.stageSubtitle.innerHTML = `
-    <strong class="stage-rule-innings"><b>${innings || currentStageInnings()}</b>이닝</strong>
+    <strong class="stage-rule-innings"><b>1</b>이닝 · ${currentGameInning()}회</strong>
     <span class="stage-rule-limit">실점 제한 <b>${currentStageRunLimit()}</b></span>
   `;
   if (els.stageThemePanel && theme) {
@@ -10719,6 +12126,7 @@ function showStageThemeOverlay(stageNumber, innings, themeId = state.stageThemeI
         <h2>경기 브리핑</h2>
         <p class="stage-briefing-row"><b>목표</b><span>${escapeHtml(goalText)}</span></p>
         <p class="stage-briefing-row is-warning"><b>주의</b><span>${escapeHtml(warningText)}</span></p>
+        <p class="stage-reward-preview"><b>승리 보상 미리보기</b><span>${escapeHtml(theme.rewardHint || "스테이지 보상")}</span></p>
         <p class="stage-theme-note">${escapeHtml(config.themeText || "")}</p>
       </section>
     `;
@@ -10742,7 +12150,7 @@ function startStageFromOverlay() {
   if (!state.dugoutPending && !state.atBat) startAtBat();
   render();
   if (state.dugoutPending) openDugoutChoiceOverlay();
-  else showBatterEntryBanner();
+
 }
 
 function renderStageThemeBadge() {
@@ -10767,8 +12175,11 @@ function renderThemeChoiceCards() {
     .map((theme) => {
       const fit = MP.themeFitLabel ? MP.themeFitLabel(theme, state.pitcher) : null;
       const fitTone = fit?.tone || "neutral";
+      const riskTone = ["stable", "balanced", "risky"].includes(theme.riskTier) ? theme.riskTier : "balanced";
+      const riskLabel = { stable: "안정", balanced: "균형", risky: "위험" }[riskTone];
       return `
-      <button class="theme-choice-card reward-choice-card core-evolution-card" type="button" data-theme-id="${escapeHtml(theme.id)}">
+      <button class="theme-choice-card theme-choice-card--${riskTone} reward-choice-card core-evolution-card" type="button" data-theme-id="${escapeHtml(theme.id)}">
+        <span class="theme-risk-rail"><b>${riskLabel}</b></span>
         <header class="core-evo-head">
           <div class="core-evo-titles">
             <strong class="core-evo-name">${escapeHtml(theme.name)}</strong>
@@ -10792,8 +12203,12 @@ function openThemeSelectOverlay() {
   showTutorialStep("nextLineup");
   renderThemeChoiceCards();
   els.themeSelectOverlay.hidden = false;
+  els.themeSelectOverlay.scrollTop = 0;
+  const themeSelectBox = els.themeSelectOverlay.querySelector(".theme-select-box");
+  if (themeSelectBox) themeSelectBox.scrollTop = 0;
   disablePitchButtons(true);
   syncScreenPhase();
+  saveRunCheckpoint();
 }
 
 function confirmStageTheme(themeId) {
@@ -10808,21 +12223,20 @@ function confirmStageTheme(themeId) {
   state.pendingStageOverlay = null;
   state.waitingNextBatter = false;
   render();
+  saveRunCheckpoint();
 }
 
-function showBatterEntryBanner() {
-  if (state.gameOver) return;
-  showNextBatterBanner();
-}
 
-function showNextBatterBanner() {
-  if (state.gameOver) return;
-  const batter = currentBatter();
-  const role = batter.isBoss ? "보스 · " : "";
-  showEventBanner(`NEXT BATTER\n${role}${batter.slot}번 타자 ${batter.name}`, "next", GAME_TIMING.nextBatterBanner);
-}
-
-function hideBallSprite() {
+function hideBallSprite(cancelResult = false) {
+  if (cancelResult && MP.pitchResultTimer) {
+    window.clearTimeout(MP.pitchResultTimer);
+    MP.pitchResultTimer = null;
+  }
+  if (cancelResult && MP.pitchVisualCleanupTimer) {
+    window.clearTimeout(MP.pitchVisualCleanupTimer);
+    MP.pitchVisualCleanupTimer = null;
+  }
+  state.pitchInFlight = false;
   if (MP.pitchFlightFrame) {
     window.cancelAnimationFrame(MP.pitchFlightFrame);
     MP.pitchFlightFrame = null;
@@ -10837,23 +12251,27 @@ function hideBallSprite() {
 
 function pitchFlightProfile(pitch) {
   const profiles = {
-    four: { breakX: 0, breakY: -8, duration: 520, spin: 540 },
-    two: { breakX: -28, breakY: 18, duration: 590, spin: 470 },
-    sinker: { breakX: -14, breakY: 58, duration: 640, spin: 430 },
-    cutter: { breakX: 26, breakY: -2, duration: 560, spin: 500 },
-    slider: { breakX: 58, breakY: 12, duration: 680, spin: 620 },
-    curve: { breakX: -24, breakY: 76, duration: 780, spin: 760 },
-    change: { breakX: -10, breakY: 34, duration: 740, spin: 360 },
-    splitter: { breakX: 6, breakY: 86, duration: 700, spin: 420 }
+    four: { c1x: 0, c1y: 0.34, c2x: 0, c2y: 0.7, duration: 520, spin: 540 },
+    two: { c1x: -8, c1y: 0.3, c2x: -34, c2y: 0.62, duration: 590, spin: 470 },
+    sinker: { c1x: -10, c1y: 0.2, c2x: -46, c2y: 0.42, duration: 640, spin: 430 },
+    cutter: { c1x: 8, c1y: 0.32, c2x: 38, c2y: 0.66, duration: 560, spin: 500 },
+    slider: { c1x: 14, c1y: 0.26, c2x: 76, c2y: 0.54, duration: 680, spin: 620 },
+    curve: { c1x: 0, c1y: 0.01, c2x: 4, c2y: 0.05, duration: 860, spin: 840 },
+    change: { c1x: -4, c1y: 0.24, c2x: -18, c2y: 0.5, duration: 740, spin: 360 },
+    splitter: { c1x: 0, c1y: 0.18, c2x: 6, c2y: 0.36, duration: 700, spin: 420 }
   };
-  return profiles[pitch?.id] || { breakX: 0, breakY: 0, duration: 620, spin: 420 };
+  return profiles[pitch?.id] || { c1x: 0, c1y: 0.32, c2x: 0, c2y: 0.66, duration: 620, spin: 420 };
 }
 
 function animatePitch(location, pitch) {
   const mobile = isMobilePortraitLayout();
   const sprite = mobile && els.mobileBallSprite ? els.mobileBallSprite : els.ballSprite;
   const zone = mobile && els.mobileStrikeZone ? els.mobileStrikeZone : els.strikeZone;
-  if (!sprite || !zone) return;
+  if (!sprite || !zone) return 0;
+  if (MP.pitchVisualCleanupTimer) {
+    window.clearTimeout(MP.pitchVisualCleanupTimer);
+    MP.pitchVisualCleanupTimer = null;
+  }
   const zoneRect = zone.getBoundingClientRect();
   const sceneRect = sprite.parentElement.getBoundingClientRect();
   const row = location?.row ?? 1;
@@ -10865,10 +12283,16 @@ function animatePitch(location, pitch) {
   const endY = zoneRect.top - sceneRect.top + locationY * zoneRect.height;
   const zoneCenterX = zoneRect.left - sceneRect.left + zoneRect.width * 0.5;
   const zoneTopY = zoneRect.top - sceneRect.top;
-  const startX = zoneCenterX;
-  const startY = clamp(zoneTopY - sceneRect.height * 0.14, sceneRect.height * 0.18, sceneRect.height * 0.42);
-  const controlX = (startX + endX) * 0.5 + movement.breakX;
-  const controlY = (startY + endY) * 0.5 + movement.breakY;
+  const startX = mobile ? sceneRect.width * 0.29 : zoneCenterX;
+  const startY = mobile
+    ? Math.min(sceneRect.height * 0.48, endY - zoneRect.height * 0.45)
+    : clamp(zoneTopY - sceneRect.height * 0.14, sceneRect.height * 0.18, sceneRect.height * 0.42);
+  const movementScale = clamp(sceneRect.width / 390, 0.75, 1.5);
+  const travelY = endY - startY;
+  const control1X = startX + (endX - startX) * 0.33 + movement.c1x * movementScale;
+  const control1Y = startY + travelY * movement.c1y;
+  const control2X = startX + (endX - startX) * 0.72 + movement.c2x * movementScale;
+  const control2Y = startY + travelY * movement.c2y;
 
   sprite.style.setProperty("--ball-start-x", `${startX}px`);
   sprite.style.setProperty("--ball-start-y", `${startY}px`);
@@ -10894,8 +12318,8 @@ function animatePitch(location, pitch) {
     const progress = Math.min((now - startTime) / duration, 1);
     const eased = easeOut(progress);
     const oneMinus = 1 - eased;
-    const x = oneMinus * oneMinus * startX + 2 * oneMinus * eased * controlX + eased * eased * endX;
-    const y = oneMinus * oneMinus * startY + 2 * oneMinus * eased * controlY + eased * eased * endY;
+    const x = oneMinus ** 3 * startX + 3 * oneMinus ** 2 * eased * control1X + 3 * oneMinus * eased ** 2 * control2X + eased ** 3 * endX;
+    const y = oneMinus ** 3 * startY + 3 * oneMinus ** 2 * eased * control1Y + 3 * oneMinus * eased ** 2 * control2Y + eased ** 3 * endY;
     const scale = 0.34 + (1.22 - 0.34) * eased;
     const rotate = movement.spin * eased;
 
@@ -10911,6 +12335,7 @@ function animatePitch(location, pitch) {
     }
   };
   MP.pitchFlightFrame = window.requestAnimationFrame(tick);
+  return duration;
 }
 
 function bindUiEvents() {
@@ -10919,6 +12344,16 @@ function bindUiEvents() {
 
   syncTitleScreenEls();
   els.titleOverlay?.addEventListener("click", (event) => {
+    if (event.target.closest("#titleClubhouseButton")) {
+      event.preventDefault();
+      openClubhouse();
+      return;
+    }
+    if (event.target.closest("#titleContinueButton")) {
+      event.preventDefault();
+      resumeRunFromTitle();
+      return;
+    }
     if (event.target.closest("#titleStartButton")) {
       event.preventDefault();
       beginGameFromTitle();
@@ -10935,12 +12370,25 @@ function bindUiEvents() {
       returnToTitleScreen();
     }
   });
-  els.newGameButton.addEventListener("click", startGame);
+  els.newGameButton.addEventListener("click", abandonRunAndStartGame);
   els.bgmToggle?.addEventListener("click", (event) => {
     event.stopPropagation();
     toggleBgm();
   });
   els.restartButton.addEventListener("click", startGame);
+  els.resultClubhouseButton?.addEventListener("click", openClubhouse);
+  els.clubhouseOverlay?.addEventListener("click", (event) => {
+    const equipmentButton = event.target.closest("[data-equipment-id]");
+    if (equipmentButton) {
+      event.preventDefault();
+      buyOrEquipItem(equipmentButton.dataset.equipmentId);
+      return;
+    }
+    if (event.target === els.clubhouseOverlay || event.target.closest("#clubhouseClose")) {
+      closeClubhouse();
+    }
+  });
+  els.equipmentSetupConfirm?.addEventListener("click", confirmEquipmentSetup);
   els.nextBatterButton.addEventListener("click", nextBatter);
   els.stageStartButton?.addEventListener("click", startStageFromOverlay);
   document.addEventListener("pointerdown", unlockAudio, { once: true });
@@ -10974,7 +12422,7 @@ function bindUiEvents() {
     }
     if (event.target.closest("[data-mobile-menu-new-game]")) {
       event.preventDefault();
-      startGame();
+      abandonRunAndStartGame();
       return;
     }
     if (event.target.closest("[data-mobile-menu-tutorial]")) {
@@ -11016,9 +12464,13 @@ function bindUiEvents() {
       closeMobileSheets();
       return;
     }
+    if (event.target.closest?.("[data-mobile-detail-back]")) {
+      renderMobilePlayerDetail();
+      return;
+    }
     const modalTag = event.target.closest?.("[data-mobile-modal-tag]");
     if (modalTag) {
-      showMobileModalTagDetail(modalTag.dataset.mobileModalTag, modalTag.dataset.mobileModalTagText || "", modalTag.dataset.mobileModalTagSection || "");
+      renderMobileTagDetail(modalTag.dataset.mobileModalTag, modalTag.dataset.mobileModalTagSection || "tag");
       return;
     }
     const batterTag = event.target.closest?.("[data-mobile-batter-tag]");
@@ -11026,7 +12478,7 @@ function bindUiEvents() {
       const tag = batterTag.dataset.mobileBatterTag;
       mobileSelectedCard = "batter";
       renderMobilePlayerDetail();
-      showMobileModalTagDetail(tag, tagDetailText(tag, currentBatter()), "tag");
+      renderMobileTagDetail(tag, "tag");
       return;
     }
     const pitcherTag = event.target.closest?.("[data-mobile-pitcher-tag]");
@@ -11035,7 +12487,7 @@ function bindUiEvents() {
       mobileSelectedCard = "pitcher";
       renderMobilePlayerDetail();
       const section = mobilePitcherTagItems().find((item) => item.label === tag)?.section || "support";
-      showMobileModalTagDetail(tag, pitcherTagDetailText(tag), section);
+      renderMobileTagDetail(tag, section);
       return;
     }
     if (event.target.closest?.("[data-mobile-suspicion]")) {
@@ -11104,13 +12556,17 @@ function bindUiEvents() {
     if (els.pitcherSelectOverlay?.classList.contains("is-revealing")) return;
     const button = event.target.closest?.("[data-pitcher-index]");
     if (!button) return;
-    const pitcher = state.pitcherChoices[Number(button.dataset.pitcherIndex)];
+    selectPitcherChoice(Number(button.dataset.pitcherIndex));
+  });
+  els.pitcherChoiceConfirm?.addEventListener("click", () => {
+    const pitcher = state.pitcherChoices[pendingPitcherChoiceIndex];
     if (pitcher) beginGameWithPitcher(pitcher);
   });
   els.rewardChoiceList?.addEventListener("click", (event) => {
     const button = event.target.closest?.("[data-reward-index]");
     if (button) selectRewardChoice(Number(button.dataset.rewardIndex));
   });
+  els.rewardRerollButton?.addEventListener("click", rerollStageRewards);
   els.dugoutChoiceList?.addEventListener("click", (event) => {
     const continueButton = event.target.closest?.("[data-dugout-continue]");
     if (continueButton) {
@@ -11173,6 +12629,23 @@ MP.debug = {
   generatePitcher,
   beginGameWithPitcher,
   startGame,
+  saveRunCheckpoint,
+  readRunCheckpoint,
+  resumeRunFromTitle,
+  clearRunCheckpoint,
+  readClubhouseProfile,
+  writeClubhouseProfile,
+  openClubhouse,
+  calculateRunCp,
+  settleRunCp,
+  unlockEquipmentLimitForGame,
+  endGame,
+  equipmentCatalog,
+  makeBallInPlayResult,
+  plannedCoreEvolutionCatalog,
+  tagRewardCardCatalog,
+  applyEquipmentRecovery,
+  equipmentIntelSummary,
   startAtBat,
   nextBatter,
   currentBatter,
@@ -11191,6 +12664,7 @@ MP.debug = {
   generateSupportTagUpgradeChoices,
   generateCoreEvolutionChoices,
   generateDugoutChoices,
+  dugoutEventDescription,
   dugoutEventCatalog,
   calculateStageResult,
   currentMission,
@@ -11199,6 +12673,7 @@ MP.debug = {
   revealBatterWeakness,
   revealRivalWeakness,
   openDugoutChoiceOverlay,
+  openThemeSelectOverlay,
   selectRewardChoice,
   confirmDugoutChoice,
   confirmStageTheme,
@@ -11212,13 +12687,23 @@ MP.debug = {
   cancelReleaseTiming,
   setTiming,
   buildReleaseTimingChallenge,
+  intendedCourse,
   gradeReleaseTiming,
+  releaseCursorPosition,
+  releaseCursorDirection,
   modelReleaseForBot,
+  pitchFlightProfile,
   throwPitch,
   tagById,
   pitchById,
   stageConfig,
   currentStageNumber,
+  currentGameIndex,
+  currentGameNumber,
+  currentGameInning,
+  isGameFinalStage,
+  stageRewardKind,
+  teamMemoryProfile,
   currentStageRunLimit,
   currentStageInnings,
   countIntentReadEffect,

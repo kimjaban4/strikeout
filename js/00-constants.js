@@ -99,15 +99,13 @@ MP.categoryNames = {
   offspeed: "느린공"
 };
 
-MP.stageInnings = [3, 3, 3];
 MP.RELEASE_TIMING_SPEED = 0.8;
 MP.RELEASE_TIMING_ZONE_SCALE = 0.8;
 
-MP.stageConfigs = [
+MP.gameConfigs = [
   {
     id: "rookie_lineup",
     name: "루키타선",
-    innings: 3,
     clearRuns: 3,
     stableRuns: 1,
     perfectRuns: 0,
@@ -130,7 +128,6 @@ MP.stageConfigs = [
   {
     id: "analysis_lineup",
     name: "분석타선",
-    innings: 3,
     clearRuns: 4,
     stableRuns: 2,
     perfectRuns: 1,
@@ -152,15 +149,14 @@ MP.stageConfigs = [
     }
   },
   {
-    id: "championship_lineup",
-    name: "챔피언십타선",
-    innings: 3,
+    id: "threat_lineup",
+    name: "위협타선",
     clearRuns: 5,
     stableRuns: 3,
     perfectRuns: 2,
     perfectExtras: ["라이벌 장타 허용 없음", "간파도 평균 60% 이하"],
-    themeText: "강한 타자들이 실투와 반복을 놓치지 않습니다. 인상을 심고, 다음 공에서 배신해야 합니다.",
-    starNames: ["최종전 생존", "우승권 운영", "완벽한 마운드 지배"],
+    themeText: "선택한 위협 유형이 타선 전체에 강하게 반영됩니다. 내 빌드가 감당할 위험을 직접 고르세요.",
+    starNames: ["위협타선 생존", "위협 대응 성공", "완벽한 위협 제압"],
     missions: [
       { id: "s3_i1_no_center_long", inning: 1, title: "중심 타선 장타 금지", type: "noCenterLongHit" },
       { id: "s3_i2_no_walk", inning: 2, title: "볼넷 없이 이닝 종료", type: "noWalk" },
@@ -174,10 +170,54 @@ MP.stageConfigs = [
       rewardText: "핵심 카드 선택지 +1",
       reward: { coreChoiceBonus: 1 }
     }
+  },
+  {
+    id: "championship_lineup",
+    name: "챔피언십타선",
+    clearRuns: 5,
+    stableRuns: 3,
+    perfectRuns: 2,
+    perfectExtras: ["라이벌 장타 허용 없음", "간파도 평균 60% 이하"],
+    themeText: "RUN에서 반복한 구종과 코스를 이미 분석한 최종 타선입니다. 익숙한 패턴을 역으로 이용하세요.",
+    starNames: ["최종전 생존", "우승권 운영", "완벽한 마운드 지배"],
+    missions: [
+      { id: "s4_i1_first_strike", inning: 1, title: "초구 스트라이크 2회 이상", type: "firstPitchStrikesAtLeast", threshold: 2 },
+      { id: "s4_i2_no_three_pitch", inning: 2, title: "같은 구종 3연속 금지", type: "maxPitchStreakBelow", threshold: 3 },
+      { id: "s4_i3_no_scoring_run", inning: 3, title: "득점권 상황 실점 금지", type: "noScoringPositionRun" }
+    ],
+    rival: {
+      name: "강태오",
+      slot: 4,
+      role: "해결사 / 장타형 / 득점권 강함 / RUN 패턴 분석",
+      goalText: "RUN에서 반복한 구종과 코스를 역이용합니다. 익숙한 선택을 한 번 더 의심하세요.",
+      rewardText: "핵심 카드 선택지 +1",
+      reward: { coreChoiceBonus: 1 }
+    }
   }
 ];
 
-MP.stageRunLimits = [4, 5, 6];
+MP.stageConfigs = (typeof MP === "undefined" ? gameConfigs : MP.gameConfigs).flatMap((game, gameIndex) =>
+  game.missions.map((mission, inningIndex) => ({
+    ...game,
+    id: `${game.id}_s${inningIndex + 1}`,
+    gameId: game.id,
+    gameIndex,
+    gameInning: inningIndex + 1,
+    innings: inningIndex + 1,
+    missions: [{ ...mission, inning: inningIndex + 1 }]
+  }))
+);
+
+MP.stageInnings = Array(12).fill(1);
+// ponytail: provisional limits preserve the current three-inning balance; tune after the 12-inning simulator runs.
+MP.gameRunLimits = [4, 5, 6, 6];
+MP.stageRunLimits = [4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 6, 6];
+MP.stageRewardSchedule = [
+  "stageCard", "stageCard", "stageCard",
+  "stageCard", "stageCard", "stageCard",
+  "stageCard", "stageCard", "stageCard",
+  "stageCard", "stageCard", "settlement"
+];
 
 MP.rivalPsychPatterns = {
   leadoffProbe: {
@@ -372,7 +412,6 @@ MP.STRIKE_ZONE_MIN = 0.125;
 MP.STRIKE_ZONE_MAX = 0.875;
 
 MP.GAME_TIMING = {
-  timingFeedbackDelay: gameFlowDelay(430),
   pitchResultCleanup: gameFlowDelay(900),
   courseFlash: gameFlowDelay(460),
   weaknessBanner: gameFlowDelay(1250),

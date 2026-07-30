@@ -28,6 +28,7 @@ MP.state = {
   pitchBallPlan: "",
   releaseTiming: null,
   lastReleaseResult: null,
+  pitchInFlight: false,
   flashZone: null,
   lastLocation: null,
   lastPitchCall: null,
@@ -36,6 +37,7 @@ MP.state = {
   rewardChoices: [],
   rewardPending: false,
   rewardKind: "normal",
+  rewardReason: "",
   afterRewardStageOverlay: null,
   pendingRewardKindAfterCurrent: null,
   pendingTransitionBanner: null,
@@ -44,7 +46,9 @@ MP.state = {
   pendingCoreEvolutionReward: false,
   lastAtBatMemory: null,
   ownedRewardCards: [],
+  acquiredRewards: [],
   cardTriggerLog: [],
+  comboRuntime: { setup: {}, scoreCounts: {} },
   stageRun: null,
   currentInningStats: null,
   currentAtBatMeta: null,
@@ -58,9 +62,12 @@ MP.state = {
   activeDugoutEffects: [],
   pendingRunComplete: false,
   pendingRunCompleteMessage: "",
+  pendingStageTransition: false,
+  pendingStageRewardKind: "",
   lastStageResult: null,
   nextBatterSuspicionBonus: 0,
   nextPitchControlBonus: 0,
+  nextBreakingControlBonus: 0,
   patternMemory: { pitches: [], lastWarningAt: 0 },
   pendingGameOver: false,
   tutorialSeen: {},
@@ -78,6 +85,11 @@ MP.state = {
   gameOver: false,
   waitingNextBatter: false,
   batterCardExpanded: false,
+  runEquipment: [],
+  equipmentRuntime: {},
+  pendingEquipmentRecovery: null,
+  pendingEquipmentSetup: false,
+  runCpAwarded: 0,
   screenPhase: "title"
 };
 
@@ -87,11 +99,14 @@ MP.uiEventsBound = false;
 MP.autoAdvanceTimer = null;
 MP.courseFlashTimer = null;
 MP.pitchFlightFrame = null;
+MP.pitchResultTimer = null;
+MP.pitchVisualCleanupTimer = null;
 MP.releaseTimingFrame = null;
 MP.rewardTimer = null;
 MP.inningBannerDismissHandler = null;
 MP.timingDismissHandler = null;
 MP.rewardRevealTimer = null;
+MP.rewardUpgradeRevealTimers = [];
 MP.dugoutRevealTimer = null;
 MP.pitcherRevealTimer = null;
 MP.gameOverTimer = null;
@@ -160,18 +175,36 @@ MP.els = {
   resultTitle: document.querySelector("#resultTitle"),
   resultMessage: document.querySelector("#resultMessage"),
   restartButton: document.querySelector("#restartButton"),
+  resultClubhouseButton: document.querySelector("#resultClubhouseButton"),
   titleOverlay: document.querySelector("#titleOverlay"),
+  titleContinueButton: document.querySelector("#titleContinueButton"),
   titleStartButton: document.querySelector("#titleStartButton"),
+  titleClubhouseButton: document.querySelector("#titleClubhouseButton"),
   titleTutorialButton: document.querySelector("#titleTutorialButton"),
+  clubhouseOverlay: document.querySelector("#clubhouseOverlay"),
+  clubhouseCp: document.querySelector("#clubhouseCp"),
+  clubhouseEquipped: document.querySelector("#clubhouseEquipped"),
+  clubhouseCatalog: document.querySelector("#clubhouseCatalog"),
+  clubhouseClose: document.querySelector("#clubhouseClose"),
+  equipmentSetupOverlay: document.querySelector("#equipmentSetupOverlay"),
+  equipmentSetupTitle: document.querySelector("#equipmentSetupTitle"),
+  equipmentSetupHelp: document.querySelector("#equipmentSetupHelp"),
+  equipmentSetupControls: document.querySelector("#equipmentSetupControls"),
+  equipmentSetupConfirm: document.querySelector("#equipmentSetupConfirm"),
   tutorialOverlay: document.querySelector("#tutorialOverlay"),
   tutorialBackButton: document.querySelector("#tutorialBackButton"),
   pitcherSelectOverlay: document.querySelector("#pitcherSelectOverlay"),
   pitcherChoiceList: document.querySelector("#pitcherChoiceList"),
+  pitcherChoiceSelectedName: document.querySelector("#pitcherChoiceSelectedName"),
+  pitcherChoiceConfirm: document.querySelector("#pitcherChoiceConfirm"),
   rewardOverlay: document.querySelector("#rewardOverlay"),
   rewardTitle: document.querySelector("#rewardTitle"),
   rewardReason: document.querySelector("#rewardReason"),
   rewardAbsorbList: document.querySelector("#rewardAbsorbList"),
   rewardChoiceList: document.querySelector("#rewardChoiceList"),
+  rewardRerollControls: document.querySelector("#rewardRerollControls"),
+  rewardLockSelect: document.querySelector("#rewardLockSelect"),
+  rewardRerollButton: document.querySelector("#rewardRerollButton"),
   stageOverlay: document.querySelector("#stageOverlay"),
   stageTitle: document.querySelector("#stageTitle"),
   stageSubtitle: document.querySelector("#stageSubtitle"),
@@ -245,6 +278,7 @@ MP.els = {
   mobileDuelReadFlow: document.querySelector("#mobileDuelReadFlow"),
   mobileDuelReadPitch: document.querySelector("#mobileDuelReadPitch"),
   mobileDuelReadRisk: document.querySelector("#mobileDuelReadRisk"),
+  mobileEquipmentIntel: document.querySelector("#mobileEquipmentIntel"),
   mobileRecentLog: document.querySelector("#mobileRecentLog"),
   mobileRecentLogMore: document.querySelector("#mobileRecentLogMore"),
   mobileThrowButton: document.querySelector("#mobileThrowButton"),

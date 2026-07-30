@@ -194,6 +194,7 @@ async function settlePage(page, botProfile = "player") {
       if (!MP?.debugReady || !state || !debug) return { kind: "booting" };
       if (state.pendingGameOver) return { kind: "wait", phase: "pendingGameOver" };
       if (state.gameOver) return { kind: "ready", phase: "gameOver" };
+      if (state.pendingStageTransition && !state.rewardPending) return { kind: "wait", phase: "stageTransition" };
       if (
         !state.rewardPending &&
         (state.pendingRunComplete || state.awaitingThemeSelection) &&
@@ -309,7 +310,11 @@ async function throwAutoPitch(page, botProfile = "player") {
     let targetCol = null;
     let ballPlan = "";
 
-    if (state.balls >= 3) {
+    // ponytail: reward sampling needs a strike-throwing control group; player bot keeps its normal decisions.
+    if (bot === "oracle") {
+      pitch = bestControl(repertoire);
+      zone = [1, 3, 7, 9][Math.floor(Math.random() * 4)];
+    } else if (state.balls >= 3) {
       pitch = bestControl(repertoire);
       zone = [1, 3, 7, 9][Math.floor(Math.random() * 4)];
     } else if (impressionId === "fast_timing") {
@@ -380,7 +385,7 @@ async function throwAutoPitch(page, botProfile = "player") {
       targetCol: Number.isFinite(Number(targetCol)) ? Number(targetCol) : null
     };
     const release = debug.modelReleaseForBot?.(pitch, plannedCourse, bot);
-    const result = debug.throwPitch(pitch.id, zone, targetRow, targetCol, release, true);
+    const result = debug.throwPitch(pitch.id, zone, targetRow, targetCol, release, true, null, null, true);
     if (!result) return null;
 
     const afterRunStats = { ...(state.runStats || {}) };

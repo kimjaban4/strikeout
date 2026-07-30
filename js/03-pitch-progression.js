@@ -42,7 +42,8 @@ window.MountPsycho = window.MountPsycho || {};
 
   function getBurdenModifiers(pitch) {
     ensurePitchRuntime(pitch);
-    const tier = burdenTier(pitch.burden);
+    const deferred = MP.hasRunEquipment?.("compression_sleeve") ? state.equipmentRuntime?.deferredBurdenByPitch?.[pitch.id] : null;
+    const tier = burdenTier(deferred ?? pitch.burden);
     return {
       tierId: tier.id,
       label: tier.label,
@@ -74,7 +75,7 @@ window.MountPsycho = window.MountPsycho || {};
 
   function batterMultiplier(batter) {
     if (!batter) return masteryCfg.batterMult.normal;
-    if (batter.isBoss && state.stageIndex >= 2) return masteryCfg.batterMult.finalBoss;
+    if (batter.isBoss && Math.floor(state.stageIndex / 3) >= 2) return masteryCfg.batterMult.finalBoss;
     if (batter.isBoss) return masteryCfg.batterMult.boss;
     if (batter.slot >= 3 && batter.slot <= 6) return masteryCfg.batterMult.middle;
     if (batter.slot >= 7) return masteryCfg.batterMult.bottom;
@@ -109,14 +110,30 @@ window.MountPsycho = window.MountPsycho || {};
     const prog = state.pitchProgression;
     const consecutive = prog.consecutiveCount;
     let delta = burdenCfg.useBase;
-    if (consecutive >= 4) delta += burdenCfg.repeat4;
-    else if (consecutive === 3) delta += burdenCfg.repeat3;
-    else if (consecutive === 2) delta += burdenCfg.repeat2;
+    const inningPitchCount = state.equipmentRuntime?.inningPitchCount || 0;
+    const ignoreRepeat = MP.hasRunEquipment?.("tubing_band") && inningPitchCount <= 3;
+    const ignoreAll = MP.hasRunEquipment?.("pitch_counter") && [11, 12].includes(inningPitchCount);
+    if (!ignoreRepeat) {
+      if (consecutive >= 4) delta += burdenCfg.repeat4;
+      else if (consecutive === 3) delta += burdenCfg.repeat3;
+      else if (consecutive === 2) delta += burdenCfg.repeat2;
+    }
     if (snapshot.strikes === 2) delta += burdenCfg.twoStrike;
     if (snapshot.balls === 3 && snapshot.strikes === 2) delta += burdenCfg.fullCount;
     if (snapshot.isBoss) delta += burdenCfg.vsBoss;
     if (before >= burdenCfg.highBurdenThreshold) delta += burdenCfg.highBurdenExtra;
+    if (ignoreAll) delta = 0;
+    const beforeTier = burdenTier(before).id;
     pitch.burden = clampBurden(before + delta);
+    const afterTier = burdenTier(pitch.burden).id;
+    if (MP.hasRunEquipment?.("compression_sleeve") && beforeTier !== afterTier) {
+      state.equipmentRuntime.deferredBurdenByPitch ||= {};
+      state.equipmentRuntime.deferredBurdenByPitch[pitch.id] ??= before;
+    }
+    if (MP.hasRunEquipment?.("blister_kit") && !state.equipmentRuntime?.blisterUsed && pitch.burden >= 75) {
+      pitch.burden = 50;
+      state.equipmentRuntime.blisterUsed = true;
+    }
   }
 
   function recoverBurdenOtherPitches(usedPitchId) {
@@ -144,8 +161,19 @@ window.MountPsycho = window.MountPsycho || {};
   }
 
   function onStageClearProgression() {
-    recoverBurdenAll(burdenCfg.recoverStage);
     resetStageMasteryAll();
+  }
+
+  function onGameStartProgression() {
+    if (MP.hasRunEquipment?.("icing_bag")) {
+      MP.applyEquipmentRecovery?.("icing", { factor: 0.5 });
+    }
+    recoverBurdenAll(burdenCfg.recoverStage);
+    if (!state.pitchProgression) return;
+    state.pitchProgression.lastPitchId = null;
+    state.pitchProgression.consecutivePitchId = null;
+    state.pitchProgression.consecutiveCount = 0;
+    state.pitchProgression.pitchSequence = [];
   }
 
   function roleBonus(pitch, result, snapshot, pattern) {
@@ -299,6 +327,7 @@ window.MountPsycho = window.MountPsycho || {};
     };
     applyMasteryFromResult(result, snapshot, { pattern, atBatEnd: true, finishTitle });
     recoverBurdenAll(burdenCfg.recoverAtBat);
+    if (state.equipmentRuntime) state.equipmentRuntime.deferredBurdenByPitch = {};
   }
 
   function masteryWeightMult(stageMastery) {
@@ -456,8 +485,14 @@ window.MountPsycho = window.MountPsycho || {};
   MP.masteryFlowLabel = masteryFlowLabel;
   MP.processPitchProgressionAfterPitch = processAfterPitch;
   MP.processPitchProgressionAtBatEnd = processAtBatEnd;
-  MP.recoverPitchBurdenInning = () => recoverBurdenAll(burdenCfg.recoverInning);
+  MP.recoverPitchBurdenInning = () => {
+    recoverBurdenAll(burdenCfg.recoverInning);
+    if (MP.hasRunEquipment?.("massage_gun") && (state.equipmentRuntime?.inningFamilies || []).length >= 3) {
+      MP.applyEquipmentRecovery?.("massage", { amount: 12 });
+    }
+  };
   MP.onStageClearPitchProgression = onStageClearProgression;
+  MP.onGameStartPitchProgression = onGameStartProgression;
   MP.collectPitchUpgradeCandidates = collectPitchUpgradeCandidates;
   MP.pickWeightedPitchUpgrades = pickWeightedPitchUpgrades;
   MP.applyPitchUpgradeReward = applyPitchUpgrade;

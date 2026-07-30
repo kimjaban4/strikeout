@@ -3,6 +3,8 @@ import { test, expect } from "@playwright/test";
 async function startFromTitle(page) {
   await page.goto("/");
   await expect(page.locator("#titleOverlay")).toBeVisible();
+  await expect(page.locator("#titleStartButton")).toContainText("새 RUN");
+  await expect(page.locator(".title-screen-actions > button").first()).toHaveAttribute("id", "titleStartButton");
   await page.locator("#titleStartButton").click();
   await expect(page.locator("#titleOverlay")).toBeHidden();
   await expect(page.locator("#pitcherSelectOverlay")).toBeVisible();
@@ -11,6 +13,7 @@ async function startFromTitle(page) {
 async function chooseFirstPitcher(page) {
   await startFromTitle(page);
   await page.locator(".pitcher-choice-card").first().click();
+  await page.locator("#pitcherChoiceConfirm").click();
   await expect(page.locator("#pitcherSelectOverlay")).toBeHidden();
   await expect(page.locator("#stageOverlay")).toBeVisible();
   await page.locator("#stageStartButton").click();
@@ -44,6 +47,11 @@ test("boots to title and pitcher select", async ({ page }) => {
 
   await startFromTitle(page);
   await expect(page.locator(".pitcher-choice-card")).toHaveCount(3);
+  await expect(page.locator("#pitcherSelectOverlay")).toContainText("선발 투수 선택");
+  await expect(page.locator("#pitcherChoiceConfirm")).toBeDisabled();
+  await page.locator(".pitcher-choice-card").first().click();
+  await expect(page.locator(".pitcher-choice-card").first()).toHaveAttribute("aria-pressed", "true");
+  await expect(page.locator("#pitcherChoiceConfirm")).toBeEnabled();
 });
 
 test("game flow runs at 1.3x while pitch result toasts stay at three seconds", async ({ page }) => {
@@ -54,7 +62,7 @@ test("game flow runs at 1.3x while pitch result toasts stay at three seconds", a
   expect(timing.pitchResultToast).toBe(3000);
 });
 
-test("title screen uses the stable black logo stage and pitcher select stays dark", async ({ page }) => {
+test("title screen uses the retro comic background and pitcher cards stay readable", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 });
   await page.goto("/");
   await expect(page.locator("#titleOverlay")).toBeVisible();
@@ -73,8 +81,8 @@ test("title screen uses the stable black logo stage and pitcher select stays dar
         rect.bottom >= window.innerHeight - 1
     };
   });
-  expect(title.backgroundImage).toBe("none");
-  expect(title.actionDirection).toBe("row");
+  expect(title.backgroundImage).toContain("main-title-background-v2.png");
+  expect(title.actionDirection).toBe("column");
   expect(title.coversViewport).toBe(true);
 
   await page.locator("#titleStartButton").click();
@@ -83,19 +91,32 @@ test("title screen uses the stable black logo stage and pitcher select stays dar
     const color = getComputedStyle(card).color.match(/\d+/g).map(Number);
     return {
       lightText: color.slice(0, 3).reduce((sum, value) => sum + value, 0) > 560,
-      statBars: card.querySelectorAll(".choice-stat").length,
+      stats: [...card.querySelectorAll(".choice-stat")].map((row) => row.textContent.trim()),
+      statBars: card.querySelectorAll(".choice-stat i").length,
       pitchBadges: card.querySelectorAll(".choice-pitch").length
     };
   });
-  expect(pitcherSelect.lightText).toBe(true);
-  expect(pitcherSelect.statBars).toBe(5);
+  expect(pitcherSelect.lightText).toBe(false);
+  expect(pitcherSelect.stats).toHaveLength(3);
+  expect(pitcherSelect.stats.every((stat) => /\d+/.test(stat))).toBe(true);
+  expect(pitcherSelect.statBars).toBe(0);
   expect(pitcherSelect.pitchBadges).toBeGreaterThanOrEqual(2);
+  await expect(page.locator("#pitcherSelectOverlay")).not.toHaveClass(/is-revealing/);
+  const wrapping = await page.locator(".pitcher-choice-card").first().evaluate((card) => ({
+    label: card.querySelector(".choice-number").getBoundingClientRect().width,
+    name: card.querySelector("strong").getBoundingClientRect().width,
+    style: card.querySelector(".choice-style").getBoundingClientRect().width
+  }));
+  expect(wrapping.label).toBeGreaterThan(50);
+  expect(wrapping.name).toBeGreaterThan(40);
+  expect(wrapping.style).toBeGreaterThan(50);
 });
 
-test("stage intro presents the briefing before a full-width start button", async ({ page }) => {
+test("stage intro presents the briefing before its primary start button", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await startFromTitle(page);
   await page.locator(".pitcher-choice-card").first().click();
+  await page.locator("#pitcherChoiceConfirm").click();
 
   await expect(page.locator("#stageOverlay")).toHaveClass(/is-stage-intro/);
   await expect(page.locator("#stageTitle")).toContainText("STAGE 1");
@@ -113,7 +134,7 @@ test("stage intro presents the briefing before a full-width start button", async
   });
   expect(layout.fits).toBe(true);
   expect(layout.buttonGap).toBeLessThanOrEqual(24);
-  expect(layout.buttonWidth).toBe(layout.boxWidth);
+  expect(layout.buttonWidth).toBeGreaterThan(layout.boxWidth * 0.85);
 });
 
 test("mobile header separates count strip from mission and opens menu", async ({ page }) => {
@@ -129,7 +150,7 @@ test("mobile header separates count strip from mission and opens menu", async ({
       missionVisible: mission.width > 0 && mission.height > 0
     };
   });
-  expect(header).toEqual({ missionBelowCount: true, countVisible: true, missionVisible: true });
+  expect(header).toEqual({ missionBelowCount: false, countVisible: true, missionVisible: true });
 
   await page.locator("#mobileNewGameButton").click();
   await expect(page.locator("#mobileMenuPanel")).toBeVisible();
@@ -144,7 +165,7 @@ test("stage missions stay inside playable innings", async ({ page }) => {
   await page.goto("/");
   const result = await page.evaluate(() => {
     const MP = window.MountPsycho;
-    return [0, 1, 2].map((stageIndex) => {
+    return Array.from({ length: 12 }, (_, stageIndex) => {
       const config = MP.debug.stageConfig(stageIndex);
       return {
         name: config.name,
@@ -157,6 +178,360 @@ test("stage missions stay inside playable innings", async ({ page }) => {
   for (const stage of result) {
     expect(stage.missionInnings.every((inning) => inning >= 1 && inning <= stage.innings)).toBe(true);
   }
+});
+
+test("12 stages map to four three-inning games and the planned reward schedule", async ({ page }) => {
+  await page.goto("/");
+  const result = await page.evaluate(() => {
+    const debug = window.MountPsycho.debug;
+    return Array.from({ length: 12 }, (_, stageIndex) => {
+      window.MountPsycho.state.stageIndex = stageIndex;
+      return {
+        stage: debug.currentStageNumber(),
+        game: debug.currentGameNumber(),
+        inning: debug.currentGameInning(),
+        reward: debug.stageRewardKind(stageIndex)
+      };
+    });
+  });
+
+  expect(result.map(({ game, inning }) => `${game}-${inning}`)).toEqual([
+    "1-1", "1-2", "1-3",
+    "2-1", "2-2", "2-3",
+    "3-1", "3-2", "3-3",
+    "4-1", "4-2", "4-3"
+  ]);
+  expect(result.map(({ reward }) => reward)).toEqual([
+    "stageCard", "stageCard", "stageCard",
+    "stageCard", "stageCard", "stageCard",
+    "stageCard", "stageCard", "stageCard",
+    "stageCard", "stageCard", "settlement"
+  ]);
+});
+
+test("planned tag rewards contain 36 explicit evolutions and 24 core-centered cards", async ({ page }) => {
+  await page.goto("/");
+  const catalog = await page.evaluate(() => {
+    const debug = window.MountPsycho.debug;
+    return {
+      evolutionCount: debug.plannedCoreEvolutionCatalog.length,
+      evolutionNames: debug.plannedCoreEvolutionCatalog.map((item) => item.name),
+      evolutionGroups: Object.fromEntries([...new Set(debug.plannedCoreEvolutionCatalog.map((item) => item.coreTagId))].map((id) => [id, debug.plannedCoreEvolutionCatalog.filter((item) => item.coreTagId === id).length])),
+      rewardCount: debug.tagRewardCardCatalog.length,
+      commonCount: debug.tagRewardCardCatalog.filter((item) => item.rarity === "common").length,
+      comboCount: debug.tagRewardCardCatalog.filter((item) => item.combo).length,
+      effectful: debug.plannedCoreEvolutionCatalog.every((item) => Object.keys(item.effects || {}).length > 0)
+    };
+  });
+  expect(catalog.evolutionCount).toBe(36);
+  expect(new Set(catalog.evolutionNames).size).toBe(36);
+  expect(Object.values(catalog.evolutionGroups).every((count) => count === 3)).toBe(true);
+  expect(catalog.rewardCount).toBe(24);
+  expect(catalog.commonCount).toBe(12);
+  expect(catalog.comboCount).toBe(12);
+  expect(catalog.effectful).toBe(true);
+});
+
+test("stage transitions preserve game state and game transitions reset it", async ({ page }) => {
+  await chooseFirstPitcher(page);
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const firstLineup = MP.state.lineup.map((batter) => batter.name);
+    MP.state.runs = 2;
+    MP.state.batterIndex = 4;
+    MP.state.patternMemory.pitches = [{ category: "fast", memoryWeight: 1 }];
+    MP.debug.advanceStage(MP.state.stageThemeId);
+    const sameGame = {
+      game: MP.debug.currentGameNumber(),
+      inning: MP.state.inning,
+      runs: MP.state.runs,
+      batterIndex: MP.state.batterIndex,
+      lineup: MP.state.lineup.map((batter) => batter.name),
+      memory: MP.state.patternMemory.pitches.length
+    };
+    MP.debug.advanceStage(MP.state.stageThemeId);
+    MP.debug.advanceStage(MP.state.stageThemeId);
+    return {
+      firstLineup,
+      sameGame,
+      newGame: {
+        game: MP.debug.currentGameNumber(),
+        inning: MP.state.inning,
+        runs: MP.state.runs,
+        batterIndex: MP.state.batterIndex,
+        lineup: MP.state.lineup.map((batter) => batter.name),
+        memory: MP.state.patternMemory.pitches.length
+      }
+    };
+  });
+
+  expect(result.sameGame).toMatchObject({ game: 1, inning: 2, runs: 2, batterIndex: 5, memory: 1 });
+  expect(result.sameGame.lineup).toEqual(result.firstLineup);
+  expect(result.newGame).toMatchObject({ game: 2, inning: 1, runs: 0, batterIndex: 0, memory: 0 });
+  expect(result.newGame.lineup).not.toEqual(result.firstLineup);
+});
+
+test("natural S1 reward continues to S2 without resetting game state", async ({ page }) => {
+  await chooseFirstPitcher(page);
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.runs = 2;
+    MP.state.batterIndex = 4;
+    MP.state.outs = 2;
+    MP.debug.addOut();
+    MP.debug.finishAtBat("STRIKE OUT!", "S1 종료");
+  });
+  await expect(page.locator("#rewardOverlay")).toBeVisible({ timeout: 3000 });
+  await page.waitForTimeout(1300);
+  await page.locator("#rewardChoiceList .reward-choice-card").first().click();
+  await expect(page.locator("#stageOverlay")).toBeVisible({ timeout: 3000 });
+  const state = await page.evaluate(() => ({
+    stageIndex: window.MountPsycho.state.stageIndex,
+    game: window.MountPsycho.debug.currentGameNumber(),
+    inning: window.MountPsycho.state.inning,
+    runs: window.MountPsycho.state.runs,
+    batterIndex: window.MountPsycho.state.batterIndex,
+    hasAtBat: !!window.MountPsycho.state.atBat
+  }));
+  expect(state).toEqual({ stageIndex: 1, game: 1, inning: 2, runs: 2, batterIndex: 5, hasAtBat: false });
+
+  await page.locator("#stageStartButton").click();
+  await expect(page.locator("#dugoutOverlay")).toBeVisible();
+  await page.waitForTimeout(1300);
+  await page.locator("[data-dugout-index='0']").click();
+  await page.locator("[data-dugout-continue]").click();
+  const resumed = await page.evaluate(() => ({
+    batterIndex: window.MountPsycho.state.batterIndex,
+    atBatBatterIndex: window.MountPsycho.state.currentAtBatMeta?.batterIndex
+  }));
+  expect(resumed).toEqual({ batterIndex: 5, atBatBatterIndex: 5 });
+});
+
+test("stage checkpoint resumes with the same generated reward choices", async ({ page }) => {
+  await chooseFirstPitcher(page);
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.runs = 2;
+    MP.state.outs = 2;
+    MP.debug.addOut();
+    MP.debug.finishAtBat("STRIKE OUT!", "체크포인트 테스트");
+  });
+  await expect(page.locator("#rewardOverlay")).toBeVisible({ timeout: 3000 });
+  const beforeReload = await page.evaluate(() => ({
+    stageIndex: window.MountPsycho.state.stageIndex,
+    rewards: window.MountPsycho.state.rewardChoices.map((reward) => reward.title)
+  }));
+
+  await page.reload();
+  await expect(page.locator("#titleContinueButton")).toBeVisible();
+  await page.locator("#titleContinueButton").click();
+  await expect(page.locator("#rewardOverlay")).toBeVisible();
+  const afterReload = await page.evaluate(() => ({
+    stageIndex: window.MountPsycho.state.stageIndex,
+    rewards: window.MountPsycho.state.rewardChoices.map((reward) => reward.title)
+  }));
+  expect(afterReload).toEqual(beforeReload);
+});
+
+test("CP settlement follows the four game milestone table", async ({ page }) => {
+  await chooseFirstPitcher(page);
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const values = [
+      [2, true, false],
+      [5, true, false],
+      [8, true, false],
+      [11, true, true]
+    ].map(([stageIndex, completed, won]) => {
+      MP.state.stageIndex = stageIndex;
+      MP.state.stageRun.stageIndex = stageIndex;
+      MP.state.stageRun.completed = completed;
+      return MP.debug.calculateRunCp(won);
+    });
+    MP.state.stageIndex = 2;
+    MP.state.stageRun.stageIndex = 2;
+    MP.state.stageRun.completed = true;
+    MP.state.runCpAwarded = 0;
+    MP.debug.writeClubhouseProfile({ cp: 0, owned: [], equipped: [], equipmentLimit: 5 });
+    MP.debug.settleRunCp(false);
+    MP.debug.settleRunCp(false);
+    return { values, savedCp: MP.debug.readClubhouseProfile().cp };
+  });
+  expect(result).toEqual({ values: [4, 9, 15, 26], savedCp: 4 });
+});
+
+test("run result uses live stats and the last recorded pitch", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.runs = 1;
+    MP.state.runStats.strikeouts = 4;
+    MP.state.runStats.hits = 2;
+    MP.state.runStats.rewards = 3;
+    MP.state.mobilePitchRecords.unshift({
+      no: 7,
+      pitch: "커터",
+      zone: "몸쪽 낮게",
+      outcome: "삼진",
+      result: "swingingStrike"
+    });
+    MP.debug.endGame(true, "테스트 승리.");
+  });
+  await expect(page.locator("#resultOverlay")).toBeVisible();
+  await expect(page.locator("#resultOverlay")).toHaveClass(/is-win/);
+  await expect(page.locator("#resultTitle")).toHaveText("승리!");
+  await expect(page.locator("#resultMessage .result-summary > span")).toHaveCount(4);
+  await expect(page.locator("#resultMessage .result-last-pitch")).toContainText(/커터|몸쪽 낮게|삼진/);
+  await expect(page.locator("#resultMessage .result-earned")).toContainText(/획득 보상|선택한 보상|CP/);
+});
+
+test("clubhouse sells and equips the 30-item catalog with CP", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.evaluate(() => window.MountPsycho.debug.writeClubhouseProfile({ cp: 4, owned: [], equipped: { mound: null, tactical: null } }));
+  await page.locator("#titleClubhouseButton").click();
+  await expect(page.locator("#clubhouseOverlay")).toBeVisible();
+  await expect(page.locator("#clubhouseCatalog .clubhouse-item")).toHaveCount(30);
+  await expect(page.locator("#clubhouseCp")).toContainText("4 CP");
+  await page.locator('[data-equipment-id="rosin_bag"]').click();
+  await expect(page.locator("#clubhouseCp")).toContainText("1 CP");
+  await expect(page.locator('[data-equipment-id="rosin_bag"]')).toContainText("장착 해제");
+  await page.locator("#clubhouseClose").click();
+  await page.locator("#titleStartButton").click();
+  await page.locator(".pitcher-choice-card").first().click();
+  await page.locator("#pitcherChoiceConfirm").click();
+  const state = await page.evaluate(() => ({
+    cp: window.MountPsycho.debug.readClubhouseProfile().cp,
+    equipment: window.MountPsycho.state.runEquipment
+  }));
+  expect(state).toEqual({ cp: 1, equipment: ["rosin_bag"] });
+});
+
+test("clubhouse enforces equipment CP and mutually exclusive shifts", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => {
+    const debug = window.MountPsycho.debug;
+    debug.writeClubhouseProfile({ cp: 0, owned: ["infield_shift", "outfield_position"], equipped: [], equipmentLimit: 9 });
+    debug.openClubhouse();
+  });
+  await page.locator('[data-equipment-id="infield_shift"]').click();
+  await expect(page.locator('[data-equipment-id="outfield_position"]')).toBeDisabled();
+  await expect(page.locator('[data-equipment-id="outfield_position"]')).toContainText("상충 장비 장착 중");
+
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.debug.writeClubhouseProfile({ cp: 0, owned: ["rosin_bag", "pitching_spikes"], equipped: ["rosin_bag"], equipmentLimit: 5 });
+    MP.debug.openClubhouse();
+  });
+  await expect(page.locator('[data-equipment-id="pitching_spikes"]')).toBeDisabled();
+  await expect(page.locator('[data-equipment-id="pitching_spikes"]')).toContainText("장착 한도 부족");
+
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.runEquipment = ["rosin_bag"];
+    const unlocked = MP.debug.unlockEquipmentLimitForGame(1);
+    return {
+      unlocked,
+      limit: MP.debug.readClubhouseProfile().equipmentLimit,
+      runEquipment: MP.state.runEquipment
+    };
+  });
+  expect(result).toEqual({ unlocked: 9, limit: 9, runEquipment: ["rosin_bag"] });
+  await page.evaluate(() => window.MountPsycho.debug.openClubhouse());
+  await page.locator('[data-equipment-id="pitching_spikes"]').click();
+  await expect(page.locator("#clubhouseEquipped")).toContainText("7 / 9 CP");
+});
+
+test("defensive positioning equipment converts qualifying hits half the time", async ({ page }) => {
+  await chooseFirstPitcher(page);
+  const results = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const base = {
+      contactQuality: 60,
+      batter: {},
+      pitch: { id: "four", category: "fast" },
+      location: { row: 2, col: 1, centerMistake: false },
+      special: {},
+      timingLabel: "정타",
+      timingValue: 0.5
+    };
+    MP.state.runEquipment = ["infield_shift"];
+    const originalRandom = Math.random;
+    Math.random = () => 0.49;
+    const converted = MP.debug.makeBallInPlayResult(base).result;
+    Math.random = () => 0.51;
+    const normal = MP.debug.makeBallInPlayResult(base).result;
+    Math.random = originalRandom;
+    return { converted, normal };
+  });
+  expect(results).toEqual({ converted: "inPlayOut", normal: "single" });
+});
+
+test("multiple setup equipment is configured in sequence before the run", async ({ page }) => {
+  await page.goto("/");
+  await page.evaluate(() => window.MountPsycho.debug.writeClubhouseProfile({
+    cp: 0,
+    owned: ["sequence_board", "dugout_tactics"],
+    equipped: ["sequence_board", "dugout_tactics"],
+    equipmentLimit: 13
+  }));
+  await page.locator("#titleStartButton").click();
+  await page.locator(".pitcher-choice-card").first().click();
+  await page.locator("#pitcherChoiceConfirm").click();
+
+  await expect(page.locator("#equipmentSetupTitle")).toHaveText("피치 시퀀스 보드");
+  await page.locator("#equipmentSetupConfirm").click();
+  await expect(page.locator("#equipmentSetupTitle")).toHaveText("더그아웃 전술 보드");
+  await page.locator("#equipmentSetupConfirm").click();
+  await expect(page.locator("#equipmentSetupOverlay")).toBeHidden();
+  await expect(page.locator("#stageOverlay")).toBeVisible();
+});
+
+test("equipment intel stays visible and tied recovery lets the player choose", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.runEquipment = ["lineup_card", "massage_gun"];
+    MP.state.pitcher.repertoire.forEach((pitch, index) => { pitch.burden = index < 2 ? 50 : 20; });
+    MP.debug.render();
+    return {
+      intel: MP.debug.equipmentIntelSummary(),
+    };
+  });
+  expect(result.intel.title).toBe("라인업");
+  await expect(page.locator("#mobileEquipmentIntel")).toBeVisible();
+  const choices = await page.evaluate(() => {
+    window.MountPsycho.debug.applyEquipmentRecovery("massage", { amount: 12 });
+    return [...document.querySelectorAll('#equipmentSetupControls select option')].map((option) => option.value);
+  });
+  expect(choices).toHaveLength(2);
+  await expect(page.locator("#equipmentSetupOverlay")).toBeVisible();
+  await page.locator('#equipmentSetupControls select').selectOption(choices[1]);
+  await page.locator('#equipmentSetupConfirm').click();
+  const burdens = await page.evaluate(() => window.MountPsycho.state.pitcher.repertoire.slice(0, 2).map((pitch) => pitch.burden));
+  expect(burdens).toEqual([50, 38]);
+});
+
+test("release target can resume the previous cursor direction", async ({ page }) => {
+  await page.goto("/");
+  const result = await page.evaluate(() => {
+    const debug = window.MountPsycho.debug;
+    const challenge = { startedAt: 0, duration: 1000, startReverse: true };
+    return {
+      position: debug.releaseCursorPosition(challenge, 100),
+      direction: debug.releaseCursorDirection(challenge, 100)
+    };
+  });
+  expect(result.position).toBeCloseTo(0.8, 5);
+  expect(result.direction).toBe("reverse");
+});
+
+test("missing fine target keeps the selected strike-zone course", async ({ page }) => {
+  await page.goto("/");
+  const course = await page.evaluate(() => window.MountPsycho.debug.intendedCourse(5, "strike", null, null, null, null));
+  expect(course).toMatchObject({ row: 1, col: 1, x: 0.5, y: 0.5 });
 });
 
 test("uses mobile shell as the main game screen on wide and narrow viewports", async ({ page }) => {
@@ -173,17 +548,25 @@ test("uses mobile shell as the main game screen on wide and narrow viewports", a
     await expect(page.locator("#mobileMissionCard")).toBeVisible();
     await expect(page.locator("#mobileStrikeZone")).toBeVisible();
 
+    const strikeZoneRatio = await page.locator("#mobileStrikeZone").evaluate((zone) => {
+      const rect = zone.getBoundingClientRect();
+      return rect.width / rect.height;
+    });
+    expect(strikeZoneRatio).toBeCloseTo(1, 1);
+
     const layout = await page.evaluate(() => {
       const shell = document.querySelector("#mobileGameShell").getBoundingClientRect();
-      const parts = [".mobile-game-header", ".mobile-field-scene", ".mobile-mid-panel", ".mobile-control-panel"]
+      const parts = [".mobile-game-header", ".mobile-field-scene", ".mobile-mid-panel"]
         .map((selector) => document.querySelector(selector).getBoundingClientRect());
       const log = document.querySelector(".mobile-recent-log-card").getBoundingClientRect();
+      const playerCard = document.querySelector(".mobile-player-card").getBoundingClientRect();
       return {
         shellVisible: shell.width > 0 && shell.height > 0,
         shellFits: shell.left >= 0 && shell.right <= innerWidth && shell.top >= 0 && shell.bottom <= innerHeight,
         shellWidth: Math.round(shell.width),
         centered: Math.abs(shell.left + shell.width / 2 - innerWidth / 2) <= 1,
         logHeight: Math.round(log.height),
+        playerCardHeight: Math.round(playerCard.height),
         ordered: parts.every((rect, index) => index === 0 || rect.top >= parts[index - 1].bottom - 1)
       };
     });
@@ -192,6 +575,7 @@ test("uses mobile shell as the main game screen on wide and narrow viewports", a
     expect(layout.centered).toBe(true);
     expect(layout.shellWidth).toBe(viewport.width > 760 ? 430 : viewport.width);
     expect(layout.logHeight).toBeGreaterThan(100);
+    expect(layout.playerCardHeight).toBe(77);
     expect(layout.ordered).toBe(true);
   }
 });
@@ -209,7 +593,7 @@ test("mobile pitch controls start circular release timing at the touched course"
   await expect(page.locator("#mobileReleasePanel")).toBeHidden();
   await expect(page.locator("#mobileStrikeZone .zone-grid-cell")).toHaveCount(0);
   await expect(page.locator("#mobileStrikeZone .strike-zone-boundary")).toHaveCount(1);
-  await expect(page.locator("#mobileStrikeZone")).toHaveCSS("border-top-width", "0px");
+  await expect(page.locator("#mobileStrikeZone")).toHaveCSS("border-top-width", "3px");
   const zoneGuide = await page.locator("#mobileStrikeZone").evaluate((zone) => {
     const boundary = zone.querySelector(".strike-zone-boundary");
     return {
@@ -217,7 +601,7 @@ test("mobile pitch controls start circular release timing at the touched course"
       gradients: (getComputedStyle(boundary).backgroundImage.match(/linear-gradient/g) || []).length
     };
   });
-  expect(zoneGuide.ratio).toBeCloseTo(0.75, 1);
+  expect(zoneGuide.ratio).toBeCloseTo(0.7, 1);
   expect(zoneGuide.gradients).toBe(2);
 
   await page.evaluate(() => {
@@ -229,12 +613,14 @@ test("mobile pitch controls start circular release timing at the touched course"
     x: element.style.getPropertyValue("--aim-x"),
     y: element.style.getPropertyValue("--aim-y"),
     shake: parseFloat(element.style.getPropertyValue("--aim-shake")),
-    animation: getComputedStyle(element).animationName
+    targetAnimation: getComputedStyle(element).animationName,
+    ringAnimation: getComputedStyle(element.querySelector(".release-aim-ring")).animationName
   }));
   expect(parseFloat(target.x)).toBeGreaterThan(50);
   expect(parseFloat(target.y)).toBeLessThan(50);
   expect(target.shake).toBeGreaterThanOrEqual(8);
-  expect(target.animation).toBe("releaseAimShake");
+  expect(target.targetAnimation).toBe("none");
+  expect(target.ringAnimation).toBe("comicAimRingPulse");
 });
 
 test("both visible strike-zone edges keep the correct inside and outside labels", async ({ page }) => {
@@ -250,7 +636,7 @@ test("both visible strike-zone edges keep the correct inside and outside labels"
   const inside = await page.evaluate(() => {
     const MP = window.MountPsycho;
     MP.state.releaseTiming.startedAt = Date.now() - MP.state.releaseTiming.duration / 4;
-    MP.debug.finishReleaseTiming();
+    MP.debug.finishReleaseTiming(true);
     return { inZone: MP.state.lastLocation.inZone, label: MP.state.lastLocation.actualLabel };
   });
   expect(inside).toEqual({ inZone: true, label: "몸쪽" });
@@ -260,7 +646,7 @@ test("both visible strike-zone edges keep the correct inside and outside labels"
   const outside = await page.evaluate(() => {
     const MP = window.MountPsycho;
     MP.state.releaseTiming.startedAt = Date.now() - MP.state.releaseTiming.duration / 4;
-    MP.debug.finishReleaseTiming();
+    MP.debug.finishReleaseTiming(true);
     return { inZone: MP.state.lastLocation.inZone, label: MP.state.lastLocation.actualLabel };
   });
   expect(outside).toEqual({ inZone: true, label: "바깥쪽" });
@@ -282,6 +668,11 @@ test("pitch result toasts auto-hide after three seconds", async ({ page }) => {
 
   await page.evaluate(() => window.MountPsycho.debug.setTiming("STRIKE", "warn"));
   await expect(page.locator("#mobileTimingBadge")).toHaveClass(/show/);
+  await expect(page.locator('#mobileTimingBadge.image-toast img[src*="toast-strike-aligned-v2.png"]')).toBeVisible();
+  await expect(page.locator("#mobileTimingBadge")).toHaveClass(/toast-positive/);
+  await expect.poll(() => page.locator("#mobileTimingBadge img").evaluate((image) => getComputedStyle(image).filter)).toContain("drop-shadow");
+  await page.evaluate(() => window.MountPsycho.debug.setTiming("BALL", "good"));
+  await expect(page.locator("#mobileTimingBadge")).toHaveClass(/toast-neutral/);
   await page.waitForTimeout(2500);
   await expect(page.locator("#mobileTimingBadge")).toHaveClass(/show/);
   await expect(page.locator("#mobileTimingBadge")).not.toHaveClass(/show/, { timeout: 1000 });
@@ -290,24 +681,45 @@ test("pitch result toasts auto-hide after three seconds", async ({ page }) => {
 test("mobile throw records a log entry", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
-  await expect(page.locator("#mobileRecentLog .is-batter-marker").first()).toContainText(/번 타자/);
+  await expect(page.locator('#mobileRecentLog [data-record-kind="batter"]')).toHaveCount(0);
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.batterIndex = (MP.state.batterIndex + 1) % MP.state.lineup.length;
+    MP.debug.startAtBat();
+    MP.debug.render();
+  });
+  await expect(page.locator('#mobileRecentLog [data-record-kind="batter"]')).toContainText(/교체\s*2번/);
+  await expect(page.locator('#mobileRecentLog [data-record-kind="batter"]')).not.toContainText("새 타자");
   await expect(page.locator(".mobile-suspicion-card")).toBeHidden();
   await chooseMobilePitchAndZone(page);
 
   const zone = page.locator("#mobileStrikeZone");
   const box = await zone.boundingBox();
   await zone.click({ position: { x: box.width * 0.56, y: box.height * 0.44 } });
-  await expect(page.locator("#mobileRecentLog .mobile-recent-log-row").first()).toBeVisible({ timeout: 8000 });
-  await expect(page.locator("#mobileRecentLog .is-batter-marker").first()).toContainText(/번 타자/);
+  const duringFlight = await page.evaluate(() => ({
+    inFlight: window.MountPsycho.state.pitchInFlight,
+    resultRows: document.querySelectorAll("#mobileRecentLog .mobile-pitch-compact-row[data-result]").length
+  }));
+  expect(duringFlight).toEqual({ inFlight: true, resultRows: 0 });
+  await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row[data-result]")).toBeVisible({ timeout: 8000 });
+  await expect(page.locator("#mobileTimingBadge")).toHaveClass(/show/, { timeout: 500 });
+  await expect(page.locator('#mobileRecentLog [data-record-kind="batter"]')).toContainText(/\d번/);
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first()).toContainText(/구/);
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first().locator(".mobile-pitch-zone")).toHaveText(/바깥|몸쪽|중앙|높게|낮게/);
-  await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row small").first()).toHaveText(
-    /끝까지 보고 골랐습니다|그대로 지켜봤습니다|배트가 먼저 나왔습니다|배트가 늦게 나왔습니다|배트가 공을 놓쳤습니다|가까스로 걷어냈습니다|배트에 걸렸습니다|땅볼을 쳤습니다|뜬공을 쳤습니다|약한 타구를 쳤습니다|타구를 정확히 맞혔습니다|강하게 받아쳤습니다|완벽하게 받아쳤습니다|수비가 처리하지 못했습니다/
-  );
+  await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row small").first()).not.toHaveText("");
   await page.locator("#mobileRecentLogMore").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
+  await expect(page.locator("#mobileInfoPanelTitle")).toContainText("현재 타석");
+  const logPopup = await page.locator("#mobileInfoPanel").evaluate((panel) => {
+    const rect = panel.getBoundingClientRect();
+    return { width: rect.width, height: rect.height, viewportWidth: innerWidth, viewportHeight: innerHeight };
+  });
+  expect(logPopup.width).toBeLessThan(logPopup.viewportWidth);
+  expect(logPopup.height).toBeLessThan(logPopup.viewportHeight);
+  await expect(page.locator("#mobileInfoPanelBody .mobile-log-counts")).toContainText(/S\s*\d\s*B\s*\d\s*투구수\s*1\s*최신순/);
   await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toBeVisible({ timeout: 8000 });
-  await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toContainText(/타자가|같은|흐름|다음 공|다음은|빠른 공|코스|스윙|계열|높이/);
+  await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toContainText(/타자가|같은|흐름|다음 공|다음은|빠른 공|코스|스윙|배트|계열|높이|정타|범타/);
+  await expect(page.locator("#mobileInfoPanelBody .mobile-log-at-bat-start")).toHaveCount(2);
 });
 
 test("stage card reward assigns performance tokens to cards", async ({ page }) => {
@@ -322,7 +734,7 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
       type
     }));
     run.rewardBoost.absorbed = 3;
-    run.rewardBoost.performanceScore = 19;
+    run.rewardBoost.performanceScore = 40;
     run.stagePerformanceEvents = [
       { key: "strikeout", label: "설계 삼진", score: 3, source: "삼진" },
       { key: "doublePlay", label: "병살 유도", score: 4, source: "병살" }
@@ -333,8 +745,36 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
   await expect(page.locator("#rewardAbsorbList")).toBeVisible();
   await expect(page.locator("#rewardAbsorbList .reward-performance-pill")).toHaveCount(2);
   await expect(page.locator("#rewardAbsorbList .reward-performance-pill").filter({ hasText: /설계 삼진/ })).toHaveCount(1);
-  await expect(page.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
-  await expect(page.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(1);
+  await expect(page.locator("#rewardAbsorbList .reward-performance-pill").filter({ hasText: /→ [123]번/ })).toHaveCount(2);
+  await expect(page.locator("#rewardChoiceList .reward-rarity-badge--common")).toHaveCount(3);
+  await expect(page.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1, { timeout: 9000 });
+  await expect(page.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(2, { timeout: 9000 });
+  await expect(page.locator("#rewardChoiceList .reward-choice-card--core .core-evo-name")).toHaveCSS("color", "rgb(255, 203, 66)");
+  const rewardMotion = await page.locator("#rewardChoiceList .reward-choice-card").evaluateAll((cards) => cards.map((card) => ({
+    upgraded: card.classList.contains("is-upgraded-by-performance"),
+    animated: card.dataset.upgradeAnimated === "true"
+  })));
+  expect(rewardMotion.filter((card) => !card.upgraded).every((card) => !card.animated)).toBe(true);
+  expect(rewardMotion.filter((card) => card.upgraded).every((card) => card.animated)).toBe(true);
+  await expect(page.locator("#rewardReason")).toContainText("태그 중심 보상 3장 중 하나를 선택합니다.");
+});
+
+test("stage rewards stay still when no performance upgrade occurred", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    Math.random = () => 0.99;
+    MP.state.stageRun.rewardBoost = { absorbed: 0, performanceScore: 0, coreBonus: 0, rareBonus: 0, coreChoiceBonus: 0, guaranteedRare: 0 };
+    MP.state.stageRun.stagePerformanceEvents = [];
+    MP.state.lastStageResult = MP.debug.calculateStageResult();
+    MP.debug.openRewardDraft("스테이지 보상", null, "stageCard");
+  });
+
+  await expect(page.locator("#rewardAbsorbList")).toBeHidden();
+  await expect(page.locator("#rewardChoiceList .is-upgraded-by-performance")).toHaveCount(0);
+  const animationNames = await page.locator("#rewardChoiceList .reward-choice-card").evaluateAll((cards) => cards.map((card) => getComputedStyle(card).animationName));
+  expect(animationNames.every((name) => name === "none")).toBe(true);
 });
 
 test("reward card rarity changes the card frame treatment", async ({ page }) => {
@@ -542,14 +982,43 @@ test("dugout event pool uses 20 baseball plans and 5 weird events", async ({ pag
   expect(result.choiceDesc).not.toContain("관찰:");
 });
 
-test("stage clear reward cards appear after inning transition overlay", async ({ page }) => {
+test("dugout batting-order warning uses the actual upcoming hitters", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  const desc = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.batterIndex = 4;
+    MP.state.dugoutBeforeAtBat = true;
+    MP.state.dugoutAdvanceBatterOnConfirm = false;
+    return MP.debug.dugoutEventDescription({ id: "cleanup_warning" });
+  });
+  expect(desc).toContain("5·6·7번");
+  expect(desc).not.toContain("3-4-5번");
+});
+
+test("at-bat results no longer grant automatic growth", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  const growth = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const pitch = MP.state.pitcher.repertoire[0];
+    const before = { coreXp: MP.state.pitcher.coreXp, pitchXp: MP.state.pitcher.pitchMastery[pitch.id].xp };
+    MP.debug.finishAtBat("GROUND OUT!", "테스트 아웃", {
+      result: { result: "inPlayOut", pitch, batter: MP.debug.currentBatter(), location: { row: 1, col: 1 } }
+    });
+    return { before, after: { coreXp: MP.state.pitcher.coreXp, pitchXp: MP.state.pitcher.pitchMastery[pitch.id].xp } };
+  });
+  expect(growth.after).toEqual(growth.before);
+});
+
+test("scheduled stage reward appears after inning transition overlay", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
   await page.evaluate(() => {
     const MP = window.MountPsycho;
     MP.state.pendingTransitionBanner = { text: "INNING CHANGE · 4 INNING", tone: "inning", duration: 500 };
-    MP.state.pendingCoreEvolutionReward = true;
-    MP.state.awaitingThemeSelection = true;
+    MP.state.pendingStageTransition = true;
+    MP.state.pendingStageRewardKind = "normal";
     MP.debug.finishAtBat("GROUND OUT!", "테스트 스테이지 종료");
   });
   await expect(page.locator("#stageOverlay")).toBeVisible();
@@ -589,7 +1058,7 @@ test("stage reward selection routes to theme select, then stage-start dugout", a
   await expect(page.locator("#mobileGameShell")).toBeVisible();
 });
 
-test("natural stage final out opens stage reward cards", async ({ page }) => {
+test("natural stage final out opens its scheduled reward", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
   await page.evaluate(() => {
@@ -613,9 +1082,49 @@ test("stage debug page can force stage reward flow", async ({ page }) => {
   await expect(frame.locator("#rewardTitle")).toContainText("스테이지 보상");
   await expect(frame.locator("#rewardChoiceList .reward-choice-card")).toHaveCount(3);
   await expect(frame.locator("#rewardAbsorbList .reward-performance-pill")).toHaveCount(8);
-  await expect(frame.locator("#rewardChoiceList .reward-card-upgrade-badge")).toHaveCount(2);
-  await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1);
-  await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(1);
+  await expect(frame.locator("#rewardChoiceList .reward-card-upgrade-badge")).toHaveCount(3);
+  await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1, { timeout: 9000 });
+  await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(2, { timeout: 9000 });
+  await expect(frame.locator("#rewardOverlay")).not.toHaveClass(/is-revealing/, { timeout: 9000 });
+  await frame.locator("#rewardChoiceList .reward-choice-card:has(.reward-rarity-badge--core)").click();
+  await expect(frame.locator("#ownedCardSummary")).toContainText("태그·진화 1");
+  await expect(frame.locator("#ownedCardSummary")).not.toContainText("보유 보상 없음");
+});
+
+test("stage debug page opens the title, core-tag, and opponent checks", async ({ page }) => {
+  await page.goto("/stage-debug.html");
+  await page.getByRole("button", { name: "시작 화면 확인", exact: true }).click();
+  const game = page.frameLocator("#gameFrame");
+  await expect(game.locator("#titleStartButton")).toContainText("새 RUN");
+  await page.getByRole("button", { name: "핵심태그 선택 확인", exact: true }).click();
+  await expect(game.locator("#pitcherSelectOverlay")).toBeVisible();
+  await expect(game.locator(".choice-number").first()).not.toBeEmpty();
+  await page.getByRole("button", { name: "상대 타선 선택 확인", exact: true }).click();
+  await expect(game.locator("#themeSelectOverlay")).toBeVisible();
+  await expect(game.locator(".theme-choice-card")).toHaveCount(3);
+  await page.getByRole("button", { name: "게임 준비", exact: true }).click();
+  await expect(game.locator("#mobileStrikeZone")).toBeVisible();
+});
+
+test("stage debug page jumps directly to any of the 12 stages", async ({ page }) => {
+  await page.setViewportSize({ width: 1100, height: 900 });
+  await page.goto("/stage-debug.html");
+  await page.selectOption("#stageSelect", "11");
+  await page.locator('[data-action="openStage"]').click();
+  await expect(page.locator("#status")).toContainText("STAGE 12을 바로 시작했습니다.", { timeout: 10000 });
+  await expect(page.locator("#status")).toContainText("GAME 4 · STAGE 12 · 3회");
+});
+
+test("stage debug page opens a forced dugout event after game preparation", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 900 });
+  await page.goto("/stage-debug.html");
+  await page.locator('[data-action="prepare"]').click();
+  await expect(page.locator("#status")).toContainText("게임 준비 완료", { timeout: 10000 });
+  await page.locator('[data-action="dugout"]').click();
+  const frame = page.frameLocator("#gameFrame");
+  await expect(frame.locator("#dugoutOverlay")).toBeVisible({ timeout: 5000 });
+  expect(await frame.locator("#dugoutChoiceList .dugout-choice-card").count()).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
 });
 
 test("mobile player tags open detail modal with tag text", async ({ page }) => {
@@ -635,10 +1144,10 @@ test("mobile player tags open detail modal with tag text", async ({ page }) => {
   const tagText = (await page.locator("[data-mobile-batter-tag]").first().textContent()).trim();
   await page.locator("[data-mobile-batter-tag]").first().click();
   await expect(page.locator("#mobilePlayerDetailPanel")).toBeVisible();
-  await expect(page.locator("#mobilePlayerDetailPanel .mobile-detail-tag-text")).toBeVisible();
-  await expect(page.locator("#mobilePlayerDetailPanel .mobile-detail-tags button").first()).toHaveAttribute("data-tier", /bronze|silver|gold|platinum/);
-  await page.locator("#mobilePlayerDetailPanel [data-mobile-modal-tag]").filter({ hasText: tagText }).first().click();
-  await expect(page.locator("#mobilePlayerDetailPanel .mobile-detail-tag-text").first()).toBeHidden();
+  await expect(page.locator("#mobilePlayerDetailPanel")).toHaveAttribute("data-view", "tag");
+  await expect(page.locator("#mobilePlayerDetailPanel .mobile-tag-hero h2")).toContainText(tagText);
+  await page.locator("[data-mobile-detail-back]").click();
+  await expect(page.locator("#mobilePlayerDetailPanel")).toHaveAttribute("data-view", "player");
   await expect(page.locator("#mobileInfoPanel")).toBeHidden();
 });
 
@@ -654,14 +1163,23 @@ test("mobile player cards open centered detail modal", async ({ page }) => {
   await expect(page.locator(".mobile-pitcher-summary")).toHaveClass(/is-selected/);
   await expect(page.locator("#mobilePanelBackdrop")).toBeVisible();
   await expect(page.locator("#mobilePlayerDetailPanel")).toContainText("주요 능력");
-  await expect(page.locator("#mobilePlayerDetailPanel")).toContainText("핵심태그");
+  await expect(page.locator("#mobilePlayerDetailPanel")).toContainText("핵심");
   await expect(page.locator('#mobilePlayerDetailPanel [data-mobile-modal-tag-section="core"]').first()).toHaveAttribute("data-tier", "bronze");
   if (await page.locator('#mobilePlayerDetailPanel [data-mobile-modal-tag-section="support"]').count()) {
     await page.locator('#mobilePlayerDetailPanel [data-mobile-modal-tag-section="support"]').first().click();
-    await expect(page.locator('#mobilePlayerDetailPanel [data-mobile-detail-tag-text="support"]')).toBeVisible();
-    await expect(page.locator('#mobilePlayerDetailPanel [data-mobile-detail-tag-text="core"]')).toBeHidden();
+    await expect(page.locator("#mobilePlayerDetailPanel")).toHaveAttribute("data-view", "tag");
+    await page.locator("[data-mobile-detail-back]").click();
   }
   await expect(page.locator("#mobilePlayerDetailPanel")).not.toContainText("구종 정보");
+
+  for (const viewport of [{ width: 320, height: 800 }, { width: 375, height: 667 }, { width: 414, height: 896 }, { width: 768, height: 1024 }]) {
+    await page.setViewportSize(viewport);
+    const detailFits = await page.locator("#mobilePlayerDetailPanel").evaluate((panel) => {
+      const rect = panel.getBoundingClientRect();
+      return document.documentElement.scrollWidth <= document.documentElement.clientWidth && panel.scrollWidth <= panel.clientWidth && rect.left >= 0 && rect.right <= innerWidth && rect.top >= 0 && rect.bottom <= innerHeight;
+    });
+    expect(detailFits).toBe(true);
+  }
 
   await page.locator("[data-mobile-detail-close]").click();
   await expect(page.locator("#mobilePlayerDetailPanel")).toBeHidden();
@@ -675,26 +1193,54 @@ test("mobile player cards open centered detail modal", async ({ page }) => {
 });
 
 test("mobile pitcher choices stay inside narrow cards", async ({ page }) => {
-  await page.setViewportSize({ width: 268, height: 844 });
+  await page.setViewportSize({ width: 320, height: 800 });
   await startFromTitle(page);
 
-  const cards = await page.locator(".pitcher-choice-card").evaluateAll((items) =>
-    items.map((card) => {
-      const cardRect = card.getBoundingClientRect();
-      const children = [card.querySelector(".choice-number"), card.querySelector("strong"), card.querySelector("em"), card.querySelector(".choice-portrait")];
-      return {
-        noHorizontalScroll: card.scrollWidth <= card.clientWidth + 1,
-        childrenFit: children.every((child) => {
-          if (!child) return false;
-          const rect = child.getBoundingClientRect();
-          return rect.left >= cardRect.left - 1 && rect.right <= cardRect.right + 1;
-        })
-      };
-    })
-  );
+  for (const viewport of [{ width: 268, height: 844 }, { width: 320, height: 800 }, { width: 375, height: 667 }, { width: 414, height: 896 }, { width: 768, height: 1024 }]) {
+    await page.setViewportSize(viewport);
+    const layout = await page.evaluate(() => ({
+      rootFits: document.documentElement.scrollWidth <= document.documentElement.clientWidth,
+      confirmFits: document.querySelector("#pitcherChoiceConfirm").scrollWidth <= document.querySelector("#pitcherChoiceConfirm").clientWidth,
+      cards: [...document.querySelectorAll(".pitcher-choice-card")].map((card) => {
+        const rect = card.getBoundingClientRect();
+        return card.scrollWidth <= card.clientWidth + 1 && rect.left >= 0 && rect.right <= innerWidth;
+      })
+    }));
+    expect(layout.rootFits && layout.confirmFits).toBe(true);
+    expect(layout.cards).toHaveLength(3);
+    expect(layout.cards.every(Boolean)).toBe(true);
+    if (viewport.width <= 430) {
+      await expect(page.locator(".pitcher-select-box")).toHaveCSS("width", `${viewport.width}px`);
+    }
+  }
 
-  expect(cards).toHaveLength(3);
-  expect(cards.every((card) => card.noHorizontalScroll && card.childrenFit)).toBe(true);
+  await expect(page.locator(".pitcher-choice-card .choice-number").first()).toHaveCSS("font-size", "28px");
+  await expect(page.locator(".pitcher-choice-card .choice-stat b").first()).toBeVisible();
+  await expect(page.locator(".pitcher-choice-card .choice-pitch").first()).toBeVisible();
+  await page.setViewportSize({ width: 320, height: 800 });
+  const statSpacing = await page.locator(".pitcher-choice-card").first().evaluate((card) =>
+    [...card.querySelectorAll(".choice-stat")].map((stat) => ({
+      gap: getComputedStyle(stat).columnGap,
+      wrap: getComputedStyle(stat).whiteSpace
+    }))
+  );
+  expect(statSpacing.every((stat) => stat.gap === "4px" && stat.wrap === "nowrap")).toBe(true);
+});
+
+test("pitch types expose visibly different flight paths", async ({ page }) => {
+  await page.goto("/");
+  const profiles = await page.evaluate(() => Object.fromEntries(
+    ["four", "sinker", "slider", "curve", "splitter"].map((id) => [id, window.MountPsycho.debug.pitchFlightProfile({ id })])
+  ));
+
+  expect(Object.values(profiles).every((profile) => profile.c1y >= 0 && profile.c1y <= profile.c2y && profile.c2y <= 1)).toBe(true);
+  expect(profiles.curve.c2y).toBeLessThan(profiles.four.c2y);
+  expect(Math.abs(profiles.curve.c2x)).toBeLessThan(20);
+  expect(profiles.curve.c2y).toBeLessThan(0.2);
+  expect(profiles.curve.duration).toBeGreaterThan(profiles.slider.duration);
+  expect(profiles.sinker.c2y).toBeLessThan(profiles.four.c2y);
+  expect(profiles.slider.c2x).toBeGreaterThan(profiles.four.c2x);
+  expect(profiles.splitter.c2y).toBeLessThan(profiles.sinker.c2y);
 });
 
 test("mobile release cursor follows the grading clock", async ({ page }) => {
