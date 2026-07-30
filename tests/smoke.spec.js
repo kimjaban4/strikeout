@@ -48,6 +48,14 @@ test("boots to title and pitcher select", async ({ page }) => {
   await startFromTitle(page);
   await expect(page.locator(".pitcher-choice-card")).toHaveCount(3);
   await expect(page.locator("#pitcherSelectOverlay")).toContainText("선발 투수 선택");
+  const landscapePitcherUi = await page.evaluate(() => ({
+    width: document.querySelector(".pitcher-select-box").getBoundingClientRect().width,
+    columns: getComputedStyle(document.querySelector(".pitcher-choice-list")).gridTemplateColumns.split(" ").length,
+    cardRadius: getComputedStyle(document.querySelector(".pitcher-choice-card")).borderRadius
+  }));
+  expect(landscapePitcherUi.width).toBeGreaterThan(380);
+  expect(landscapePitcherUi.columns).toBe(1);
+  expect(landscapePitcherUi.cardRadius).toBe("0px");
   await expect(page.locator("#pitcherChoiceConfirm")).toBeDisabled();
   await page.locator(".pitcher-choice-card").first().click();
   await expect(page.locator(".pitcher-choice-card").first()).toHaveAttribute("aria-pressed", "true");

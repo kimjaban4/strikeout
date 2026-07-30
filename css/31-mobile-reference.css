@@ -1825,7 +1825,7 @@
 }
 
 /* Player/tag sheets and starter confirmation share the existing mobile surfaces. */
-@media (orientation: portrait) {
+@media all {
   .mobile-player-detail-panel {
     width: min(370px, calc(100vw - 20px));
     max-height: calc(100dvh - 24px);
@@ -2205,7 +2205,7 @@
   }
 }
 
-@media (orientation: portrait) {
+@media all {
   .reward-overlay,
   .dugout-overlay {
     place-items: start center;
@@ -2380,7 +2380,7 @@
   }
 }
 
-@media (orientation: portrait) {
+@media all {
   .reward-overlay,
   .dugout-overlay {
     place-items: center;
@@ -3450,7 +3450,7 @@
   .mobile-pitch-button strong { font-size: 10px; }
 }
 
-@media (orientation: portrait) {
+@media all {
   .reward-overlay,
   .dugout-overlay {
     place-items: start center;
@@ -3617,7 +3617,7 @@
 }
 
 /* Comic stage briefing: isolated from ordinary inning-change overlays. */
-@media (orientation: portrait) {
+@media all {
   .stage-overlay.is-stage-intro {
     place-items: start center;
     padding: 0;
@@ -3832,7 +3832,7 @@
 }
 
 /* Comic opponent choice: risk colors come from each theme's live riskTier. */
-@media (orientation: portrait) {
+@media all {
   .theme-select-overlay {
     place-items: start center;
     padding: 0;
@@ -3976,7 +3976,7 @@
 }
 
 /* Comic starter selection: the existing generated pitcher buttons stay functional. */
-@media (orientation: portrait) {
+@media all {
   .pitcher-select-overlay {
     place-items: start center;
     padding: 0;
@@ -4206,7 +4206,7 @@
 }
 
 /* Comic run result: built only from already-recorded run statistics. */
-@media (orientation: portrait) {
+@media all {
   .result-overlay {
     place-items: start center;
     padding: 0;
@@ -4413,7 +4413,7 @@
   }
 }
 
-@media (orientation: portrait) {
+@media all {
   .pitcher-choice-card { min-height: 176px; padding-left: 88px !important; }
   .pitcher-choice-card .choice-portrait { display: none; }
   .pitcher-choice-card .choice-number {
@@ -4494,7 +4494,7 @@
   }
 }
 
-@media (orientation: portrait) {
+@media all {
   .reward-choice-card--core.core-evolution-card .core-evo-name { color: #ffcb42; }
   .reward-choice-card--core.core-evolution-card .core-evo-sub,
   .reward-choice-card--core.core-evolution-card .core-evo-label,
