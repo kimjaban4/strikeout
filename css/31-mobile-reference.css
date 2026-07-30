@@ -3136,7 +3136,7 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .mobile-strike-zone .release-aim-target.show .release-aim-ring { animation: none; }
+    .mobile-strike-zone .release-aim-target.show .release-aim-ring { animation: comicAimRingPulse 900ms steps(2, end) infinite; }
   }
 
   .mobile-field-scene::after { display: none; }
