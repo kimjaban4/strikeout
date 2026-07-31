@@ -11616,8 +11616,7 @@ function renderStrikeZoneGuideMarkup() {
 function releaseAimMarkup() {
   const active = state.releaseTiming?.active ? state.releaseTiming : null;
   if (!active) {
-    const ready = Boolean(state.selectedPitchId && !state.pitchInFlight && !state.waitingNextBatter);
-    return `<div class="release-aim-target${ready ? " show" : ""}" style="--aim-x:50%;--aim-y:50%" aria-hidden="true"><i class="release-aim-ring"></i></div>`;
+    return `<div class="release-aim-target" style="--aim-x:50%;--aim-y:50%" aria-hidden="true"><i class="release-aim-ring"></i></div>`;
   }
   const x = clamp(Number(active.targetX) || 0.5, 0.01, 0.99) * 100;
   const y = clamp(Number(active.targetY) || 0.5, 0.01, 0.99) * 100;

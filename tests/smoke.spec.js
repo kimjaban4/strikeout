@@ -617,6 +617,7 @@ test("mobile pitch controls start circular release timing at the touched course"
   });
 
   await page.locator("#mobilePitchButtons .mobile-pitch-button").first().click();
+  await expect(page.locator("#mobileStrikeZone .release-aim-target.show")).toHaveCount(0);
   await chooseMobilePitchAndZone(page);
   const target = await page.locator("#mobileStrikeZone .release-aim-target.show").evaluate((element) => ({
     x: element.style.getPropertyValue("--aim-x"),
