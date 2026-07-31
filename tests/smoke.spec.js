@@ -617,23 +617,22 @@ test("mobile pitch controls start circular release timing at the touched course"
   });
 
   await page.locator("#mobilePitchButtons .mobile-pitch-button").first().click();
-  await expect(page.locator("#mobileStrikeZone .release-aim-target.show .release-aim-ring")).toHaveCSS("animation-name", "comicAimRingPulse");
-  await page.emulateMedia({ reducedMotion: "reduce" });
-  await expect(page.locator("#mobileStrikeZone .release-aim-target.show .release-aim-ring")).toHaveCSS("animation-name", "comicAimRingPulse");
-  await page.emulateMedia({ reducedMotion: "no-preference" });
   await chooseMobilePitchAndZone(page);
   const target = await page.locator("#mobileStrikeZone .release-aim-target.show").evaluate((element) => ({
     x: element.style.getPropertyValue("--aim-x"),
     y: element.style.getPropertyValue("--aim-y"),
     shake: parseFloat(element.style.getPropertyValue("--aim-shake")),
     targetAnimation: getComputedStyle(element).animationName,
-    ringAnimation: getComputedStyle(element.querySelector(".release-aim-ring")).animationName
+    ringAnimation: getComputedStyle(element.querySelector(".release-aim-ring")).animationName,
+    ringScale: parseFloat(element.querySelector(".release-aim-ring").style.getPropertyValue("--release-ring-scale"))
   }));
   expect(parseFloat(target.x)).toBeGreaterThan(50);
   expect(parseFloat(target.y)).toBeLessThan(50);
   expect(target.shake).toBeGreaterThanOrEqual(8);
   expect(target.targetAnimation).toBe("none");
-  expect(target.ringAnimation).toBe("comicAimRingPulse");
+  expect(target.ringAnimation).toBe("none");
+  expect(target.ringScale).toBeGreaterThanOrEqual(0.5);
+  expect(target.ringScale).toBeLessThanOrEqual(1.4);
 });
 
 test("both visible strike-zone edges keep the correct inside and outside labels", async ({ page }) => {

@@ -3123,20 +3123,7 @@
     border: 3px solid var(--comic-red);
     background: rgba(23, 18, 14, 0.18);
     box-shadow: none;
-    transform: translate(-50%, -50%) scale(1);
-  }
-
-  .mobile-strike-zone .release-aim-target.show .release-aim-ring {
-    animation: comicAimRingPulse 720ms ease-in-out infinite;
-  }
-
-  @keyframes comicAimRingPulse {
-    0%, 100% { transform: translate(-50%, -50%) scale(0.86); }
-    50% { transform: translate(-50%, -50%) scale(1.18); }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .mobile-strike-zone .release-aim-target.show .release-aim-ring { animation: comicAimRingPulse 900ms steps(2, end) infinite; }
+    transform: translate(-50%, -50%) scale(var(--release-ring-scale, 1));
   }
 
   .mobile-field-scene::after { display: none; }
