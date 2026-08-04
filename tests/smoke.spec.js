@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+﻿import { test, expect } from "@playwright/test";
 
 async function startFromTitle(page) {
   await page.goto("/");
@@ -400,11 +400,29 @@ test("clubhouse sells and equips the 30-item catalog with CP", async ({ page }) 
   await page.evaluate(() => window.MountPsycho.debug.writeClubhouseProfile({ cp: 4, owned: [], equipped: { mound: null, tactical: null } }));
   await page.locator("#titleClubhouseButton").click();
   await expect(page.locator("#clubhouseOverlay")).toBeVisible();
-  await expect(page.locator("#clubhouseCatalog .clubhouse-item")).toHaveCount(30);
+  await expect(page.locator("#clubhouseCatalog .clubhouse-bingo-cell")).toHaveCount(30);
+  await expect(page.locator('[data-clubhouse-item="sequence_board"] strong')).toHaveText("피치 시퀀스 보드");
+  const clippedEquipmentNames = await page.locator(".clubhouse-bingo-cell strong").evaluateAll((names) =>
+    names.filter((name) => name.scrollHeight > name.clientHeight + 1).map((name) => name.textContent?.trim()),
+  );
+  expect(clippedEquipmentNames).toEqual([]);
+  await expect(page.locator("#clubhouseCatalog .clubhouse-item-detail")).toHaveCount(0);
+  await expect(page.locator("#clubhouseCatalog .clubhouse-equipment-icon").first()).toHaveCSS("background-image", /equipment-icons-sheet-v3/);
+  await expect(page.locator("#clubhouseCatalog .clubhouse-equipment-icon").first()).toHaveCSS("background-size", "500% 600%");
+  const bingoColumns = await page.locator(".clubhouse-bingo-grid").evaluate((grid) => getComputedStyle(grid).gridTemplateColumns.split(" ").length);
+  expect(bingoColumns).toBe(3);
+  const firstCardSize = await page.locator(".clubhouse-bingo-cell").first().boundingBox();
+  expect(Math.abs(firstCardSize.width - firstCardSize.height)).toBeLessThan(1);
   await expect(page.locator("#clubhouseCp")).toContainText("4 CP");
+  await expect(page.locator(".clubhouse-bingo-cell.is-selected")).toHaveCount(0);
+  await expect(page.locator(".clubhouse-item-empty")).toBeVisible();
+  await page.locator('[data-clubhouse-item="rosin_bag"]').click();
+  await expect(page.locator("#clubhouseCatalog .clubhouse-item-detail")).toHaveCount(1);
   await page.locator('[data-equipment-id="rosin_bag"]').click();
   await expect(page.locator("#clubhouseCp")).toContainText("1 CP");
   await expect(page.locator('[data-equipment-id="rosin_bag"]')).toContainText("장착 해제");
+  await expect(page.locator('[data-clubhouse-item="rosin_bag"]')).toHaveCSS("background-color", "rgb(220, 235, 215)");
+  expect(await page.locator('[data-clubhouse-item="rosin_bag"]').evaluate((cell) => getComputedStyle(cell, "::after").content)).toBe('"장착중"');
   await page.locator("#clubhouseClose").click();
   await page.locator("#titleStartButton").click();
   await page.locator(".pitcher-choice-card").first().click();
@@ -423,7 +441,9 @@ test("clubhouse enforces equipment CP and mutually exclusive shifts", async ({ p
     debug.writeClubhouseProfile({ cp: 0, owned: ["infield_shift", "outfield_position"], equipped: [], equipmentLimit: 9 });
     debug.openClubhouse();
   });
+  await page.locator('[data-clubhouse-item="infield_shift"]').click();
   await page.locator('[data-equipment-id="infield_shift"]').click();
+  await page.locator('[data-clubhouse-item="outfield_position"]').click();
   await expect(page.locator('[data-equipment-id="outfield_position"]')).toBeDisabled();
   await expect(page.locator('[data-equipment-id="outfield_position"]')).toContainText("상충 장비 장착 중");
 
@@ -432,6 +452,7 @@ test("clubhouse enforces equipment CP and mutually exclusive shifts", async ({ p
     MP.debug.writeClubhouseProfile({ cp: 0, owned: ["rosin_bag", "pitching_spikes"], equipped: ["rosin_bag"], equipmentLimit: 5 });
     MP.debug.openClubhouse();
   });
+  await page.locator('[data-clubhouse-item="pitching_spikes"]').click();
   await expect(page.locator('[data-equipment-id="pitching_spikes"]')).toBeDisabled();
   await expect(page.locator('[data-equipment-id="pitching_spikes"]')).toContainText("장착 한도 부족");
 
@@ -447,6 +468,7 @@ test("clubhouse enforces equipment CP and mutually exclusive shifts", async ({ p
   });
   expect(result).toEqual({ unlocked: 9, limit: 9, runEquipment: ["rosin_bag"] });
   await page.evaluate(() => window.MountPsycho.debug.openClubhouse());
+  await page.locator('[data-clubhouse-item="pitching_spikes"]').click();
   await page.locator('[data-equipment-id="pitching_spikes"]').click();
   await expect(page.locator("#clubhouseEquipped")).toContainText("7 / 9 CP");
 });
@@ -629,8 +651,8 @@ test("mobile pitch controls start circular release timing at the touched course"
   }));
   expect(parseFloat(target.x)).toBeGreaterThan(50);
   expect(parseFloat(target.y)).toBeLessThan(50);
-  expect(target.shake).toBeGreaterThanOrEqual(8);
-  expect(target.targetAnimation).toBe("none");
+  expect(target.shake).toBeGreaterThanOrEqual(1);
+  expect(target.targetAnimation).toBe("releaseAimShake");
   expect(target.ringAnimation).toBe("none");
   expect(target.ringScale).toBeGreaterThanOrEqual(0.5);
   expect(target.ringScale).toBeLessThanOrEqual(1.4);
@@ -663,6 +685,40 @@ test("both visible strike-zone edges keep the correct inside and outside labels"
     return { inZone: MP.state.lastLocation.inZone, label: MP.state.lastLocation.actualLabel };
   });
   expect(outside).toEqual({ inZone: true, label: "바깥쪽" });
+});
+
+test("starter stats are capped and release shake combines command with mental", async ({ page }) => {
+  await chooseFirstPitcher(page);
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const limits = {
+      power: { 구속: [64, 78], 제구: [44, 62], 변화: [32, 48], 멘탈: [42, 66], 예측: [34, 56] },
+      breaking: { 구속: [42, 60], 제구: [46, 64], 변화: [64, 78], 멘탈: [42, 68], 예측: [38, 60] },
+      command: { 구속: [44, 62], 제구: [64, 78], 변화: [44, 62], 멘탈: [46, 70], 예측: [40, 62] },
+      balanced: { 구속: [52, 66], 제구: [52, 66], 변화: [52, 66], 멘탈: [44, 68], 예측: [38, 58] }
+    };
+    const statsInRange = Array.from({ length: 200 }, () => MP.debug.generatePitcher()).every((pitcher) =>
+      Object.entries(limits[pitcher.profileId]).every(([stat, [min, max]]) =>
+        pitcher.stats[stat] >= min && pitcher.stats[stat] <= max
+      )
+    );
+
+    const pitch = MP.state.pitcher.repertoire[0];
+    const course = { zone: 5, intent: "strike", targetX: 0.5, targetY: 0.5 };
+    MP.state.bases = [false, false, false];
+    MP.state.pitcher.stats.제구 = 56;
+    MP.state.pitcher.stats.멘탈 = 40;
+    const lowMental = MP.debug.buildReleaseTimingChallenge(pitch, course);
+    MP.state.pitcher.stats.멘탈 = 80;
+    const highMental = MP.debug.buildReleaseTimingChallenge(pitch, course);
+
+    return { statsInRange, lowMental, highMental };
+  });
+
+  expect(result.statsInRange).toBe(true);
+  expect(result.lowMental.stability).toBeLessThan(result.highMental.stability);
+  expect(result.lowMental.shakeAmount).toBeGreaterThan(result.highMental.shakeAmount);
+  expect(result.lowMental.shakeDuration).toBeLessThan(result.highMental.shakeDuration);
 });
 
 test("event banners auto-hide after their configured duration", async ({ page }) => {
@@ -720,6 +776,21 @@ test("mobile throw records a log entry", async ({ page }) => {
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first()).toContainText(/구/);
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first().locator(".mobile-pitch-zone")).toHaveText(/바깥|몸쪽|중앙|높게|낮게/);
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row small").first()).not.toHaveText("");
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const pitch = MP.state.pitcher.repertoire[0];
+    MP.state.strikes = 3;
+    MP.debug.finishAtBat("STRIKE OUT!", "테스트 삼진", {
+      result: {
+        result: "swingingStrike",
+        pitch,
+        batter: MP.debug.currentBatter(),
+        location: { row: 1, col: 1, actualLabel: "중앙" }
+      }
+    });
+    MP.debug.render();
+  });
+  await expect(page.locator('#mobileRecentLog [data-record-kind="result"]')).toHaveText("삼진!");
   await page.locator("#mobileRecentLogMore").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
   await expect(page.locator("#mobileInfoPanelTitle")).toContainText("현재 타석");
@@ -732,7 +803,8 @@ test("mobile throw records a log entry", async ({ page }) => {
   await expect(page.locator("#mobileInfoPanelBody .mobile-log-counts")).toContainText(/S\s*\d\s*B\s*\d\s*투구수\s*1\s*최신순/);
   await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toBeVisible({ timeout: 8000 });
   await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toContainText(/타자가|같은|흐름|다음 공|다음은|빠른 공|코스|스윙|배트|계열|높이|정타|범타/);
-  await expect(page.locator("#mobileInfoPanelBody .mobile-log-at-bat-start")).toHaveCount(2);
+  await expect(page.locator("#mobileInfoPanelBody .mobile-log-at-bat-start:not(.mobile-log-at-bat-result)")).toHaveCount(2);
+  await expect(page.locator("#mobileInfoPanelBody .mobile-log-at-bat-result")).toContainText("삼진!");
 });
 
 test("stage card reward assigns performance tokens to cards", async ({ page }) => {

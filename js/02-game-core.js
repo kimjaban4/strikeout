@@ -4551,43 +4551,51 @@ function renderClubhouse() {
     `;
   }
   if (els.clubhouseCatalog) {
-    els.clubhouseCatalog.innerHTML = equipmentCatalog
-      .map((item) => {
-        const owned = profile.owned.includes(item.id);
-        const equipped = profile.equipped.includes(item.id);
-        const canBuy = profile.cp >= item.price;
-        const conflict = equipmentConflicts[item.id];
-        const conflictEquipped = conflict && profile.equipped.includes(conflict);
-        const withinLimit = equipmentLoadoutCost([...profile.equipped, item.id]) <= profile.equipmentLimit;
-        const canEquip = !conflictEquipped && withinLimit;
-        const disabled = equipped ? false : owned ? !canEquip : !canBuy;
-        const buttonText = equipped
-          ? "장착 해제"
-          : owned && conflictEquipped
-            ? "상충 장비 장착 중"
-            : owned && !withinLimit
-              ? "장착 한도 부족"
-              : owned
-                ? "장착"
-                : canBuy
-                  ? `${item.price} CP 구매${canEquip ? "·장착" : ""}`
-                  : `CP 부족 · ${item.price}`;
-        return `
-          <article class="clubhouse-item${equipped ? " is-equipped" : ""}">
-            <header><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)}${equipmentConflicts[item.id] ? " · 상충 장비" : ""}</small></header>
-            <p>${escapeHtml(item.description).replace(/(\d+%)/g, "<em>$1</em>")}</p>
-            <footer>
-              <span class="clubhouse-item-cost"><b>${item.price}</b> CP</span>
-              <button type="button" data-equipment-id="${escapeHtml(item.id)}" ${disabled ? "disabled" : ""}>${buttonText}</button>
-            </footer>
-          </article>
-        `;
-      })
-      .join("");
+    const selectedItemId = MP.clubhouseSelectedItemId;
+    const item = equipmentById(selectedItemId) || equipmentCatalog[0];
+    const owned = profile.owned.includes(item.id);
+    const equipped = profile.equipped.includes(item.id);
+    const canBuy = profile.cp >= item.price;
+    const conflict = equipmentConflicts[item.id];
+    const conflictEquipped = conflict && profile.equipped.includes(conflict);
+    const withinLimit = equipmentLoadoutCost([...profile.equipped, item.id]) <= profile.equipmentLimit;
+    const canEquip = !conflictEquipped && withinLimit;
+    const disabled = equipped ? false : owned ? !canEquip : !canBuy;
+    const buttonText = equipped
+      ? "장착 해제"
+      : owned && conflictEquipped
+        ? "상충 장비 장착 중"
+        : owned && !withinLimit
+          ? "장착 한도 부족"
+          : owned
+            ? "장착"
+            : canBuy
+              ? `${item.price} CP 구매${canEquip ? "·장착" : ""}`
+              : `CP 부족 · ${item.price}`;
+    els.clubhouseCatalog.innerHTML = `
+      <div class="clubhouse-bingo-grid">
+        ${equipmentCatalog.map((catalogItem, index) => `
+          <button class="clubhouse-bingo-cell${catalogItem.id === selectedItemId ? " is-selected" : ""}${profile.owned.includes(catalogItem.id) ? " is-owned" : ""}${profile.equipped.includes(catalogItem.id) ? " is-equipped" : ""}" type="button" data-clubhouse-item="${escapeHtml(catalogItem.id)}" aria-pressed="${catalogItem.id === selectedItemId}">
+            <i class="clubhouse-equipment-icon" style="--icon-x:${index % 5};--icon-y:${Math.floor(index / 5)}" aria-hidden="true"></i>
+            <strong>${escapeHtml(catalogItem.name)}</strong>
+            <small>${catalogItem.price} CP</small>
+          </button>
+        `).join("")}
+      </div>
+      ${selectedItemId ? `<article class="clubhouse-item clubhouse-item-detail${equipped ? " is-equipped" : ""}">
+        <header><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.category)}${equipmentConflicts[item.id] ? " · 상충 장비" : ""}</small></header>
+        <p>${escapeHtml(item.description).replace(/(\d+%)/g, "<em>$1</em>")}</p>
+        <footer>
+          <span class="clubhouse-item-cost"><b>${item.price}</b> CP</span>
+          <button type="button" data-equipment-id="${escapeHtml(item.id)}" ${disabled ? "disabled" : ""}>${buttonText}</button>
+        </footer>
+      </article>` : `<p class="clubhouse-item-empty">장비를 선택하면 상세 효과와 구매 정보를 확인할 수 있습니다.</p>`}
+    `;
   }
 }
 
 function openClubhouse() {
+  MP.clubhouseSelectedItemId = null;
   renderClubhouse();
   if (els.clubhouseOverlay) els.clubhouseOverlay.hidden = false;
   syncGameOverlayUi();
@@ -5274,9 +5282,11 @@ function buildReleaseTimingChallenge(pitch, plannedCourse) {
   if (hasRunEquipment("release_target") && state.equipmentRuntime?.lastZone === Number(plannedCourse.zone) && state.equipmentRuntime?.lastReleaseDuration) {
     duration = state.equipmentRuntime.lastReleaseDuration;
   }
-  const controlShake = Math.max(0, (68 - control) * 0.35);
+  const stability = control * 0.6 + mental * 0.4;
+  const stabilityShake = Math.max(0, (68 - stability) * 0.35);
   const pressureShake = pressure >= 32 ? 2 + (pressure - 32) * 0.08 : 0;
-  const shakeAmount = clamp(Math.max(controlShake, pressureShake), 0, 9);
+  const shakeAmount = clamp(Math.max(stabilityShake, pressureShake), 0, 9);
+  const shakeDuration = Math.round(clamp(180 + (mental - 55) * 2.5 - pressure * 1.2, 80, 220));
   return {
     active: true,
     pitchId: pitch.id,
@@ -5296,8 +5306,10 @@ function buildReleaseTimingChallenge(pitch, plannedCourse) {
     pressureReasons,
     control,
     mental,
+    stability,
     shake: shakeAmount >= 1,
     shakeAmount,
+    shakeDuration,
     plannedCourse
   };
 }
@@ -7480,6 +7492,7 @@ function finishAtBat(title, text, options = {}) {
   }
   // ponytail: growth now comes only from explicit reward choices.
   addLog(title, text);
+  recordMobileAtBatResult(options.result);
   state.lastAtBatMemory = atBatMemoryFrom(title, options.result);
   if (options.result && MP.processPitchProgressionAtBatEnd) {
     MP.processPitchProgressionAtBatEnd(options.result, title, state.lastPitchPattern);
@@ -10080,7 +10093,7 @@ function renderReleaseTimingPanel() {
     els.releaseTimingButton.disabled = false;
     els.releaseTimingButton.setAttribute("aria-disabled", "false");
     els.releaseTimingGrade.textContent = "타이밍";
-    els.releaseTimingMode.textContent = `제구 ${Math.round(active.control)} · 압박 ${Math.round(active.pressure)}`;
+    els.releaseTimingMode.textContent = `안정도 ${Math.round(active.stability)} · 압박 ${Math.round(active.pressure)}`;
     els.releaseTimingHint.textContent = `${pressureText} · 클릭/스페이스 확정 · ESC 취소`;
     els.releaseTimingTrack?.style.setProperty("--good-left", `${goodLeft}%`);
     els.releaseTimingTrack?.style.setProperty("--good-width", `${active.goodSize * 100}%`);
@@ -10269,7 +10282,7 @@ function releaseAimMarkup() {
   }
   const x = clamp(Number(active.targetX) || 0.5, 0.01, 0.99) * 100;
   const y = clamp(Number(active.targetY) || 0.5, 0.01, 0.99) * 100;
-  return `<div class="release-aim-target show${active.shake ? " is-shaking" : ""}" style="--aim-x:${x}%;--aim-y:${y}%;--aim-shake:${active.shakeAmount || 0}px" aria-hidden="true"><i class="release-aim-ring"></i></div>`;
+  return `<div class="release-aim-target show${active.shake ? " is-shaking" : ""}" style="--aim-x:${x}%;--aim-y:${y}%;--aim-shake:${active.shakeAmount || 0}px;--aim-shake-duration:${active.shakeDuration || 150}ms" aria-hidden="true"><i class="release-aim-ring"></i></div>`;
 }
 
 function renderMobileZones() {
@@ -10734,6 +10747,17 @@ function recordMobilePitchResult(result) {
   state.mobilePitchRecords = records;
 }
 
+function recordMobileAtBatResult(result) {
+  if (!result) return;
+  const records = state.mobilePitchRecords || [];
+  records.unshift({
+    type: "result",
+    outcome: mobilePitchResultShortLabel(result),
+    result: result.result || ""
+  });
+  state.mobilePitchRecords = records;
+}
+
 function mobilePitchZoneLabel(location) {
   if (!location) return "-";
   const row = Number(location.row);
@@ -10978,7 +11002,11 @@ function renderMobileRecentLog() {
     <div class="mobile-pitch-compact-list">
       ${visibleItems
         .map(
-          (item) => item.type === "batter"
+          (item) => item.type === "result"
+            ? `<div class="mobile-recent-log-row mobile-pitch-compact-row mobile-at-bat-result-row" data-record-kind="result">
+                <strong class="mobile-at-bat-result-label">${escapeHtml(item.outcome)}!</strong>
+              </div>`
+            : item.type === "batter"
             ? `<div class="mobile-recent-log-row mobile-pitch-compact-row" data-record-kind="batter">
                 <span class="mobile-pitch-order">교체</span>
                 <em class="mobile-result-badge">${escapeHtml(item.slot || "-")}번</em>
@@ -11001,7 +11029,7 @@ function renderMobileInfoPanel() {
   if (mobilePanelMode === "log") {
     const current = currentBatter();
     const records = state.mobilePitchRecords || [];
-    const pitchItems = records.filter((item) => item.type !== "batter");
+    const pitchItems = records.filter((item) => !item.type);
     els.mobileInfoPanelTitle.innerHTML = `승부기록<small>현재 타석 · ${escapeHtml(current?.slot || "-")}번 ${escapeHtml(current?.name || "타자")}</small>`;
     els.mobileInfoPanelBody.innerHTML = pitchItems.length
       ? `<section class="mobile-log-sheet">
@@ -11013,7 +11041,9 @@ function renderMobileInfoPanel() {
           </div>
           <div class="mobile-pitch-detail-list">${records
           .map(
-            (item) => item.type === "batter"
+            (item) => item.type === "result"
+              ? `<div class="mobile-log-at-bat-start mobile-log-at-bat-result">— ${escapeHtml(item.outcome)}! —</div>`
+              : item.type === "batter"
               ? `<div class="mobile-log-at-bat-start">— ${item.changed ? `${escapeHtml(item.slot || "-")}번 ${escapeHtml(item.batter)} 타석 시작` : "타석 시작"} —</div>`
               : `<article class="log-item mobile-pitch-detail-row" data-result="${escapeHtml(item.result)}">
                   <span class="mobile-log-pitch-no mobile-log-pitch-no--${escapeHtml(mobilePitchResultTone(item))}"><b>${item.no}</b><small>구째</small></span>
@@ -12380,6 +12410,12 @@ function bindUiEvents() {
   els.restartButton.addEventListener("click", startGame);
   els.resultClubhouseButton?.addEventListener("click", openClubhouse);
   els.clubhouseOverlay?.addEventListener("click", (event) => {
+    const selectionButton = event.target.closest("[data-clubhouse-item]");
+    if (selectionButton) {
+      MP.clubhouseSelectedItemId = selectionButton.dataset.clubhouseItem;
+      renderClubhouse();
+      return;
+    }
     const equipmentButton = event.target.closest("[data-equipment-id]");
     if (equipmentButton) {
       event.preventDefault();

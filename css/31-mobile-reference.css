@@ -3113,8 +3113,8 @@
   }
 
   .mobile-strike-zone .release-aim-target.is-shaking {
-    animation: none;
-    will-change: auto;
+    animation: releaseAimShake var(--aim-shake-duration, 150ms) steps(2, end) infinite;
+    will-change: transform;
   }
 
   .mobile-strike-zone .release-aim-ring {
@@ -3422,6 +3422,20 @@
   }
 
   .mobile-log-copy small::before { content: "– "; }
+
+  .mobile-pitch-compact-row.mobile-at-bat-result-row {
+    grid-template-columns: 1fr;
+    min-height: 38px;
+  }
+
+  .mobile-at-bat-result-label {
+    grid-column: 1 / -1;
+    color: var(--comic-red);
+    font-size: 15px;
+    font-weight: 1000;
+    line-height: 1;
+    text-align: center;
+  }
   .mobile-control-panel { display: none; }
 }
 
