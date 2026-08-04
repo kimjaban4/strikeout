@@ -110,7 +110,7 @@ const gameConfigs = [
     missions: [
       { id: "s1_i1_first_strike", inning: 1, title: "초구 스트라이크 1회 이상", type: "firstPitchStrikesAtLeast", threshold: 1 },
       { id: "s1_i2_no_walk", inning: 2, title: "볼넷 없이 이닝 종료", type: "noWalk" },
-      { id: "s1_i3_low_suspicion", inning: 3, title: "간파도 60% 이하 유지", type: "suspicionEndBelow", threshold: 60 }
+      { id: "s1_i3_mix_pitches", inning: 3, title: "같은 구종 3연속 사용하지 않기", type: "maxPitchStreakBelow", threshold: 3 }
     ],
     rival: {
       name: "주시온",
@@ -127,9 +127,9 @@ const gameConfigs = [
     clearRuns: 4,
     stableRuns: 2,
     perfectRuns: 1,
-    perfectExtras: ["같은 구종 3연속 사용 없음", "간파도 평균 55% 이하"],
+    perfectExtras: ["같은 구종 3연속 사용 없음", "반복 패턴 억제"],
     themeText: "같은 공과 같은 코스를 빠르게 기억합니다. 성공한 패턴도 반복하면 바로 읽힙니다.",
-    starNames: ["분석타선 돌파", "패턴 관리 성공", "노림수 역이용 경기"],
+    starNames: ["분석타선 돌파", "패턴 관리 성공", "타자의 기다림을 깬 경기"],
     missions: [
       { id: "s2_i1_first_strike", inning: 1, title: "초구 스트라이크 2회 이상", type: "firstPitchStrikesAtLeast", threshold: 2 },
       { id: "s2_i2_no_three_pitch", inning: 2, title: "같은 구종 3연속 금지", type: "maxPitchStreakBelow", threshold: 3 },
@@ -150,7 +150,7 @@ const gameConfigs = [
     clearRuns: 5,
     stableRuns: 3,
     perfectRuns: 2,
-    perfectExtras: ["라이벌 장타 허용 없음", "간파도 평균 60% 이하"],
+    perfectExtras: ["라이벌 장타 허용 없음", "반복 패턴 억제"],
     themeText: "선택한 위협 유형이 타선 전체에 강하게 반영됩니다. 내 빌드가 감당할 위험을 직접 고르세요.",
     starNames: ["위협타선 생존", "위협 대응 성공", "완벽한 위협 제압"],
     missions: [
@@ -173,7 +173,7 @@ const gameConfigs = [
     clearRuns: 5,
     stableRuns: 3,
     perfectRuns: 2,
-    perfectExtras: ["라이벌 장타 허용 없음", "간파도 평균 60% 이하"],
+    perfectExtras: ["라이벌 장타 허용 없음", "반복 패턴 억제"],
     themeText: "RUN에서 반복한 구종과 코스를 이미 분석한 최종 타선입니다. 익숙한 패턴을 역으로 이용하세요.",
     starNames: ["최종전 생존", "우승권 운영", "완벽한 마운드 지배"],
     missions: [
@@ -365,7 +365,7 @@ const rewardCardCatalog = [
   { id: "R016", rarity: "rare", name: "반응 데이터 축적", type: ["타자 분석", "심리전"], description: "초구 반응 데이터를 쌓아 타자가 어느 계열에 맞춰 움직이는지 더 빨리 좁힙니다.", triggerCondition: "타자별 첫 투구", effectText: "초구 반응 데이터로 다음 승부의 읽기가 좋아집니다.", stackType: "unique", synergyTags: ["분석", "초구"], effects: { reactionCheck: 1 } },
   { id: "R017", rarity: "rare", name: "파울 분석", type: ["타자 분석", "심리전"], description: "파울 타이밍을 보고 타자의 기준점을 더 정확히 읽습니다.", triggerCondition: "파울 발생", effectText: "파울 이후 다음 배합 판단이 좋아집니다.", stackType: "unique", synergyTags: ["분석", "파울"], effects: { foulAnalysis: 1 } },
   { id: "K001", rarity: "core", name: "땅볼 설계자", type: ["구종 강화", "위기관리"], description: "낮은 공으로 타구를 눌러 다음 타자까지 흐름을 안정시킵니다.", triggerCondition: "땅볼 결과", effectText: "땅볼 성공 시 다음 타자가 바로 기다리지 못합니다.", stackType: "unique", synergyTags: ["땅볼"], effects: { groundOutNextSuspicion: -10 } },
-  { id: "K002", rarity: "core", name: "노림수 역이용", type: ["심리전"], description: "타자가 기다리기 시작한 순간, 오히려 그 기다림을 흔듭니다.", triggerCondition: "간파도 60% 이상", effectText: "타자가 기다리는 순간 헛스윙을 끌어내기 쉽습니다.", stackType: "unique", synergyTags: ["심리전"], effects: { highSuspicionWhiff: 0.12 } },
+  { id: "K002", rarity: "core", name: "기다림 깨기", type: ["심리전"], description: "타자가 한쪽 공을 기다리기 시작한 순간 다른 흐름으로 흔듭니다.", triggerCondition: "타자가 반복 패턴을 기다릴 때", effectText: "기다린 공을 피하면 헛스윙을 끌어내기 쉽습니다.", stackType: "unique", synergyTags: ["심리전"], effects: { highSuspicionWhiff: 0.12 } },
   { id: "K003", rarity: "core", name: "부담 건 승부", type: ["심리전", "위험 감수"], description: "피로도가 쌓인 구종을 과감하게 성공시키면 분위기를 되찾지만 실패 리스크가 큽니다.", triggerCondition: "부담 50 이상 구종", effectText: "부담 높은 구종 성공 시 타자의 기다림을 끊습니다.", stackType: "unique", synergyTags: ["위험"], effects: { burdenGamble: 1 } },
   { id: "K004", rarity: "core", name: "포수의 다음 수", type: ["덕아웃", "심리전"], description: "포수와 미리 맞춘 작전으로 직전 공의 의식을 다음 공까지 더 선명하게 이어갑니다.", triggerCondition: "덕아웃 선택 / 이전 공 활용", effectText: "덕아웃 효과와 이전 공 활용이 강화됩니다.", stackType: "unique", synergyTags: ["덕아웃", "포수"], effects: { dugoutEffectMult: 1.3, catcherNextMove: 1 } },
   { id: "K005", rarity: "core", name: "분석 역이용", type: ["타자 분석", "심리전"], description: "공개된 약점 태그와 일치하는 투구에 성공하면 다음 승부가 더 쉬워집니다.", triggerCondition: "약점 태그 활용 성공", effectText: "다음 투구 성공률이 증가합니다.", stackType: "unique", synergyTags: ["약점 태그"], effects: { weaknessNextPitchControl: 7 } },
@@ -755,7 +755,7 @@ const coreTagCatalog = [
   },
   {
     id: "core_counter_pitcher",
-    name: "노림수 역이용",
+    name: "기다림 깨기",
     family: "심리계",
     description: "타자가 기다리는 흐름을 읽고 반대로 찔러 타구 힘을 떨어뜨립니다.",
     effects: { counterContactPenalty: 4, mixSuspicionBonus: 1 },
@@ -868,11 +868,11 @@ const coreEvolutionCatalog = [
   { id: "evo_bd_walk_care", coreTagId: "core_bait_designer", name: "볼넷관리", icon: "scales", role: "weakness", condition: "유인 실패 후", effectText: "다음 스트 제구↑", operation: "볼넷 막기", when: { behindCount: true }, effects: { strikeControlBonus: 2, fullCountWalkReduce: 1 } },
   { id: "evo_bd_whiff_trap", coreTagId: "core_bait_designer", name: "헛스윙덫", icon: "hook", role: "risk", condition: "유인구", effectText: "헛스윙↑, 3볼↓", operation: "과감한 유인", when: { chaseZone: true }, effects: { chaseBonus: 0.05, whiffBonus: 0.03 } },
   { id: "evo_bd_eye_lead", coreTagId: "core_bait_designer", name: "시선유도", icon: "cycle", role: "psych", condition: "보여주기 볼 후", effectText: "반대 코스 타이밍 흔듦↑", operation: "시선 끌고 반대로", when: { ballIntentSwitch: true }, effects: { mixSuspicionBonus: 2, chaseBonus: 0.02 } },
-  { id: "evo_cp_read_break", coreTagId: "core_counter_pitcher", name: "노림파괴", icon: "target", role: "canonical", condition: "역노림 성공", effectText: "타구 품질↓", operation: "노림수 역이용", when: { counterPitch: true }, effects: { counterContactPenalty: 5, mixSuspicionBonus: 1 } },
-  { id: "evo_cp_reverse_flow", coreTagId: "core_counter_pitcher", name: "역류승부", icon: "cycle", role: "psych", condition: "간파도 60+", effectText: "다른 계열 타이밍 흔듦↑", operation: "높은 간파도 역공", when: { highSuspicion: true, categorySwitch: true }, effects: { mixSuspicionBonus: 2, secondaryQualityBonus: 2 } },
+  { id: "evo_cp_read_break", coreTagId: "core_counter_pitcher", name: "기다림 파괴", icon: "target", role: "canonical", condition: "기다린 공을 피했을 때", effectText: "타구 품질↓", operation: "타자의 기다림 깨기", when: { counterPitch: true }, effects: { counterContactPenalty: 5, mixSuspicionBonus: 1 } },
+  { id: "evo_cp_reverse_flow", coreTagId: "core_counter_pitcher", name: "흐름 전환", icon: "cycle", role: "psych", condition: "타자가 패턴을 기다릴 때", effectText: "다른 계열 타이밍 흔듦↑", operation: "기다린 공과 다른 계열 선택", when: { highSuspicion: true, categorySwitch: true }, effects: { mixSuspicionBonus: 2, secondaryQualityBonus: 2 } },
   { id: "evo_cp_pattern_cut", coreTagId: "core_counter_pitcher", name: "패턴절단", icon: "shield", role: "weakness", condition: "패턴 노출 후", effectText: "반복 흐름 완화", operation: "패턴 끊고 안정", when: { categorySwitch: true }, effects: { mixSuspicionBonus: 1 } },
   { id: "evo_cp_false_seed", coreTagId: "core_counter_pitcher", name: "허상심기", icon: "hook", role: "synergy", condition: "거짓 단서 후", effectText: "다음 공 타이밍 흔듦↑", operation: "허상으로 흔들기", when: { afterFalseClue: true }, effects: { mixSuspicionBonus: 2, chaseBonus: 0.02 } },
-  { id: "evo_cp_read_counter", coreTagId: "core_counter_pitcher", name: "노림수역공", icon: "bolt", role: "risk", condition: "패턴 노출 역계열", effectText: "성공 시 큰 보너스", operation: "간파당했을 때 역공", when: { counterPitch: true, patternExposed: true }, effects: { counterContactPenalty: 6, whiffBonus: 0.03 } },
+  { id: "evo_cp_read_counter", coreTagId: "core_counter_pitcher", name: "반대 승부", icon: "bolt", role: "risk", condition: "패턴 노출 후 다른 계열", effectText: "성공 시 큰 보너스", operation: "읽힌 흐름과 반대로 승부", when: { counterPitch: true, patternExposed: true }, effects: { counterContactPenalty: 6, whiffBonus: 0.03 } },
   { id: "evo_cl_crisis_block", coreTagId: "core_clutch_pitcher", name: "위기봉쇄", icon: "shield", role: "canonical", condition: "득점권", effectText: "실투↓", operation: "득점권에서 버티기", when: { scoring: true }, effects: { pressureReduce: 5, strikeControlBonus: 2 } },
   { id: "evo_cl_full_gamble", coreTagId: "core_clutch_pitcher", name: "승부수", icon: "scales", role: "operation", condition: "3-2 풀카운트", effectText: "스트 제구↑, 볼넷↓", operation: "도망가지 않는 존 승부", when: { fullCount: true, strike: true }, effects: { fullCountControlBonus: 4, fullCountWalkReduce: 2 } },
   { id: "evo_cl_clutch_engine", coreTagId: "core_clutch_pitcher", name: "클러치엔진", icon: "bolt", role: "risk", condition: "주자 + 결정구", effectText: "결정구↑, 실패 시 부담↑", operation: "위기에서 한 방", when: { runners: true, twoStrike: true }, effects: { twoStrikeQualityBonus: 3, pressureReduce: 3 } },
@@ -1226,6 +1226,7 @@ let gameOverTimer = null;
 const els = {
   newGameButton: document.querySelector("#newGameButton"),
   bgmToggle: document.querySelector("#bgmToggle"),
+  mobileMenuBgm: document.querySelector("[data-mobile-menu-bgm]"),
   nextBatterButton: document.querySelector("#nextBatterButton"),
   inningText: document.querySelector("#inningText"),
   runsText: document.querySelector("#runsText"),
@@ -1490,7 +1491,7 @@ function showTutorialStep(id) {
   if (!step || state.tutorialSeen?.[id]) return;
   state.tutorialSeen = { ...(state.tutorialSeen || {}), [id]: true };
   addLog(step.title, step.text);
-  showEventBanner(step.title.replace("튜토리얼 · ", ""), "reward", gameFlowDelay(1600));
+  if (id !== "weakness") showEventBanner(step.title.replace("튜토리얼 · ", ""), "reward", gameFlowDelay(1600));
 }
 
 function clamp(value, min, max) {
@@ -1544,11 +1545,16 @@ function startBgm() {
 }
 
 function updateBgmToggle() {
-  if (!els.bgmToggle) return;
-  els.bgmToggle.classList.toggle("off", audioState.muted);
-  els.bgmToggle.setAttribute("aria-pressed", String(audioState.muted));
-  els.bgmToggle.textContent = audioState.muted ? "BGM OFF" : "BGM";
-  els.bgmToggle.title = audioState.muted ? "BGM 켜기" : "BGM 끄기";
+  if (els.bgmToggle) {
+    els.bgmToggle.classList.toggle("off", audioState.muted);
+    els.bgmToggle.setAttribute("aria-pressed", String(audioState.muted));
+    els.bgmToggle.textContent = audioState.muted ? "BGM OFF" : "BGM";
+    els.bgmToggle.title = audioState.muted ? "BGM 켜기" : "BGM 끄기";
+  }
+  if (els.mobileMenuBgm) {
+    els.mobileMenuBgm.setAttribute("aria-pressed", String(!audioState.muted));
+    els.mobileMenuBgm.textContent = audioState.muted ? "BGM 켜기" : "BGM 끄기";
+  }
 }
 
 function toggleBgm() {
@@ -4014,11 +4020,36 @@ function runnersKey() {
   return runners || "empty";
 }
 
-function zoneSide(zone) {
+function normalizeHand(value) {
+  return value === "L" ? "L" : "R";
+}
+
+function pitcherThrows(pitcher = state.pitcher) {
+  return normalizeHand(pitcher?.throws);
+}
+
+function batterBats(batter = currentBatter()) {
+  return normalizeHand(batter?.bats);
+}
+
+function pitcherHandLabel(pitcher = state.pitcher) {
+  return pitcherThrows(pitcher) === "L" ? "좌투" : "우투";
+}
+
+function batterHandLabel(batter = currentBatter()) {
+  return batterBats(batter) === "L" ? "좌타" : "우타";
+}
+
+function horizontalCourseSide(col, batter = currentBatter()) {
+  if (col > 0 && col < 2) return "middle";
+  const screenLeft = col <= 0;
+  if (batterBats(batter) === "L") return screenLeft ? "inside" : "outside";
+  return screenLeft ? "outside" : "inside";
+}
+
+function zoneSide(zone, batter = currentBatter()) {
   const col = courseZones[zone]?.col ?? 1;
-  if (col <= 0) return "outside";
-  if (col >= 2) return "inside";
-  return "middle";
+  return horizontalCourseSide(col, batter);
 }
 
 function zoneHeight(zone) {
@@ -4033,10 +4064,11 @@ function classifyBallIntent(zone, intent, selectedPlan = "", targetRow = null, t
   if (ballIntentPlans[selectedPlan]) return selectedPlan;
   const row = targetRow != null && Number.isFinite(Number(targetRow)) ? Number(targetRow) : courseZones[zone]?.row ?? 1;
   const col = targetCol != null && Number.isFinite(Number(targetCol)) ? Number(targetCol) : courseZones[zone]?.col ?? 1;
-  if (col > 2) return "brush";
+  const side = horizontalCourseSide(col);
+  if ((col < 0 || col > 2) && side === "inside") return "brush";
   if (row > 2) return "fishing";
   if (row < 0) return "show";
-  if (col < 0) return "waste";
+  if ((col < 0 || col > 2) && side === "outside") return "waste";
   return "waste";
 }
 
@@ -4129,11 +4161,9 @@ function pitchDisplayResult(result) {
   );
 }
 
-function locationSideTag(location) {
+function locationSideTag(location, batter = currentBatter()) {
   const col = Number(location?.col);
-  if (col <= 0) return "outside";
-  if (col >= 2) return "inside";
-  return "middle";
+  return horizontalCourseSide(col, batter);
 }
 
 function locationHeightTag(location) {
@@ -4177,6 +4207,8 @@ function pitchDisplayReaction(result) {
   }
 
   if (result.result === "ball") {
+    if (result.takeType === "check") return "체크스윙으로 참았습니다";
+    if (result.takeType === "ignore") return "처음부터 반응하지 않았습니다";
     if (ballIntent === "brush" || side === "inside") return "몸쪽을 의식했습니다";
     if (ballIntent === "waste") return "타자의 반응을 확인했습니다";
     if (ballIntent === "show" && height === "high") return "눈높이가 올라갔습니다";
@@ -4785,15 +4817,9 @@ function createEmptyBatterMemory(batter) {
   };
 }
 
-function locationSideFromRowCol(row, col) {
-  if (row >= 0 && row <= 2 && col >= 0 && col <= 2) {
-    if (col <= 0) return "outside";
-    if (col >= 2) return "inside";
-    return "center";
-  }
-  if (col < 0) return "outside";
-  if (col > 2) return "inside";
-  return "center";
+function locationSideFromRowCol(row, col, batter = currentBatter()) {
+  const side = horizontalCourseSide(col, batter);
+  return side === "middle" ? "center" : side;
 }
 
 function locationHeightFromRowCol(row) {
@@ -5341,6 +5367,7 @@ function generatePitcher(portrait = pick(pitcherPortraits), forcedCoreTagId = nu
 
   return {
     name: makeName(),
+    throws: chance(0.3) ? "L" : "R",
     style: profile.label,
     profileId: profile.id,
     portrait,
@@ -5472,7 +5499,7 @@ function generateLineup(stageIndex = state.stageIndex) {
   const bossSlot =
     theme?.bottomBossWeight && chance(0.42) ? rand(7, 9) : rand(1, 9);
   const lineupPortraits = sample(batterPortraits, 9);
-  return Array.from({ length: 9 }, (_, index) => {
+  const lineup = Array.from({ length: 9 }, (_, index) => {
     const slot = index + 1;
     const themeAffinity = affinityMap[slot] || "medium";
     const archetype = archetypeForSlot(slot);
@@ -5521,6 +5548,7 @@ function generateLineup(stageIndex = state.stageIndex) {
     return {
       slot,
       name: `${makeName()}`,
+      bats: chance(0.4) ? "L" : "R",
       portrait: lineupPortraits[index],
       type: isBoss ? `보스 타자 · ${archetype.type}` : archetype.type,
       stats,
@@ -5539,6 +5567,9 @@ function generateLineup(stageIndex = state.stageIndex) {
       tags: makeBatterTags(stats, weights, mind, tendency, isBoss, batterTagIds)
     };
   });
+  if (lineup.every((batter) => batter.bats === "R")) lineup[0].bats = "L";
+  if (lineup.every((batter) => batter.bats === "L")) lineup[0].bats = "R";
+  return lineup;
 }
 
 function assignStageRival(preserveExisting = false) {
@@ -6025,6 +6056,8 @@ function resumeRunFromTitle() {
   state.flashZone = null;
   state.pendingGameOver = false;
   state.gameOver = false;
+  state.pitcher.throws = pitcherThrows(state.pitcher);
+  state.lineup.forEach((batter) => { batter.bats = batterBats(batter); });
   ensurePitcherTagFields(state.pitcher);
   ensurePitcherGrowthFields(state.pitcher);
   state.pitcher.repertoire?.forEach((pitch) => MP.ensurePitchRuntime?.(pitch));
@@ -6092,6 +6125,7 @@ function returnToTitleScreen() {
 }
 
 function openMobileMenu() {
+  updateBgmToggle();
   if (els.mobileMenuOverlay) els.mobileMenuOverlay.hidden = false;
   els.mobileNewGameButton?.setAttribute("aria-expanded", "true");
 }
@@ -6430,7 +6464,7 @@ function intendedCourse(zone, intent, targetRow = null, targetCol = null, target
     col: base.col,
     x: hasPoint ? clamp(Number(targetX), 0, 1) : (base.col + 1.5) / 5,
     y: hasPoint ? clamp(Number(targetY), 0, 1) : (base.row + 1.5) / 5,
-    label: base.label
+    label: actualCourseLabel(base.row, base.col)
   };
 
   if (hasPoint || hasCell) {
@@ -6455,6 +6489,7 @@ function intendedCourse(zone, intent, targetRow = null, targetCol = null, target
 
   course.x = (course.col + 1.5) / 5;
   course.y = (course.row + 1.5) / 5;
+  course.label = actualCourseLabel(course.row, course.col);
 
   return course;
 }
@@ -6470,23 +6505,33 @@ function isStrikeZonePoint(x, y) {
   return x >= STRIKE_ZONE_MIN && x <= STRIKE_ZONE_MAX && y >= STRIKE_ZONE_MIN && y <= STRIKE_ZONE_MAX;
 }
 
-function actualCourseLabel(row, col) {
+function ballDistanceEffect(x, y) {
+  const dx = x < STRIKE_ZONE_MIN ? STRIKE_ZONE_MIN - x : x > STRIKE_ZONE_MAX ? x - STRIKE_ZONE_MAX : 0;
+  const dy = y < STRIKE_ZONE_MIN ? STRIKE_ZONE_MIN - y : y > STRIKE_ZONE_MAX ? y - STRIKE_ZONE_MAX : 0;
+  const distance = Math.hypot(dx, dy);
+  if (distance === 0) return { tier: "zone", distance: 0, swing: 0 };
+  if (distance <= 0.075) return { tier: "near", distance, swing: 0.09 };
+  return { tier: "far", distance, swing: -0.12 };
+}
+
+function actualCourseLabel(row, col, batter = currentBatter()) {
+  const side = horizontalCourseSide(col, batter);
   if (row >= 0 && row <= 2 && col >= 0 && col <= 2) {
-    if (col <= 0) return "바깥쪽";
-    if (col >= 2) return "몸쪽";
+    if (side === "outside") return "바깥쪽";
+    if (side === "inside") return "몸쪽";
     return "중앙";
   }
   if (row < 0) return "높은 볼";
   if (row > 2) return "낮은 볼";
-  if (col < 0) return "바깥쪽 볼";
-  return "몸쪽 볼";
+  return side === "outside" ? "바깥쪽 볼" : "몸쪽 볼";
 }
 
-function ballTakeDetail(location) {
+function ballTakeDetail(location, batter = currentBatter()) {
   if (location.row < 0) return "높은 볼을 골라냈습니다.";
   if (location.row > 2) return "낮은 볼을 골라냈습니다.";
-  if (location.col < 0) return "바깥쪽 볼을 골라냈습니다.";
-  if (location.col > 2) return "몸쪽 볼을 골라냈습니다.";
+  const side = horizontalCourseSide(location.col, batter);
+  if (side === "outside") return "바깥쪽 볼을 골라냈습니다.";
+  if (side === "inside") return "몸쪽 볼을 골라냈습니다.";
   return "존에 걸친 공을 지켜봤습니다.";
 }
 
@@ -6939,6 +6984,7 @@ function resolvePitchLocation(pitch, plannedCourse) {
   const row = strikeZoneAxisCell(y);
   const col = strikeZoneAxisCell(x);
   const inZone = isStrikeZonePoint(x, y);
+  const ballDistance = ballDistanceEffect(x, y);
 
   return {
     zone,
@@ -6949,6 +6995,9 @@ function resolvePitchLocation(pitch, plannedCourse) {
     x,
     y,
     inZone,
+    ballDistanceTier: ballDistance.tier,
+    ballDistance: ballDistance.distance,
+    ballSwingModifier: ballDistance.swing,
     centerMistake: row === 1 && col === 1,
     unintendedCenter: row === 1 && col === 1 && (aimed.row !== 1 || aimed.col !== 1),
     commandScore: effectiveCommand,
@@ -7573,6 +7622,16 @@ function applyMindGameResult(result, pattern) {
   };
 }
 
+function handednessMatchupEffect(pitcher = state.pitcher, batter = currentBatter()) {
+  const key = `${pitcherThrows(pitcher)}${batterBats(batter)}`;
+  return {
+    RR: { contact: -0.015, contactQuality: -2, chase: 0.005 },
+    RL: { contact: 0.02, contactQuality: 2, chase: -0.005 },
+    LL: { contact: -0.035, contactQuality: -4, chase: 0.015 },
+    LR: { contact: 0.005, contactQuality: 1, chase: 0 }
+  }[key];
+}
+
 function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {}) {
   const atBat = state.atBat;
   const targetMatch = isTargetedPitchCategory(pitch.category, atBat.target);
@@ -7590,6 +7649,7 @@ function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {})
   const cardEffect = rewardCardPitchEffect(pitch, location, plannedCourse, pattern, batter);
   const impressionEffect = currentImpressionEffect(pitch, location);
   const batterMindEffect = currentBatterMindEffect(targetMatch, location);
+  const handedness = handednessMatchupEffect(state.pitcher, batter);
   const mem = pattern.memoryModifiers || createEmptyMemoryModifiers();
   const quality = clamp(
     pitchQuality(pitch) +
@@ -7652,6 +7712,7 @@ function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {})
     cardEffect,
     impressionEffect,
     batterMindEffect,
+    handedness,
     mem,
     quality,
     repeatedPenalty,
@@ -7668,7 +7729,7 @@ function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {})
 }
 
 function pitchSwingProbability(context) {
-  const { atBat, batter, targetMatch, inZone, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, mem, themeFx, rivalEffect, countIntentEffect, centerSwingBonus, countPressure } = context;
+  const { atBat, batter, targetMatch, inZone, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, handedness, mem, themeFx, rivalEffect, countIntentEffect, centerSwingBonus, countPressure } = context;
   let swingProbability = inZone ? 0.46 : 0.21;
   if (atBat.approach === "적극") swingProbability += 0.13;
   if (atBat.approach === "신중") swingProbability -= 0.12;
@@ -7690,7 +7751,7 @@ function pitchSwingProbability(context) {
     (inZone ? countPressure.swingInZone : countPressure.swingOutZone) +
     (mem.swingBonus || 0) +
     (themeFx.swing || 0);
-  if (!inZone) swingProbability += mind.chase + tagEffect.chase + batterTag.chase + cardEffect.chase + batterMindEffect.chase + rivalEffect.chase + countIntentEffect.chase + (mem.chasePenalty || 0) + (themeFx.chase || 0);
+  if (!inZone) swingProbability += (context.location?.ballSwingModifier || 0) + mind.chase + tagEffect.chase + batterTag.chase + cardEffect.chase + batterMindEffect.chase + handedness.chase + rivalEffect.chase + countIntentEffect.chase + (mem.chasePenalty || 0) + (themeFx.chase || 0);
   if (!inZone) swingProbability -= batter.stats.선구 / 280;
   return swingProbability;
 }
@@ -7754,7 +7815,7 @@ function foulTimingRead(context, timingValue) {
 }
 
 function pitchContactProbability(context, timing) {
-  const { batter, targetMatch, quality, repeatedPenalty, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, rivalEffect, countIntentEffect, centerContactBonus, themeFx, burden, mem, release, countPressure } = context;
+  const { batter, targetMatch, quality, repeatedPenalty, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, handedness, rivalEffect, countIntentEffect, centerContactBonus, themeFx, burden, mem, release, countPressure } = context;
   return (
     0.14 +
     batter.stats.컨택 / 170 +
@@ -7769,6 +7830,7 @@ function pitchContactProbability(context, timing) {
     cardEffect.contact +
     impressionEffect.contact +
     batterMindEffect.contact +
+    handedness.contact +
     rivalEffect.contact +
     countIntentEffect.contact +
     centerContactBonus +
@@ -7788,7 +7850,7 @@ function pitchFoulProbability(context, timingValue) {
 }
 
 function pitchContactQuality(context, timing) {
-  const { batter, targetMatch, quality, repeatedPenalty, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, rivalEffect, countIntentEffect, profile, centerQualityBonus, memoryQualityBonus, burden, themeFx, release, countPressure } = context;
+  const { batter, targetMatch, quality, repeatedPenalty, special, mind, tagEffect, batterTag, cardEffect, impressionEffect, batterMindEffect, handedness, rivalEffect, countIntentEffect, profile, centerQualityBonus, memoryQualityBonus, burden, themeFx, release, countPressure } = context;
   return (
     batter.stats.컨택 * 0.28 +
     batter.stats.파워 * 0.48 +
@@ -7803,6 +7865,7 @@ function pitchContactQuality(context, timing) {
     cardEffect.contactQuality +
     impressionEffect.contactQuality +
     batterMindEffect.contactQuality +
+    handedness.contactQuality +
     rivalEffect.contactQuality +
     countIntentEffect.contactQuality +
     profile.contactQuality +
@@ -7850,7 +7913,11 @@ function resolvePitch(pitch, batter, plannedCourse, pattern = {}, balanceMeta = 
       if (balanceMeta) balanceMeta.probabilities.takeBall = balanceRound(takeBallChance, 4);
       if (balanceChance(takeBallChance, "takeBall", balanceMeta)) noSwingResult = "ball";
     }
-    const takeType = !inZone && swingProbability >= 0.42 ? "check" : targetMatch ? "read" : "ignore";
+    const takeType = inZone
+      ? "read"
+      : location.ballDistanceTier === "near"
+        ? (swingProbability >= 0.32 ? "check" : "read")
+        : "ignore";
     return {
       pitch,
       batter,
@@ -7864,7 +7931,7 @@ function resolvePitch(pitch, batter, plannedCourse, pattern = {}, balanceMeta = 
       timingLabel: inZone ? "지켜봄" : "참아냄",
       takeType,
       result: noSwingResult,
-      detail: inZone ? "타자가 그대로 얼어붙었습니다." : "존 밖 공을 끝까지 봤습니다.",
+      detail: inZone ? "타자가 그대로 얼어붙었습니다." : takeType === "check" ? "배트가 나오다 멈췄습니다." : takeType === "ignore" ? "처음부터 공을 지켜봤습니다." : "존 끝에서 공을 골라냈습니다.",
       clue: inZone && !targetMatch ? "노림과 다른 공이 들어간 듯합니다." : "유인구 반복은 신중해야 합니다."
     };
   }
@@ -8621,7 +8688,6 @@ function checkWeaknessReveal(eventType) {
   pitcher.hiddenWeaknessTags = pitcher.hiddenWeaknessTags.filter((id) => id !== tagId);
   pitcher.revealedWeaknessTags = [...new Set([...(pitcher.revealedWeaknessTags || []), tagId])];
   addLog("위험 보조태그 공개", `${tag.name} · ${tag.description}`);
-  showEventBanner("위험 보조태그 공개", "walk", GAME_TIMING.weaknessBanner);
 }
 
 function noteOnBaseAllowed() {
@@ -9885,33 +9951,44 @@ function applyDugoutChoice(choice) {
     const effectHtml = effectLines.length ? `<p class="log-muted">효과: ${effectLines.map(escapeHtml).join(" · ")}</p>` : "";
     addLog("덕아웃 판단", `<p>${resultHtml}</p>${hintHtml}${effectHtml}<p class="log-muted">선택: ${escapeHtml(choice.title)}</p>`);
     showEventBanner(`덕아웃 판단\n${choice.title}`, choice.correct ? "reward" : "walk", gameFlowDelay(1300));
-    return { title: "덕아웃 판단", resultText: choice.resultText || choice.title, effectLines };
+    return { title: "덕아웃 판단", resultText: choice.resultText || choice.title, effectLines, success: !!choice.correct };
   } else {
     addLog("덕아웃 선택", `${choice.title}${rarityNote} · ${choice.desc}`);
     showEventBanner(`이닝 작전\n${choice.title}`, "reward", gameFlowDelay(1200));
-    return { title: "덕아웃 작전", resultText: choice.title, effectLines: dugoutEffectSummary(effects, true) };
+    return { title: "덕아웃 작전", resultText: choice.title, effectLines: dugoutEffectSummary(effects, true), success: null };
   }
 }
 
 function showDugoutChoiceResult(result, continueLabel = "다음 타자") {
   if (!els.dugoutOverlay || !result) return false;
   hideEventBanner();
+  const resultStatus = result.success === true ? "판단 성공" : result.success === false ? "판단 실패" : "작전 결과";
+  const resultReason = result.success === true
+    ? "판단에 성공했습니다. 다음 타자부터 효과가 적용됩니다."
+    : result.success === false
+      ? "판단에 실패했습니다. 불리한 효과가 적용됩니다."
+      : "사인 전달 완료. 다음 타자부터 갑니다.";
+  const resultFootnote = result.success === true
+    ? "성공한 판단은 스테이지 보상에도 반영됩니다."
+    : result.success === false
+      ? "실패 효과를 확인하고 다음 승부를 준비하세요."
+      : "좋은 사인은 스테이지 보상까지 따라갑니다.";
   if (els.dugoutTitle) els.dugoutTitle.textContent = result.title;
-  if (els.dugoutReason) els.dugoutReason.textContent = "사인 전달 완료. 다음 타자부터 갑니다.";
+  if (els.dugoutReason) els.dugoutReason.textContent = resultReason;
   if (els.dugoutChoiceList) {
     const lines = result.effectLines?.length ? result.effectLines : ["추가 효과 없음"];
     const resultLines = String(result.resultText || result.title || "사인 전달").split("\n").filter(Boolean);
     const resultTitle = resultLines[0] || "사인 전달";
     const resultSub = resultLines.slice(1).join(" · ");
     els.dugoutChoiceList.innerHTML = `
-      <div class="dugout-result-card">
-        <span class="dugout-result-kicker">작전 결과</span>
+      <div class="dugout-result-card${result.success === false ? " dugout-result-card--failure" : ""}">
+        <span class="dugout-result-kicker">${resultStatus}</span>
         <strong>${escapeHtml(resultTitle)}</strong>
         ${resultSub ? `<p class="dugout-result-sub">${escapeHtml(resultSub)}</p>` : ""}
         <div class="dugout-result-effects">
           ${lines.map((line) => `<span>${escapeHtml(line)}</span>`).join("")}
         </div>
-        <p class="dugout-result-footnote">좋은 사인은 스테이지 보상까지 따라갑니다.</p>
+        <p class="dugout-result-footnote">${resultFootnote}</p>
         <button class="dugout-continue-button" type="button" data-dugout-continue>${escapeHtml(continueLabel)}</button>
       </div>
     `;
@@ -10381,7 +10458,7 @@ function playRewardRarityUpgrade(card, badge, reward) {
     ],
     { duration: 1150, easing: "cubic-bezier(0.18, 0.9, 0.22, 1)", fill: "none" }
   );
-  [badge, card.querySelector(".reward-card-upgrade-badge"), card.querySelector(".reward-card-upgrade-text")]
+  [badge, card.querySelector(".reward-card-upgrade-badge")]
     .filter(Boolean)
     .forEach((element, index) => {
       element.animate(
@@ -10741,7 +10818,6 @@ function rewardUpgradeTokensHtml(index) {
   return `
     <div class="reward-card-upgrade-tokens" aria-hidden="true">
       <span class="reward-card-upgrade-badge">${from && to ? `${escapeHtml(from)} → ${escapeHtml(to)}` : "등급 상승"}</span>
-      <span class="reward-card-upgrade-text">${to === "핵심" ? "성과로 진화 개방" : "성과로 등급 상승"}</span>
     </div>
   `;
 }
@@ -11197,7 +11273,7 @@ function showBatterWeaknessDetail(tagId) {
 
 function renderPitcherName() {
   if (!els.pitcherName) return;
-  els.pitcherName.textContent = state.pitcher?.name || "-";
+  els.pitcherName.textContent = state.pitcher ? `${state.pitcher.name} · ${pitcherHandLabel()}` : "-";
 }
 
 function pitcherNameParts(pitcher) {
@@ -11255,7 +11331,7 @@ function renderPitcherChoices() {
           <span class="choice-copy">
             <span class="choice-number">${escapeHtml(archetype.label)}</span>
             <strong>${escapeHtml(display.name)}</strong>
-            <em class="choice-style">${escapeHtml(archetype.style)}</em>
+            <em class="choice-style">${escapeHtml(archetype.style)} · ${pitcherHandLabel(pitcher)}</em>
             <em class="choice-core-tag">${escapeHtml(coreTagNameById(pitcher.coreTagId))}</em>
           </span>
           <span class="choice-stats">${pitcherChoiceStatsHtml(pitcher)}</span>
@@ -11516,7 +11592,7 @@ function render() {
   renderPitchButtons();
   renderCourseControls();
 
-  els.batterName.textContent = batter.name;
+  els.batterName.textContent = `${batter.name} · ${batterHandLabel(batter)}`;
   setPortrait(els.batterPortrait, batter.portrait);
   els.batterCard?.classList.add("card-v2");
   renderSlotBadge(batter);
@@ -11633,7 +11709,8 @@ function releaseAimMarkup() {
   }
   const x = clamp(Number(active.targetX) || 0.5, 0.01, 0.99) * 100;
   const y = clamp(Number(active.targetY) || 0.5, 0.01, 0.99) * 100;
-  return `<div class="release-aim-target show${active.shake ? " is-shaking" : ""}" style="--aim-x:${x}%;--aim-y:${y}%;--aim-shake:${active.shakeAmount || 0}px;--aim-shake-duration:${active.shakeDuration || 150}ms" aria-hidden="true"><i class="release-aim-ring"></i></div>`;
+  const ringScale = 0.5 + Math.abs(releaseCursorPosition(active) - 0.5) * 1.8;
+  return `<div class="release-aim-target show${active.shake ? " is-shaking" : ""}" style="--aim-x:${x}%;--aim-y:${y}%;--aim-shake:${active.shakeAmount || 0}px;--aim-shake-duration:${active.shakeDuration || 150}ms" aria-hidden="true"><i class="release-aim-ring" style="--release-ring-scale:${ringScale.toFixed(3)}"></i></div>`;
 }
 
 function renderMobileZones() {
@@ -11650,9 +11727,9 @@ function renderMobilePitchButtons() {
     const burdenValue = Math.min(100, Math.max(0, pitch.burden || 0));
     const burdenTone = burdenValue >= 70 ? "danger" : burdenValue >= 45 ? "warn" : "stable";
     const levelTier = pitchLevelTierId(pitch);
-    return `<button class="mobile-pitch-button${state.selectedPitchId === pitch.id ? " is-selected" : ""}" type="button" data-mobile-pitch="${escapeHtml(pitch.id)}" data-burden="${burdenTone}" data-pitch-tier="${escapeHtml(levelTier)}" ${pitchInputLocked({ includeRelease: false }) ? "disabled" : ""}>
+    return `<button class="mobile-pitch-button${state.selectedPitchId === pitch.id ? " is-selected" : ""}" type="button" data-mobile-pitch="${escapeHtml(pitch.id)}" data-burden="${burdenTone}" data-pitch-tier="${escapeHtml(levelTier)}" data-pitch-category="${escapeHtml(pitch.category)}" ${pitchInputLocked({ includeRelease: false }) ? "disabled" : ""}>
       <strong>${escapeHtml(pitch.name)}</strong>
-      <small>피로 ${Math.round(burdenValue)}%</small>
+      <span class="mobile-pitch-category">${escapeHtml(categoryNames[pitch.category] || pitch.label || "구종")}</span>
       <span class="mobile-pitch-fatigue" aria-hidden="true"><i style="width:${burdenValue}%"></i></span>
     </button>`;
   }).join("");
@@ -11745,7 +11822,7 @@ function mobileBatterTagChipsHtml(batter) {
 
 function mobileBatterMetaText(batter) {
   if (!batter) return "1번타자";
-  const labels = [`${batter.slot || 1}번타자`];
+  const labels = [`${batter.slot || 1}번타자`, batterHandLabel(batter)];
   if (batter.isBoss) labels.push("보스");
   if (batter.isRival) labels.push("키맨");
   return labels.join(" · ");
@@ -11765,8 +11842,8 @@ function mobilePitcherStatusHtml() {
 }
 
 function mobileBatterStatusHtml(batter) {
-  const suspicion = clamp(Math.round(state.atBat?.suspicion || 0), 0, 100);
-  return `<div class="mobile-detail-status"><span><b>노림수</b><em>${escapeHtml(batter?.tendency?.label || batter?.type || "탐색 중")}</em></span><span><b>멘탈</b><em>${escapeHtml(batter?.mind?.label || "안정")}</em></span><span><b>간파도</b><em>${suspicion}%</em></span></div>`;
+  const impression = state.atBat?.batterMind?.lastImpression?.label || "탐색 중";
+  return `<div class="mobile-detail-status"><span><b>타격 성향</b><em>${escapeHtml(batter?.tendency?.label || batter?.type || "탐색 중")}</em></span><span><b>현재 의식</b><em>${escapeHtml(impression)}</em></span><span><b>멘탈</b><em>${escapeHtml(batter?.mind?.label || "안정")}</em></span></div>`;
 }
 
 function mobileOverall(stats) {
@@ -11898,7 +11975,7 @@ function renderMobilePlayerDetail() {
     const coreTag = tags.find((tag) => tag.section === "core");
     const supportTagsHtml = mobileModalTagButtonsHtml(tags.filter((tag) => tag.section !== "core"));
     els.mobilePlayerDetailPanel.innerHTML = `
-      <header class="mobile-detail-hero"><div><span>내 선수</span><strong>${escapeHtml(state.pitcher.name || "-")}</strong><small>${escapeHtml(state.pitcher.style || "투수")} · ${mobileGrade(state.pitcher.stats)}등급</small></div><button class="mobile-detail-close" type="button" data-mobile-detail-close>×</button></header>
+      <header class="mobile-detail-hero"><div><span>내 선수</span><strong>${escapeHtml(state.pitcher.name || "-")}</strong><small>${escapeHtml(state.pitcher.style || "투수")} · ${pitcherHandLabel()} · ${mobileGrade(state.pitcher.stats)}등급</small></div><button class="mobile-detail-close" type="button" data-mobile-detail-close>×</button></header>
       <section class="mobile-detail-section"><strong>주요 능력 <small>OVR ${mobileOverall(state.pitcher.stats)}</small></strong><div class="mobile-detail-stat-list">${mobileStatRowsHtml(state.pitcher.stats)}</div></section>
       <section class="mobile-detail-section"><strong>태그</strong>${mobileCoreTagCardHtml(coreTag)}<div class="mobile-detail-tags mobile-detail-support-tags">${supportTagsHtml || "<span>보조 태그 없음</span>"}</div></section>
       <section class="mobile-detail-section"><strong>현재 상태</strong>${mobilePitcherStatusHtml()}</section>
@@ -12115,14 +12192,13 @@ function mobilePitchZoneLabel(location) {
   const col = Number(location.col);
   const high = row <= 0;
   const low = row >= 2;
-  const inside = col >= 2;
-  const outside = col <= 0;
-  if (inside && high) return "몸쪽 높게";
-  if (inside && low) return "몸쪽 낮게";
-  if (outside && high) return "바깥쪽 높게";
-  if (outside && low) return "바깥쪽 낮게";
-  if (inside) return "몸쪽";
-  if (outside) return "바깥";
+  const side = horizontalCourseSide(col);
+  if (side === "inside" && high) return "몸쪽 높게";
+  if (side === "inside" && low) return "몸쪽 낮게";
+  if (side === "outside" && high) return "바깥쪽 높게";
+  if (side === "outside" && low) return "바깥쪽 낮게";
+  if (side === "inside") return "몸쪽";
+  if (side === "outside") return "바깥";
   if (high) return "높게";
   if (low) return "낮게";
   return "중앙";
@@ -12178,7 +12254,7 @@ function mobilePitchReactionText(result) {
     if (side === "early") return "스윙이 빨랐습니다";
     if (side === "late") return "스윙이 늦었습니다";
     if (!result.inZone) return "유인구에 배트가 나왔습니다";
-    return "공을 따라가지 못했습니다";
+    return "배트에 맞히지 못했습니다";
   }
   if (result.result === "foul") {
     if (String(result.countBefore || "").endsWith("-2")) return "파울로 버텼습니다";
@@ -12363,7 +12439,7 @@ function renderMobileRecentLog() {
                 <em class="mobile-result-badge">${escapeHtml(item.slot || "-")}번</em>
                 <span class="mobile-log-copy"><b>${escapeHtml(item.batter)}</b></span>
               </div>`
-            : `<div class="mobile-recent-log-row mobile-pitch-compact-row" data-result="${escapeHtml(item.result)}">
+            : `<div class="mobile-recent-log-row mobile-pitch-compact-row" data-record-kind="pitch" data-result="${escapeHtml(item.result)}">
             <span class="mobile-pitch-order">${item.no}구</span>
             <em class="mobile-result-badge mobile-result-badge--${escapeHtml(mobilePitchResultTone(item))}">${escapeHtml(item.mark || item.outcome)}</em>
             <span class="mobile-log-copy"><b>${escapeHtml(item.pitch)}</b><span class="mobile-pitch-zone">${escapeHtml(item.zone || "-")}</span><small>${escapeHtml(item.reaction || item.detail || "타자 반응을 확인했습니다")}</small></span>
@@ -12491,14 +12567,11 @@ function renderMobileGameUi() {
   els.mobileMissionTitle.textContent = mission ? missionDisplayName(mission) : "추가 미션 없음";
   els.mobileMissionCondition.textContent = mission ? missionConditionText(mission) : "이번 이닝은 기본 운영";
   els.mobileMissionStatus.textContent = mission ? missionCompactStatus(liveStatus) : "대기";
-  els.mobilePitcherName.textContent = state.pitcher.name || "-";
+  els.mobilePitcherName.textContent = `${state.pitcher.name || "-"} · ${pitcherHandLabel()}`;
   els.mobilePitcherTags.innerHTML = mobilePitcherTagChipsHtml();
   els.mobileBatterName.textContent = batter?.name || "-";
   els.mobileBatterTags.innerHTML = mobileBatterTagChipsHtml(batter);
   els.mobileBattingSlot.textContent = mobileBatterMetaText(batter);
-  const suspicion = clamp(state.atBat?.suspicion || 0, 0, 100);
-  els.mobileSuspicionText.textContent = `${Math.round(suspicion)}%`;
-  els.mobileSuspicionFill.style.width = `${suspicion}%`;
 
   renderMobileZones();
   renderMobilePitchButtons();
@@ -13666,15 +13739,18 @@ function animatePitch(location, pitch) {
   const endY = zoneRect.top - sceneRect.top + locationY * zoneRect.height;
   const zoneCenterX = zoneRect.left - sceneRect.left + zoneRect.width * 0.5;
   const zoneTopY = zoneRect.top - sceneRect.top;
-  const startX = mobile ? sceneRect.width * 0.29 : zoneCenterX;
+  const handDirection = pitcherThrows() === "L" ? -1 : 1;
+  const startX = mobile
+    ? sceneRect.width * (0.5 - handDirection * 0.21)
+    : zoneCenterX - handDirection * zoneRect.width * 0.22;
   const startY = mobile
     ? Math.min(sceneRect.height * 0.48, endY - zoneRect.height * 0.45)
     : clamp(zoneTopY - sceneRect.height * 0.14, sceneRect.height * 0.18, sceneRect.height * 0.42);
   const movementScale = clamp(sceneRect.width / 390, 0.75, 1.5);
   const travelY = endY - startY;
-  const control1X = startX + (endX - startX) * 0.33 + movement.c1x * movementScale;
+  const control1X = startX + (endX - startX) * 0.33 + movement.c1x * movementScale * handDirection;
   const control1Y = startY + travelY * movement.c1y;
-  const control2X = startX + (endX - startX) * 0.72 + movement.c2x * movementScale;
+  const control2X = startX + (endX - startX) * 0.72 + movement.c2x * movementScale * handDirection;
   const control2Y = startY + travelY * movement.c2y;
 
   sprite.style.setProperty("--ball-start-x", `${startX}px`);
@@ -14038,6 +14114,13 @@ MP.debug = {
   startAtBat,
   nextBatter,
   currentBatter,
+  pitcherThrows,
+  batterBats,
+  horizontalCourseSide,
+  handednessMatchupEffect,
+  ballDistanceEffect,
+  buildPitchResolutionContext,
+  pitchSwingProbability,
   addOut,
   advanceStage,
   finishAtBat,
@@ -14077,11 +14160,13 @@ MP.debug = {
   setTiming,
   buildReleaseTimingChallenge,
   intendedCourse,
+  showEventBanner,
   gradeReleaseTiming,
   releaseCursorPosition,
   releaseCursorDirection,
   modelReleaseForBot,
   pitchFlightProfile,
+  animatePitch,
   throwPitch,
   tagById,
   pitchById,
@@ -14239,6 +14324,7 @@ function setupTestConsoleBridge() {
     if (state.pitcher) {
       snap.pitcher = {
         name: state.pitcher.name,
+        throws: pitcherThrows(state.pitcher),
         style: state.pitcher.style,
         coreTagId: state.pitcher.coreTagId,
         coreEvolutionId: state.pitcher.coreEvolutionId || null,
@@ -14280,6 +14366,7 @@ function setupTestConsoleBridge() {
     if (batter) {
       snap.currentBatter = {
         name: batter.name,
+        bats: batterBats(batter),
         type: batter.type,
         isBoss: !!batter.isBoss,
         stats: { ...batter.stats },

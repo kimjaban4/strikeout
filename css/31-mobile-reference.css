@@ -3681,6 +3681,7 @@
     font-size: 34px !important;
     font-weight: 900;
     line-height: 0.95 !important;
+    transform: translateY(-5px);
     white-space: normal;
     text-shadow: 4px 4px 0 #ef412c;
   }
@@ -3982,11 +3983,13 @@
     place-items: start center;
     padding: 0;
     background: #27201c;
+    overflow-y: auto;
   }
 
   .pitcher-select-box {
     width: min(390px, 100vw);
-    height: 100dvh;
+    min-height: 100dvh;
+    max-height: none;
     max-width: 390px;
     padding: 38px 20px 24px;
     border: 4px solid #17120e;
@@ -3997,7 +4000,7 @@
       #f4ead4;
     box-shadow: 8px 0 0 rgba(16, 13, 11, 0.45);
     box-sizing: border-box;
-    overflow-y: auto;
+    overflow: visible;
   }
 
   .pitcher-select-box > .eyebrow {
@@ -4501,7 +4504,14 @@
   .reward-choice-card--core.core-evolution-card .core-evo-label,
   .reward-choice-card--core.core-evolution-card .core-evo-value { color: #fff; }
 
+  .reward-overlay[data-kind="stageCard"] {
+    overflow-y: auto;
+  }
+
   .reward-overlay[data-kind="stageCard"] .reward-box {
+    min-height: 100dvh;
+    max-height: none;
+    overflow: visible;
     background:
       linear-gradient(#17120e 0 226px, transparent 226px),
       radial-gradient(circle, rgba(23, 18, 14, 0.09) 1px, transparent 1.2px) 0 0 / 12px 12px,
@@ -4582,3 +4592,19 @@
   }
   .mobile-info-panel[data-mode="mission"] .mobile-mission-detail p span { color: #ef412c; font-size: 11px; font-weight: 1000; }
 }
+
+.mobile-pitch-category {
+  display: block;
+  margin-top: 2px;
+  padding: 1px 4px;
+  color: #fff;
+  font-size: 8px;
+  font-weight: 1000;
+  line-height: 1.1;
+}
+
+.mobile-pitch-button[data-pitch-category="fast"] .mobile-pitch-category { background: var(--comic-red); }
+.mobile-pitch-button[data-pitch-category="breaking"] .mobile-pitch-category { background: #e78b1f; }
+.mobile-pitch-button[data-pitch-category="offspeed"] .mobile-pitch-category { background: #397ed1; }
+.mobile-pitch-button small { margin-top: 2px; }
+.mobile-pitch-button.is-selected .mobile-pitch-category { background: var(--comic-ink); color: var(--comic-yellow); }

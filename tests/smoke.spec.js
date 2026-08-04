@@ -162,6 +162,14 @@ test("mobile header separates count strip from mission and opens menu", async ({
 
   await page.locator("#mobileNewGameButton").click();
   await expect(page.locator("#mobileMenuPanel")).toBeVisible();
+  const bgmButton = page.locator("[data-mobile-menu-bgm]");
+  await expect(bgmButton).toHaveText("BGM 끄기");
+  await bgmButton.click();
+  await expect(bgmButton).toHaveText("BGM 켜기");
+  await expect(bgmButton).toHaveAttribute("aria-pressed", "false");
+  await bgmButton.click();
+  await expect(bgmButton).toHaveText("BGM 끄기");
+  await expect(bgmButton).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator("[data-mobile-menu-new-game]")).toContainText("새게임 시작");
 
   await page.locator("[data-mobile-menu-new-game]").click();
@@ -618,6 +626,15 @@ test("mobile pitch controls start circular release timing at the touched course"
   await expect(page.locator("#mobilePitchButtons .mobile-pitch-button")).toHaveCount(mobilePitchCount);
   await expect(page.locator("#mobilePitchButtons .mobile-pitch-button > b")).toHaveCount(0);
   await expect(page.locator("#mobilePitchButtons .mobile-pitch-button").first()).toHaveAttribute("data-burden", /stable|warn|danger/);
+  await expect(page.locator("#mobilePitchButtons .mobile-pitch-category")).toHaveCount(mobilePitchCount);
+  const pitchCategories = await page.locator("#mobilePitchButtons .mobile-pitch-category").allTextContents();
+  expect(pitchCategories.every((label) => ["강속구", "변화구", "느린공"].includes(label))).toBe(true);
+  await expect(page.locator(".mobile-suspicion-row")).toHaveCount(0);
+  await expect(page.locator("#mobilePitchButtons .mobile-pitch-button[data-pitch-category]")).toHaveCount(mobilePitchCount);
+  await expect(page.locator("#mobilePitchButtons .mobile-pitch-category").first()).toBeVisible();
+  await expect(page.locator("#mobilePitchButtons .mobile-pitch-button > small")).toHaveCount(0);
+  await expect(page.locator("#mobilePitchButtons .mobile-pitch-fatigue")).toHaveCount(mobilePitchCount);
+
   await expect(page.locator(".mobile-duel-read-card")).not.toContainText(/추천|예측/);
   await expect(page.locator("#mobileDuelReadRisk")).toHaveText(/안정|경계|위험/);
   await expect(page.locator("#mobileReleasePanel")).toBeHidden();
@@ -662,6 +679,7 @@ test("both visible strike-zone edges keep the correct inside and outside labels"
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
   await page.evaluate(() => {
+    window.MountPsycho.debug.currentBatter().bats = "R";
     Math.random = () => 0;
   });
   await page.locator("#mobilePitchButtons .mobile-pitch-button").first().click();
@@ -685,6 +703,108 @@ test("both visible strike-zone edges keep the correct inside and outside labels"
     return { inZone: MP.state.lastLocation.inZone, label: MP.state.lastLocation.actualLabel };
   });
   expect(outside).toEqual({ inZone: true, label: "바깥쪽" });
+});
+
+test("handedness flips course meaning, matchup weight, release side, and UI labels", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const pitcher = MP.state.pitcher;
+    const batter = MP.debug.currentBatter();
+    const pitch = pitcher.repertoire[0];
+    const sprite = MP.debug.els.mobileBallSprite;
+    const combinations = [
+      ["R", "R"],
+      ["R", "L"],
+      ["L", "L"],
+      ["L", "R"]
+    ].map(([throws, bats]) => ({ key: throws + bats, ...MP.debug.handednessMatchupEffect({ throws }, { bats }) }));
+
+    pitcher.throws = "R";
+    batter.bats = "R";
+    MP.debug.animatePitch({ row: 1, col: 1, x: 0.5, y: 0.5 }, pitch);
+    const rightStart = parseFloat(sprite.style.getPropertyValue("--ball-start-x"));
+    const rightEnd = parseFloat(sprite.style.getPropertyValue("--ball-end-x"));
+
+    pitcher.throws = "L";
+    batter.bats = "L";
+    MP.debug.animatePitch({ row: 1, col: 1, x: 0.5, y: 0.5 }, pitch);
+    const leftStart = parseFloat(sprite.style.getPropertyValue("--ball-start-x"));
+    const leftEnd = parseFloat(sprite.style.getPropertyValue("--ball-end-x"));
+    MP.debug.render();
+
+    return {
+      generated: [pitcher.throws, ...MP.state.lineup.map((item) => item.bats)].every((hand) => hand === "R" || hand === "L"),
+      lineupHasBoth: new Set(MP.state.lineup.map((item) => item.bats)).size === 2,
+      right: [MP.debug.horizontalCourseSide(0, { bats: "R" }), MP.debug.horizontalCourseSide(2, { bats: "R" })],
+      left: [MP.debug.horizontalCourseSide(0, { bats: "L" }), MP.debug.horizontalCourseSide(2, { bats: "L" })],
+      legacy: [MP.debug.pitcherThrows({}), MP.debug.batterBats({})],
+      combinations,
+      rightStart,
+      leftStart,
+      rightEnd,
+      leftEnd,
+      pitcherLabel: MP.debug.els.mobilePitcherName.textContent,
+      batterLabel: MP.debug.els.mobileBattingSlot.textContent
+    };
+  });
+
+  expect(result.generated).toBe(true);
+  expect(result.lineupHasBoth).toBe(true);
+  expect(result.right).toEqual(["outside", "inside"]);
+  expect(result.left).toEqual(["inside", "outside"]);
+  expect(result.legacy).toEqual(["R", "R"]);
+  expect(result.combinations).toEqual([
+    { key: "RR", contact: -0.015, contactQuality: -2, chase: 0.005 },
+    { key: "RL", contact: 0.02, contactQuality: 2, chase: -0.005 },
+    { key: "LL", contact: -0.035, contactQuality: -4, chase: 0.015 },
+    { key: "LR", contact: 0.005, contactQuality: 1, chase: 0 }
+  ]);
+  expect(result.leftStart).toBeGreaterThan(result.rightStart);
+  expect(result.leftEnd).toBeCloseTo(result.rightEnd, 4);
+  expect(result.pitcherLabel).toContain("좌투");
+  expect(result.batterLabel).toContain("좌타");
+});
+
+test("near balls invite swings while far balls are easy takes", async ({ page }) => {
+  await chooseFirstPitcher(page);
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const pitch = MP.state.pitcher.repertoire[0];
+    const batter = MP.debug.currentBatter();
+    const random = Math.random;
+    Math.random = () => 0;
+    const near = MP.debug.buildPitchResolutionContext(pitch, batter, {
+      zone: 4,
+      intent: "ball",
+      targetX: 0.1,
+      targetY: 0.5
+    });
+    const far = MP.debug.buildPitchResolutionContext(pitch, batter, {
+      zone: 4,
+      intent: "ball",
+      targetX: 0.01,
+      targetY: 0.5
+    });
+    const answer = {
+      nearTier: near.location.ballDistanceTier,
+      farTier: far.location.ballDistanceTier,
+      nearDistance: near.location.ballDistance,
+      farDistance: far.location.ballDistance,
+      swingGap: MP.debug.pitchSwingProbability(near) - MP.debug.pitchSwingProbability(far),
+      zone: MP.debug.ballDistanceEffect(0.5, 0.5)
+    };
+    Math.random = random;
+    return answer;
+  });
+
+  expect(result.nearTier).toBe("near");
+  expect(result.farTier).toBe("far");
+  expect(result.nearDistance).toBeLessThan(result.farDistance);
+  expect(result.swingGap).toBeCloseTo(0.21, 5);
+  expect(result.zone).toEqual({ tier: "zone", distance: 0, swing: 0 });
 });
 
 test("starter stats are capped and release shake combines command with mental", async ({ page }) => {
@@ -725,11 +845,31 @@ test("event banners auto-hide after their configured duration", async ({ page })
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
 
-  await page.evaluate(() => window.MountPsycho.debug.nextBatter());
+  await page.evaluate(() => window.MountPsycho.debug.showEventBanner("이닝 미션", "reward", 600));
   await expect(page.locator("#mobileInningBanner")).toBeVisible();
-  await page.waitForTimeout(1000);
+  await page.waitForTimeout(800);
   await expect(page.locator("#mobileInningBanner")).toBeHidden();
 });
+test("weakness reveals stay in the log without opening a toast", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+
+  const revealed = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.tutorialSeen = { ...(MP.state.tutorialSeen || {}) };
+    delete MP.state.tutorialSeen.weakness;
+    [MP.debug.els.inningBanner, MP.debug.els.mobileInningBanner].filter(Boolean).forEach((banner) => {
+      banner.hidden = true;
+      banner.classList.remove("show");
+    });
+    return Boolean(MP.debug.revealBatterWeakness(MP.debug.currentBatter()));
+  });
+
+  expect(revealed).toBe(true);
+  await expect(page.locator("#inningBanner")).toBeHidden();
+  await expect(page.locator("#mobileInningBanner")).toBeHidden();
+});
+
 
 test("pitch result toasts auto-hide after three seconds", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
@@ -771,11 +911,14 @@ test("mobile throw records a log entry", async ({ page }) => {
   }));
   expect(duringFlight).toEqual({ inFlight: true, resultRows: 0 });
   await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row[data-result]")).toBeVisible({ timeout: 8000 });
-  await expect(page.locator("#mobileTimingBadge")).toHaveClass(/show/, { timeout: 500 });
+  await expect.poll(async () => page.evaluate(() =>
+    document.querySelector("#mobileTimingBadge")?.classList.contains("show")
+    || document.querySelector("#mobileInningBanner")?.classList.contains("show")
+  ), { timeout: 1000 }).toBe(true);
   await expect(page.locator('#mobileRecentLog [data-record-kind="batter"]')).toContainText(/\d번/);
-  await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first()).toContainText(/구/);
-  await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row").first().locator(".mobile-pitch-zone")).toHaveText(/바깥|몸쪽|중앙|높게|낮게/);
-  await expect(page.locator("#mobileRecentLog .mobile-pitch-compact-row small").first()).not.toHaveText("");
+  await expect(page.locator('#mobileRecentLog [data-record-kind="pitch"]').first()).toContainText(/구/);
+  await expect(page.locator('#mobileRecentLog [data-record-kind="pitch"]').first().locator(".mobile-pitch-zone")).toHaveText(/바깥|몸쪽|중앙|높게|낮게/);
+  await expect(page.locator('#mobileRecentLog [data-record-kind="pitch"] small').first()).not.toHaveText("");
   await page.evaluate(() => {
     const MP = window.MountPsycho;
     const pitch = MP.state.pitcher.repertoire[0];
@@ -790,7 +933,7 @@ test("mobile throw records a log entry", async ({ page }) => {
     });
     MP.debug.render();
   });
-  await expect(page.locator('#mobileRecentLog [data-record-kind="result"]')).toHaveText("삼진!");
+  await expect(page.locator('#mobileRecentLog [data-record-kind="result"]').filter({ hasText: "삼진!" }).first()).toHaveText("삼진!");
   await page.locator("#mobileRecentLogMore").click();
   await expect(page.locator("#mobileInfoPanel")).toBeVisible();
   await expect(page.locator("#mobileInfoPanelTitle")).toContainText("현재 타석");
@@ -804,7 +947,7 @@ test("mobile throw records a log entry", async ({ page }) => {
   await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toBeVisible({ timeout: 8000 });
   await expect(page.locator("#mobileInfoPanelBody .mobile-pitch-detail-row").first()).toContainText(/타자가|같은|흐름|다음 공|다음은|빠른 공|코스|스윙|배트|계열|높이|정타|범타/);
   await expect(page.locator("#mobileInfoPanelBody .mobile-log-at-bat-start:not(.mobile-log-at-bat-result)")).toHaveCount(2);
-  await expect(page.locator("#mobileInfoPanelBody .mobile-log-at-bat-result")).toContainText("삼진!");
+  await expect(page.locator("#mobileInfoPanelBody .mobile-log-at-bat-result").filter({ hasText: "삼진!" }).first()).toContainText("삼진!");
 });
 
 test("stage card reward assigns performance tokens to cards", async ({ page }) => {
@@ -828,6 +971,19 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
     MP.debug.openRewardDraft("스테이지 보상", null, "stageCard");
   });
   await expect(page.locator("#rewardAbsorbList")).toBeVisible();
+  const rewardScrollLayout = await page.locator('#rewardOverlay[data-kind="stageCard"]').evaluate((overlay) => {
+    const box = overlay.querySelector(".reward-box");
+    overlay.scrollTop = overlay.scrollHeight;
+    const layout = {
+      scrollsOutside: overlay.scrollTop > 0,
+      boxOwnScrollDisabled: getComputedStyle(box).overflowY === "visible" && box.scrollTop === 0,
+      boxCoversContent: box.clientHeight >= box.scrollHeight
+    };
+    overlay.scrollTop = 0;
+    return layout;
+  });
+  expect(rewardScrollLayout).toEqual({ scrollsOutside: true, boxOwnScrollDisabled: true, boxCoversContent: true });
+
   await expect(page.locator("#rewardAbsorbList .reward-performance-pill")).toHaveCount(2);
   await expect(page.locator("#rewardAbsorbList .reward-performance-pill").filter({ hasText: /설계 삼진/ })).toHaveCount(1);
   await expect(page.locator("#rewardAbsorbList .reward-performance-pill").filter({ hasText: /→ [123]번/ })).toHaveCount(2);
@@ -839,6 +995,7 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
     upgraded: card.classList.contains("is-upgraded-by-performance"),
     animated: card.dataset.upgradeAnimated === "true"
   })));
+  await expect(page.locator("#rewardChoiceList .reward-card-upgrade-text")).toHaveCount(0);
   expect(rewardMotion.filter((card) => !card.upgraded).every((card) => !card.animated)).toBe(true);
   expect(rewardMotion.filter((card) => card.upgraded).every((card) => card.animated)).toBe(true);
   await expect(page.locator("#rewardReason")).toContainText("태그 중심 보상 3장 중 하나를 선택합니다.");
@@ -912,6 +1069,7 @@ test("psych reward cards feed batter impressions", async ({ page }) => {
   await chooseFirstPitcher(page);
   const result = await page.evaluate(() => {
     const MP = window.MountPsycho;
+    MP.debug.currentBatter().bats = "R";
     MP.state.ownedRewardCards = ["C010", "C011", "C015", "C015"];
     const fast = MP.debug.pitchById("four");
     const slider = MP.debug.pitchById("slider");
@@ -1033,11 +1191,28 @@ test("dugout choice reveals applied effect before advancing", async ({ page }) =
   await page.waitForTimeout(1300);
   await page.locator("[data-dugout-index='0']").click();
   await expect(page.locator("#dugoutTitle")).toContainText(/판단/);
-  await expect(page.locator(".dugout-result-card")).not.toContainText(/판단 적중|판단 빗나감/);
+  await expect(page.locator(".dugout-result-card")).toContainText("판단 성공");
+  await expect(page.locator("#dugoutReason")).toContainText("판단에 성공했습니다");
   await expect(page.locator(".dugout-result-card")).toContainText(/강속구 제구/);
   await expect(page.locator(".dugout-result-card")).toContainText(/성과 흡수/);
   await page.locator("[data-dugout-continue]").click();
   await expect(page.locator("#dugoutOverlay")).toBeHidden();
+
+  await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    MP.state.pendingDugoutChoices = [{
+      id: "test_dugout_fail", dugoutEventId: "test", category: "판단", title: "무리하게 승부한다",
+      desc: "테스트 실패 판단", resultText: "사인이 빗나갔습니다.\n장타 위험 상승", correct: false,
+      effects: { singleRisk: 0.08 }, rarity: "common"
+    }];
+    MP.state.dugoutPending = true;
+    MP.debug.openDugoutChoiceOverlay();
+  });
+  await page.waitForTimeout(1300);
+  await page.locator("[data-dugout-index='0']").click();
+  await expect(page.locator(".dugout-result-card")).toContainText("판단 실패");
+  await expect(page.locator("#dugoutReason")).toContainText("판단에 실패했습니다");
+  await expect(page.locator(".dugout-result-card")).toHaveClass(/dugout-result-card--failure/);
 });
 
 test("dugout event pool uses 20 baseball plans and 5 weird events", async ({ page }) => {
@@ -1310,6 +1485,16 @@ test("mobile pitcher choices stay inside narrow cards", async ({ page }) => {
     }))
   );
   expect(statSpacing.every((stat) => stat.gap === "4px" && stat.wrap === "nowrap")).toBe(true);
+  const scrollLayout = await page.locator("#pitcherSelectOverlay").evaluate((overlay) => {
+    overlay.scrollTop = overlay.scrollHeight;
+    const box = overlay.querySelector(".pitcher-select-box");
+    return {
+      scrollsOutside: overlay.scrollTop > 0,
+      boxOwnScrollDisabled: getComputedStyle(box).overflowY === "visible" && box.scrollTop === 0,
+      boxCoversContent: box.clientHeight >= box.scrollHeight
+    };
+  });
+  expect(scrollLayout).toEqual({ scrollsOutside: true, boxOwnScrollDisabled: true, boxCoversContent: true });
 });
 
 test("pitch types expose visibly different flight paths", async ({ page }) => {

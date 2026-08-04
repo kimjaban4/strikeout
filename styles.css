@@ -6409,6 +6409,16 @@ button.card-toggle {
   letter-spacing: 0;
 }
 
+.dugout-result-card--failure {
+  border-color: rgba(235, 64, 44, 0.35);
+  background: linear-gradient(180deg, #ffffff, #fff0e9);
+}
+
+.dugout-result-card--failure .dugout-result-kicker {
+  background: rgba(235, 64, 44, 0.14);
+  color: #b93224;
+}
+
 .dugout-result-card strong {
   font-size: clamp(20px, 5.6vw, 28px);
   line-height: 1.18;
@@ -8474,6 +8484,9 @@ body:has(#titleOverlay:not([hidden])) .bgm-toggle {
     background: var(--comic-yellow);
     color: var(--comic-ink);
   }
+
+  .dugout-result-card--failure { box-shadow: 6px 6px 0 var(--comic-red); }
+  .dugout-result-card--failure .dugout-result-kicker { background: var(--comic-red); color: #fff; }
 
   .dugout-result-card strong { color: var(--comic-ink); font-size: 26px; }
   .dugout-result-card p,

@@ -114,7 +114,7 @@ MP.gameConfigs = [
     missions: [
       { id: "s1_i1_first_strike", inning: 1, title: "초구 스트라이크 1회 이상", type: "firstPitchStrikesAtLeast", threshold: 1 },
       { id: "s1_i2_no_walk", inning: 2, title: "볼넷 없이 이닝 종료", type: "noWalk" },
-      { id: "s1_i3_low_suspicion", inning: 3, title: "간파도 60% 이하 유지", type: "suspicionEndBelow", threshold: 60 }
+      { id: "s1_i3_mix_pitches", inning: 3, title: "같은 구종 3연속 사용하지 않기", type: "maxPitchStreakBelow", threshold: 3 }
     ],
     rival: {
       name: "주시온",
@@ -131,9 +131,9 @@ MP.gameConfigs = [
     clearRuns: 4,
     stableRuns: 2,
     perfectRuns: 1,
-    perfectExtras: ["같은 구종 3연속 사용 없음", "간파도 평균 55% 이하"],
+    perfectExtras: ["같은 구종 3연속 사용 없음", "반복 패턴 억제"],
     themeText: "같은 공과 같은 코스를 빠르게 기억합니다. 성공한 패턴도 반복하면 바로 읽힙니다.",
-    starNames: ["분석타선 돌파", "패턴 관리 성공", "노림수 역이용 경기"],
+    starNames: ["분석타선 돌파", "패턴 관리 성공", "타자의 기다림을 깬 경기"],
     missions: [
       { id: "s2_i1_first_strike", inning: 1, title: "초구 스트라이크 2회 이상", type: "firstPitchStrikesAtLeast", threshold: 2 },
       { id: "s2_i2_no_three_pitch", inning: 2, title: "같은 구종 3연속 금지", type: "maxPitchStreakBelow", threshold: 3 },
@@ -154,7 +154,7 @@ MP.gameConfigs = [
     clearRuns: 5,
     stableRuns: 3,
     perfectRuns: 2,
-    perfectExtras: ["라이벌 장타 허용 없음", "간파도 평균 60% 이하"],
+    perfectExtras: ["라이벌 장타 허용 없음", "반복 패턴 억제"],
     themeText: "선택한 위협 유형이 타선 전체에 강하게 반영됩니다. 내 빌드가 감당할 위험을 직접 고르세요.",
     starNames: ["위협타선 생존", "위협 대응 성공", "완벽한 위협 제압"],
     missions: [
@@ -177,7 +177,7 @@ MP.gameConfigs = [
     clearRuns: 5,
     stableRuns: 3,
     perfectRuns: 2,
-    perfectExtras: ["라이벌 장타 허용 없음", "간파도 평균 60% 이하"],
+    perfectExtras: ["라이벌 장타 허용 없음", "반복 패턴 억제"],
     themeText: "RUN에서 반복한 구종과 코스를 이미 분석한 최종 타선입니다. 익숙한 패턴을 역으로 이용하세요.",
     starNames: ["최종전 생존", "우승권 운영", "완벽한 마운드 지배"],
     missions: [
@@ -369,7 +369,7 @@ MP.rewardCardCatalog = [
   { id: "R016", rarity: "rare", name: "반응 데이터 축적", type: ["타자 분석", "심리전"], description: "초구 반응 데이터를 쌓아 타자가 어느 계열에 맞춰 움직이는지 더 빨리 좁힙니다.", triggerCondition: "타자별 첫 투구", effectText: "초구 반응 데이터로 다음 승부의 읽기가 좋아집니다.", stackType: "unique", synergyTags: ["분석", "초구"], effects: { reactionCheck: 1 } },
   { id: "R017", rarity: "rare", name: "파울 분석", type: ["타자 분석", "심리전"], description: "파울 타이밍을 보고 타자의 기준점을 더 정확히 읽습니다.", triggerCondition: "파울 발생", effectText: "파울 이후 다음 배합 판단이 좋아집니다.", stackType: "unique", synergyTags: ["분석", "파울"], effects: { foulAnalysis: 1 } },
   { id: "K001", rarity: "core", name: "땅볼 설계자", type: ["구종 강화", "위기관리"], description: "낮은 공으로 타구를 눌러 다음 타자까지 흐름을 안정시킵니다.", triggerCondition: "땅볼 결과", effectText: "땅볼 성공 시 다음 타자가 바로 기다리지 못합니다.", stackType: "unique", synergyTags: ["땅볼"], effects: { groundOutNextSuspicion: -10 } },
-  { id: "K002", rarity: "core", name: "노림수 역이용", type: ["심리전"], description: "타자가 기다리기 시작한 순간, 오히려 그 기다림을 흔듭니다.", triggerCondition: "간파도 60% 이상", effectText: "타자가 기다리는 순간 헛스윙을 끌어내기 쉽습니다.", stackType: "unique", synergyTags: ["심리전"], effects: { highSuspicionWhiff: 0.12 } },
+  { id: "K002", rarity: "core", name: "기다림 깨기", type: ["심리전"], description: "타자가 한쪽 공을 기다리기 시작한 순간 다른 흐름으로 흔듭니다.", triggerCondition: "타자가 반복 패턴을 기다릴 때", effectText: "기다린 공을 피하면 헛스윙을 끌어내기 쉽습니다.", stackType: "unique", synergyTags: ["심리전"], effects: { highSuspicionWhiff: 0.12 } },
   { id: "K003", rarity: "core", name: "부담 건 승부", type: ["심리전", "위험 감수"], description: "피로도가 쌓인 구종을 과감하게 성공시키면 분위기를 되찾지만 실패 리스크가 큽니다.", triggerCondition: "부담 50 이상 구종", effectText: "부담 높은 구종 성공 시 타자의 기다림을 끊습니다.", stackType: "unique", synergyTags: ["위험"], effects: { burdenGamble: 1 } },
   { id: "K004", rarity: "core", name: "포수의 다음 수", type: ["덕아웃", "심리전"], description: "포수와 미리 맞춘 작전으로 직전 공의 의식을 다음 공까지 더 선명하게 이어갑니다.", triggerCondition: "덕아웃 선택 / 이전 공 활용", effectText: "덕아웃 효과와 이전 공 활용이 강화됩니다.", stackType: "unique", synergyTags: ["덕아웃", "포수"], effects: { dugoutEffectMult: 1.3, catcherNextMove: 1 } },
   { id: "K005", rarity: "core", name: "분석 역이용", type: ["타자 분석", "심리전"], description: "공개된 약점 태그와 일치하는 투구에 성공하면 다음 승부가 더 쉬워집니다.", triggerCondition: "약점 태그 활용 성공", effectText: "다음 투구 성공률이 증가합니다.", stackType: "unique", synergyTags: ["약점 태그"], effects: { weaknessNextPitchControl: 7 } },
@@ -759,7 +759,7 @@ MP.coreTagCatalog = [
   },
   {
     id: "core_counter_pitcher",
-    name: "노림수 역이용",
+    name: "기다림 깨기",
     family: "심리계",
     description: "타자가 기다리는 흐름을 읽고 반대로 찔러 타구 힘을 떨어뜨립니다.",
     effects: { counterContactPenalty: 4, mixSuspicionBonus: 1 },
@@ -872,11 +872,11 @@ MP.coreEvolutionCatalog = [
   { id: "evo_bd_walk_care", coreTagId: "core_bait_designer", name: "볼넷관리", icon: "scales", role: "weakness", condition: "유인 실패 후", effectText: "다음 스트 제구↑", operation: "볼넷 막기", when: { behindCount: true }, effects: { strikeControlBonus: 2, fullCountWalkReduce: 1 } },
   { id: "evo_bd_whiff_trap", coreTagId: "core_bait_designer", name: "헛스윙덫", icon: "hook", role: "risk", condition: "유인구", effectText: "헛스윙↑, 3볼↓", operation: "과감한 유인", when: { chaseZone: true }, effects: { chaseBonus: 0.05, whiffBonus: 0.03 } },
   { id: "evo_bd_eye_lead", coreTagId: "core_bait_designer", name: "시선유도", icon: "cycle", role: "psych", condition: "보여주기 볼 후", effectText: "반대 코스 타이밍 흔듦↑", operation: "시선 끌고 반대로", when: { ballIntentSwitch: true }, effects: { mixSuspicionBonus: 2, chaseBonus: 0.02 } },
-  { id: "evo_cp_read_break", coreTagId: "core_counter_pitcher", name: "노림파괴", icon: "target", role: "canonical", condition: "역노림 성공", effectText: "타구 품질↓", operation: "노림수 역이용", when: { counterPitch: true }, effects: { counterContactPenalty: 5, mixSuspicionBonus: 1 } },
-  { id: "evo_cp_reverse_flow", coreTagId: "core_counter_pitcher", name: "역류승부", icon: "cycle", role: "psych", condition: "간파도 60+", effectText: "다른 계열 타이밍 흔듦↑", operation: "높은 간파도 역공", when: { highSuspicion: true, categorySwitch: true }, effects: { mixSuspicionBonus: 2, secondaryQualityBonus: 2 } },
+  { id: "evo_cp_read_break", coreTagId: "core_counter_pitcher", name: "기다림 파괴", icon: "target", role: "canonical", condition: "기다린 공을 피했을 때", effectText: "타구 품질↓", operation: "타자의 기다림 깨기", when: { counterPitch: true }, effects: { counterContactPenalty: 5, mixSuspicionBonus: 1 } },
+  { id: "evo_cp_reverse_flow", coreTagId: "core_counter_pitcher", name: "흐름 전환", icon: "cycle", role: "psych", condition: "타자가 패턴을 기다릴 때", effectText: "다른 계열 타이밍 흔듦↑", operation: "기다린 공과 다른 계열 선택", when: { highSuspicion: true, categorySwitch: true }, effects: { mixSuspicionBonus: 2, secondaryQualityBonus: 2 } },
   { id: "evo_cp_pattern_cut", coreTagId: "core_counter_pitcher", name: "패턴절단", icon: "shield", role: "weakness", condition: "패턴 노출 후", effectText: "반복 흐름 완화", operation: "패턴 끊고 안정", when: { categorySwitch: true }, effects: { mixSuspicionBonus: 1 } },
   { id: "evo_cp_false_seed", coreTagId: "core_counter_pitcher", name: "허상심기", icon: "hook", role: "synergy", condition: "거짓 단서 후", effectText: "다음 공 타이밍 흔듦↑", operation: "허상으로 흔들기", when: { afterFalseClue: true }, effects: { mixSuspicionBonus: 2, chaseBonus: 0.02 } },
-  { id: "evo_cp_read_counter", coreTagId: "core_counter_pitcher", name: "노림수역공", icon: "bolt", role: "risk", condition: "패턴 노출 역계열", effectText: "성공 시 큰 보너스", operation: "간파당했을 때 역공", when: { counterPitch: true, patternExposed: true }, effects: { counterContactPenalty: 6, whiffBonus: 0.03 } },
+  { id: "evo_cp_read_counter", coreTagId: "core_counter_pitcher", name: "반대 승부", icon: "bolt", role: "risk", condition: "패턴 노출 후 다른 계열", effectText: "성공 시 큰 보너스", operation: "읽힌 흐름과 반대로 승부", when: { counterPitch: true, patternExposed: true }, effects: { counterContactPenalty: 6, whiffBonus: 0.03 } },
   { id: "evo_cl_crisis_block", coreTagId: "core_clutch_pitcher", name: "위기봉쇄", icon: "shield", role: "canonical", condition: "득점권", effectText: "실투↓", operation: "득점권에서 버티기", when: { scoring: true }, effects: { pressureReduce: 5, strikeControlBonus: 2 } },
   { id: "evo_cl_full_gamble", coreTagId: "core_clutch_pitcher", name: "승부수", icon: "scales", role: "operation", condition: "3-2 풀카운트", effectText: "스트 제구↑, 볼넷↓", operation: "도망가지 않는 존 승부", when: { fullCount: true, strike: true }, effects: { fullCountControlBonus: 4, fullCountWalkReduce: 2 } },
   { id: "evo_cl_clutch_engine", coreTagId: "core_clutch_pitcher", name: "클러치엔진", icon: "bolt", role: "risk", condition: "주자 + 결정구", effectText: "결정구↑, 실패 시 부담↑", operation: "위기에서 한 방", when: { runners: true, twoStrike: true }, effects: { twoStrikeQualityBonus: 3, pressureReduce: 3 } },
