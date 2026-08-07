@@ -19,6 +19,7 @@ window.MountPsycho = window.MountPsycho || {};
     dugoutChoiceCatalog,
     STRIKE_ZONE_MIN,
     STRIKE_ZONE_MAX,
+    STRIKE_BALL_RADIUS,
     GAME_TIMING,
     suspicionStageMultipliers,
     batterMindStageMultipliers,
@@ -110,7 +111,8 @@ const equipmentCatalog = [
 const tutorialSteps = {
   firstPitch: {
     title: "튜토리얼 · 첫 투구",
-    text: "매 공은 단순히 던지는 싸움이 아닙니다. 타자가 무엇을 기다리는지 흔드는 싸움입니다."
+    text: "구종을 고르고 코스를 조준한 뒤, 다시 눌러 릴리즈합니다. 타자가 무엇을 기다리는지 흔드세요.",
+    banner: "구종 → 코스 → 릴리즈 순서로 던지세요."
   },
   inningMission: {
     title: "튜토리얼 · 이닝 미션",
@@ -126,7 +128,7 @@ const tutorialSteps = {
   },
   stageCards: {
     title: "튜토리얼 · 스테이지 카드",
-    text: "카드는 단순 능력치가 아니라 운영 방식입니다. 내 투수가 어떤 방식으로 타자를 흔들지 정하세요."
+    text: "카드는 운영 방식입니다. 카드를 고른 뒤 선택 완료를 눌러 확정하세요."
   },
   nextLineup: {
     title: "튜토리얼 · 다음 상대 타선",
@@ -134,19 +136,61 @@ const tutorialSteps = {
   }
 };
 
+const tutorialPages = [
+  {
+    id: "goal", kicker: "01 · 게임 목표", title: "실점 제한 안에서 이닝을 끝내세요",
+    lead: "타자가 기다리는 공을 피하고 아웃을 쌓는 투수 심리전입니다.",
+    points: ["실점 제한에 도달하면 스테이지 실패", "이닝 미션을 달성하면 다음 승부에 유리한 정보 획득"],
+    visual: '<div class="tutorial-score-demo"><span>이닝 <b>1/3</b></span><span>실점 <b>0</b></span><span>제한 <b>4</b></span></div>'
+  },
+  {
+    id: "pitch", kicker: "02 · 구종 선택", title: "타자의 노림과 다른 공을 던지세요",
+    lead: "구종은 빠른 공, 느린 공, 변화구로 나뉩니다.",
+    points: ["타자는 매 공 특정 종류와 코스를 기다림", "승부기록의 반응을 보고 다음 공을 바꿔서 선택"],
+    visual: '<div class="tutorial-pitch-demo"><span class="is-fast">빠른 공</span><span class="is-slow">느린 공</span><span class="is-break">변화구</span></div>'
+  },
+  {
+    id: "release", kicker: "03 · 코스와 릴리즈", title: "조준한 뒤 타이밍에 맞춰 릴리즈하세요",
+    lead: "구종 선택 → 코스 조준 → 다시 눌러 릴리즈 순서입니다.",
+    points: ["빨간 원만 커졌다 작아지고 조준점은 고정", "제구와 멘탈이 낮으면 조준원이 더 빠르고 크게 흔들림"],
+    visual: '<div class="tutorial-release-demo"><i></i><b></b><span>다시 눌러 릴리즈</span></div>'
+  },
+  {
+    id: "log", kicker: "04 · 타자 반응", title: "승부기록은 다음 공의 힌트입니다",
+    lead: "타자의 노림을 직접 알려주지는 않지만 반응은 숨기지 않습니다.",
+    points: ["스윙이 빨랐습니다: 공보다 배트가 먼저 나옴", "배트가 나오다 멈췄습니다: 볼을 뒤늦게 참음"],
+    visual: '<div class="tutorial-log-demo"><span><b>3구</b> 스윙이 빨랐습니다</span><span><b>2구</b> 배트가 나오다 멈췄습니다</span></div>'
+  },
+];
+let tutorialPageIndex = 0;
+
+function renderTutorialPage() {
+  const page = tutorialPages[tutorialPageIndex];
+  if (!page || !els.tutorialPage) return;
+  els.tutorialPage.dataset.page = page.id;
+  els.tutorialProgress.textContent = `${tutorialPageIndex + 1} / ${tutorialPages.length}`;
+  els.tutorialVisual.innerHTML = page.visual;
+  els.tutorialKicker.textContent = page.kicker;
+  els.tutorialTitle.textContent = page.title;
+  els.tutorialLead.textContent = page.lead;
+  els.tutorialPoints.innerHTML = page.points.map((point) => `<li>${escapeHtml(point)}</li>`).join("");
+  els.tutorialPrevButton.disabled = tutorialPageIndex === 0;
+  els.tutorialNextButton.textContent = tutorialPageIndex === tutorialPages.length - 1 ? "튜토리얼 완료" : "다음 ▶";
+}
+
 function showTutorialStep(id) {
   const step = tutorialSteps[id];
   if (!step || state.tutorialSeen?.[id]) return;
   state.tutorialSeen = { ...(state.tutorialSeen || {}), [id]: true };
   addLog(step.title, step.text);
-  if (id !== "weakness") showEventBanner(step.title.replace("튜토리얼 · ", ""), "reward", gameFlowDelay(1600));
+  if (id !== "weakness") showEventBanner(step.banner || step.title.replace("튜토리얼 · ", ""), "reward", gameFlowDelay(1600));
 }
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function getAudio(name) {
+function getAudio(name, source = audioPaths[name]) {
   if (typeof Audio === "undefined") return null;
   if (name === "bgm") {
     if (!audioState.bgm) {
@@ -161,13 +205,14 @@ function getAudio(name) {
     }
     return audioState.bgm;
   }
-  if (!audioState.effects[name]) {
-    const audio = new Audio(audioPaths[name]);
-    audio.volume = name === "homerun" ? 0.62 : 0.48;
+  if (!source || Array.isArray(source)) return null;
+  if (!audioState.effects[source]) {
+    const audio = new Audio(source);
+    audio.volume = name === "homeRun" || name === "homerunHit" ? 0.62 : 0.48;
     audio.preload = "auto";
-    audioState.effects[name] = audio;
+    audioState.effects[source] = audio;
   }
-  return audioState.effects[name];
+  return audioState.effects[source];
 }
 
 function unlockAudio() {
@@ -219,25 +264,49 @@ function toggleBgm() {
   updateBgmToggle();
 }
 
+function pickEffectPath(name) {
+  const paths = [audioPaths[name]].flat().filter(Boolean);
+  if (paths.length < 2) return paths[0] || "";
+  const previous = audioState.lastEffectPaths[name];
+  const candidates = paths.filter((path) => path !== previous);
+  const path = pick(candidates.length ? candidates : paths);
+  audioState.lastEffectPaths[name] = path;
+  return path;
+}
+
 function playEffect(name) {
-  const audio = getAudio(name);
+  const source = pickEffectPath(name);
+  const audio = getAudio(name, source);
   if (!audio || !audioState.unlocked) return;
   audio.currentTime = 0;
   audio.play().catch(() => {});
 }
 
 function playResultSound(result) {
-  if (result.result === "homerun") {
-    playEffect("homerun");
-    return;
-  }
-  if (result.result === "single" || result.result === "double") {
-    playEffect("hit");
-    return;
-  }
-  if (result.result === "swingingStrike") {
-    playEffect("swing");
-  }
+  const major = majorResultText(result);
+  if (["ball", "calledStrike", "swingingStrike"].includes(result.result)) playEffect("catch");
+  if (result.swung) playEffect("swing");
+  if (["foul", "single", "double", "homerun", "inPlayOut", "doublePlay", "error"].includes(result.result)) playEffect("hit");
+  if (result.result === "homerun") playEffect("homerunHit");
+
+  const majorSounds = {
+    "WALK!": "walk",
+    "STRIKE OUT!": "strikeout",
+    "DOUBLE PLAY!": "doublePlay",
+    "ERROR!": "error",
+    "BASE HIT!": "single",
+    "TEXAS HIT!": "texas",
+    "DOUBLE!": "double",
+    "HOME RUN!": "homeRun",
+    "GROUND OUT!": "groundOut",
+    "FLY OUT!": "flyOut",
+    "OUT!": "out"
+  };
+  if (major) return playEffect(majorSounds[major] || "out");
+  if (result.result === "ball") playEffect("ball");
+  else if (result.result === "calledStrike") playEffect("strike");
+  else if (result.result === "swingingStrike") playEffect("miss");
+  else if (result.result === "foul") playEffect("foul");
 }
 
 function rand(min, max) {
@@ -4308,6 +4377,15 @@ function syncTitleScreenEls() {
   els.titleClubhouseButton = document.querySelector("#titleClubhouseButton");
   els.titleTutorialButton = document.querySelector("#titleTutorialButton");
   els.tutorialOverlay = document.querySelector("#tutorialOverlay");
+  els.tutorialPage = document.querySelector("#tutorialPage");
+  els.tutorialProgress = document.querySelector("#tutorialProgress");
+  els.tutorialVisual = document.querySelector("#tutorialVisual");
+  els.tutorialKicker = document.querySelector("#tutorialKicker");
+  els.tutorialTitle = document.querySelector("#tutorialTitle");
+  els.tutorialLead = document.querySelector("#tutorialLead");
+  els.tutorialPoints = document.querySelector("#tutorialPoints");
+  els.tutorialPrevButton = document.querySelector("#tutorialPrevButton");
+  els.tutorialNextButton = document.querySelector("#tutorialNextButton");
   els.tutorialBackButton = document.querySelector("#tutorialBackButton");
 }
 
@@ -4761,6 +4839,8 @@ function beginGameFromTitle() {
 
 function openTutorialFromTitle() {
   closeMobileMenu();
+  tutorialPageIndex = 0;
+  renderTutorialPage();
   if (els.titleOverlay) els.titleOverlay.hidden = true;
   if (els.tutorialOverlay) els.tutorialOverlay.hidden = false;
   state.screenPhase = SCREEN_PHASE.tutorial;
@@ -5116,8 +5196,9 @@ function intendedCourse(zone, intent, targetRow = null, targetCol = null, target
   };
 
   if (hasPoint || hasCell) {
-    course.row = hasPoint ? strikeZoneAxisCell(course.y) : clamp(Number(targetRow), -1, 3);
-    course.col = hasPoint ? strikeZoneAxisCell(course.x) : clamp(Number(targetCol), -1, 3);
+    const pointInZone = hasPoint && isStrikeZonePoint(course.x, course.y);
+    course.row = hasPoint ? strikeZoneAxisCell(pointInZone ? clamp(course.y, STRIKE_ZONE_MIN, STRIKE_ZONE_MAX) : course.y) : clamp(Number(targetRow), -1, 3);
+    course.col = hasPoint ? strikeZoneAxisCell(pointInZone ? clamp(course.x, STRIKE_ZONE_MIN, STRIKE_ZONE_MAX) : course.x) : clamp(Number(targetCol), -1, 3);
     if (!hasPoint) {
       course.x = (course.col + 1.5) / 5;
       course.y = (course.row + 1.5) / 5;
@@ -5149,16 +5230,20 @@ function strikeZoneAxisCell(value) {
   return clamp(Math.floor(((point - STRIKE_ZONE_MIN) / (STRIKE_ZONE_MAX - STRIKE_ZONE_MIN)) * 3), 0, 2);
 }
 
+function strikeZoneGap(x, y) {
+  const dx = x < STRIKE_ZONE_MIN ? STRIKE_ZONE_MIN - x : x > STRIKE_ZONE_MAX ? x - STRIKE_ZONE_MAX : 0;
+  const dy = y < STRIKE_ZONE_MIN ? STRIKE_ZONE_MIN - y : y > STRIKE_ZONE_MAX ? y - STRIKE_ZONE_MAX : 0;
+  return Math.max(0, Math.hypot(dx, dy) - STRIKE_BALL_RADIUS);
+}
+
 function isStrikeZonePoint(x, y) {
-  return x >= STRIKE_ZONE_MIN && x <= STRIKE_ZONE_MAX && y >= STRIKE_ZONE_MIN && y <= STRIKE_ZONE_MAX;
+  return strikeZoneGap(x, y) <= 1e-9;
 }
 
 function ballDistanceEffect(x, y) {
-  const dx = x < STRIKE_ZONE_MIN ? STRIKE_ZONE_MIN - x : x > STRIKE_ZONE_MAX ? x - STRIKE_ZONE_MAX : 0;
-  const dy = y < STRIKE_ZONE_MIN ? STRIKE_ZONE_MIN - y : y > STRIKE_ZONE_MAX ? y - STRIKE_ZONE_MAX : 0;
-  const distance = Math.hypot(dx, dy);
+  const distance = strikeZoneGap(x, y);
   if (distance === 0) return { tier: "zone", distance: 0, swing: 0 };
-  if (distance <= 0.075) return { tier: "near", distance, swing: 0.09 };
+  if (distance <= 0.04) return { tier: "near", distance, swing: 0.09 };
   return { tier: "far", distance, swing: -0.12 };
 }
 
@@ -5486,6 +5571,9 @@ function finishReleaseTiming(instant = false) {
   state.lastReleaseResult = release;
   if (els.releaseTimingCursor) els.releaseTimingCursor.style.setProperty("--release-cursor-x", `${release.position * 100}%`);
   els.mobileReleaseCursor?.style.setProperty("--cursor-x", `${release.position * 100}%`);
+  playEffect("release");
+  const pitch = state.pitcher?.repertoire?.find((item) => item.id === challenge.pitchId);
+  if (pitch?.category) playEffect(pitch.category);
   return throwPitch(
     challenge.pitchId,
     challenge.zone,
@@ -5629,9 +5717,9 @@ function resolvePitchLocation(pitch, plannedCourse) {
     }
   }
 
-  const row = strikeZoneAxisCell(y);
-  const col = strikeZoneAxisCell(x);
   const inZone = isStrikeZonePoint(x, y);
+  const row = strikeZoneAxisCell(inZone ? clamp(y, STRIKE_ZONE_MIN, STRIKE_ZONE_MAX) : y);
+  const col = strikeZoneAxisCell(inZone ? clamp(x, STRIKE_ZONE_MIN, STRIKE_ZONE_MAX) : x);
   const ballDistance = ballDistanceEffect(x, y);
 
   return {
@@ -5660,6 +5748,7 @@ function selectPitch(pitchId) {
   if (pitchInputLocked({ includeRelease: false })) return;
   if (state.releaseTiming?.active) cancelReleaseTiming({ renderAfter: false });
   state.selectedPitchId = pitchId;
+  playEffect("pitchSelect");
   renderPitchButtons();
   renderCourseControls();
   renderReleaseTimingPanel();
@@ -9569,7 +9658,7 @@ function renderCoreEvolutionRewardCard(reward, index) {
   const title = rewardDisplayTitle(reward);
   const hasUpgradeToken = Boolean(reward.upgradedByPerformance);
   return `
-    <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(visibleRarity)}${hasUpgradeToken ? " is-upgraded-by-performance" : ""}" type="button" data-reward-index="${index}">
+    <button class="reward-choice-card core-evolution-card reward-choice-card--${escapeHtml(visibleRarity)}${hasUpgradeToken ? " is-upgraded-by-performance" : ""}" type="button" data-reward-index="${index}" aria-pressed="false">
       ${rewardUpgradeTokensHtml(index)}
       <header class="core-evo-head">
         <div class="core-evo-titles">
@@ -9592,6 +9681,8 @@ function renderCoreEvolutionRewardCard(reward, index) {
 
 function renderRewardChoices() {
   if (!els.rewardChoiceList) return;
+  pendingRewardChoiceIndex = -1;
+  if (els.rewardChoiceConfirm) els.rewardChoiceConfirm.disabled = true;
   els.rewardChoiceList.classList.add("core-evolution-list");
   els.rewardChoiceList.innerHTML = state.rewardChoices
     .map((reward, index) => renderCoreEvolutionRewardCard(reward, index))
@@ -9600,7 +9691,20 @@ function renderRewardChoices() {
 
 function selectRewardChoice(index) {
   if (els.rewardOverlay?.classList.contains("is-revealing")) return;
-  applyReward(index);
+  if (!state.rewardChoices[index]) return;
+  pendingRewardChoiceIndex = index;
+  els.rewardChoiceList?.querySelectorAll("[data-reward-index]").forEach((card) => {
+    const selected = Number(card.dataset.rewardIndex) === index;
+    card.classList.toggle("is-selected", selected);
+    card.setAttribute("aria-pressed", String(selected));
+  });
+  if (els.rewardChoiceConfirm) els.rewardChoiceConfirm.disabled = false;
+}
+
+function confirmRewardChoice() {
+  if (pendingRewardChoiceIndex < 0 || els.rewardOverlay?.classList.contains("is-revealing")) return;
+  playEffect("confirm");
+  applyReward(pendingRewardChoiceIndex);
 }
 
 function nextBatter() {
@@ -10303,6 +10407,7 @@ const MOBILE_PORTRAIT_QUERY = "(min-width: 0px)";
 let mobilePanelMode = "";
 let mobileSelectedCard = "";
 let pendingPitcherChoiceIndex = -1;
+let pendingRewardChoiceIndex = -1;
 
 function isMobilePortraitLayout() {
   return true;
@@ -11954,6 +12059,7 @@ function renderPitchMarker(container = els.strikeZone) {
 
 function handleCourseClick(zone, targetRow = null, targetCol = null, intent = "strike", targetX = null, targetY = null) {
   if (pitchInputLocked({ includeRelease: false })) return;
+  playEffect("courseSelect");
   const plannedIntent = intent === "ball" ? "ball" : "strike";
   state.pitchIntent = plannedIntent;
   state.pitchBallPlan =
@@ -12317,6 +12423,7 @@ function openThemeSelectOverlay() {
 
 function confirmStageTheme(themeId) {
   if (!themeId || state.gameOver) return;
+  playEffect("confirm");
   state.awaitingThemeSelection = false;
   state.pendingThemeChoices = [];
   if (els.themeSelectOverlay) els.themeSelectOverlay.hidden = true;
@@ -12387,7 +12494,7 @@ function animatePitch(location, pitch) {
   const endY = zoneRect.top - sceneRect.top + locationY * zoneRect.height;
   const zoneCenterX = zoneRect.left - sceneRect.left + zoneRect.width * 0.5;
   const zoneTopY = zoneRect.top - sceneRect.top;
-  const handDirection = pitcherThrows() === "L" ? -1 : 1;
+  const handDirection = pitcherThrows() === "L" ? 1 : -1;
   const startX = mobile
     ? sceneRect.width * (0.5 - handDirection * 0.21)
     : zoneCenterX - handDirection * zoneRect.width * 0.22;
@@ -12472,6 +12579,17 @@ function bindUiEvents() {
     }
   });
   els.tutorialOverlay?.addEventListener("click", (event) => {
+    if (event.target.closest("#tutorialPrevButton")) {
+      tutorialPageIndex = Math.max(0, tutorialPageIndex - 1);
+      renderTutorialPage();
+      return;
+    }
+    if (event.target.closest("#tutorialNextButton")) {
+      if (tutorialPageIndex >= tutorialPages.length - 1) returnToTitleScreen();
+      tutorialPageIndex += 1;
+      renderTutorialPage();
+      return;
+    }
     if (event.target.closest("#tutorialBackButton")) {
       event.preventDefault();
       returnToTitleScreen();
@@ -12673,12 +12791,16 @@ function bindUiEvents() {
   });
   els.pitcherChoiceConfirm?.addEventListener("click", () => {
     const pitcher = state.pitcherChoices[pendingPitcherChoiceIndex];
-    if (pitcher) beginGameWithPitcher(pitcher);
+    if (pitcher) {
+      playEffect("confirm");
+      beginGameWithPitcher(pitcher);
+    }
   });
   els.rewardChoiceList?.addEventListener("click", (event) => {
     const button = event.target.closest?.("[data-reward-index]");
     if (button) selectRewardChoice(Number(button.dataset.rewardIndex));
   });
+  els.rewardChoiceConfirm?.addEventListener("click", confirmRewardChoice);
   els.rewardRerollButton?.addEventListener("click", rerollStageRewards);
   els.dugoutChoiceList?.addEventListener("click", (event) => {
     const continueButton = event.target.closest?.("[data-dugout-continue]");
@@ -12767,6 +12889,7 @@ MP.debug = {
   horizontalCourseSide,
   handednessMatchupEffect,
   ballDistanceEffect,
+  isStrikeZonePoint,
   buildPitchResolutionContext,
   pitchSwingProbability,
   addOut,
@@ -12815,6 +12938,8 @@ MP.debug = {
   modelReleaseForBot,
   pitchFlightProfile,
   animatePitch,
+  audioPaths,
+  pickEffectPath,
   throwPitch,
   tagById,
   pitchById,

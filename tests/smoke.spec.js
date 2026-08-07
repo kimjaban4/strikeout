@@ -62,6 +62,32 @@ test("boots to title and pitcher select", async ({ page }) => {
   await expect(page.locator("#pitcherChoiceConfirm")).toBeEnabled();
 });
 
+test("ball edge touching the zone is a strike while a clear miss is a ball", async ({ page }) => {
+  await page.goto("/");
+  const result = await page.evaluate(() => {
+    const check = window.MountPsycho.debug.isStrikeZonePoint;
+    return {
+      inside: check(0.5, 0.5),
+      edge: check(0.065, 0.5),
+      outside: check(0.06, 0.5),
+      cornerMiss: check(0.075, 0.075)
+    };
+  });
+  expect(result).toEqual({ inside: true, edge: true, outside: false, cornerMiss: false });
+});
+
+test("title tutorial explains the four core rules", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/");
+  await page.locator("#titleTutorialButton").click();
+  await expect(page.locator("#tutorialOverlay")).toBeVisible();
+  await expect(page.locator("#tutorialProgress")).toHaveText("1 / 4");
+  for (let index = 0; index < 3; index += 1) await page.locator("#tutorialNextButton").click();
+  await expect(page.locator("#tutorialProgress")).toHaveText("4 / 4");
+  await expect(page.locator("#tutorialTitle")).toContainText("승부기록은 다음 공의 힌트");
+  await expect(page.locator("#tutorialNextButton")).toHaveText("튜토리얼 완료");
+});
+
 test("game flow runs at 1.3x while pitch result toasts stay at three seconds", async ({ page }) => {
   await page.goto("/");
   const timing = await page.evaluate(() => window.MountPsycho.GAME_TIMING);
@@ -177,6 +203,31 @@ test("mobile header separates count strip from mission and opens menu", async ({
   await expect(page.locator("#pitcherSelectOverlay")).toBeVisible();
 });
 
+test("audio variants avoid immediate repeats and edited files replace originals", async ({ page }) => {
+  await page.goto("/");
+  const result = await page.evaluate(() => {
+    const { audioPaths, pickEffectPath } = window.MountPsycho.debug;
+    const ball = Array.from({ length: 12 }, () => pickEffectPath("ball"));
+    return {
+      ball,
+      edited: {
+        course: audioPaths.courseSelect,
+        release: audioPaths.release,
+        offspeed: audioPaths.offspeed,
+        breaking: audioPaths.breaking
+      }
+    };
+  });
+
+  expect(result.ball.every((path, index) => index === 0 || path !== result.ball[index - 1])).toBe(true);
+  expect(result.edited).toEqual({
+    course: "assets/audio/코스선택_편집.mp3",
+    release: "assets/audio/릴리즈_편집.mp3",
+    offspeed: "assets/audio/느린공_편집.mp3",
+    breaking: "assets/audio/변화구_편집.mp3"
+  });
+
+});
 test("stage missions stay inside playable innings", async ({ page }) => {
   await page.goto("/");
   const result = await page.evaluate(() => {
@@ -299,7 +350,12 @@ test("natural S1 reward continues to S2 without resetting game state", async ({ 
   });
   await expect(page.locator("#rewardOverlay")).toBeVisible({ timeout: 3000 });
   await page.waitForTimeout(1300);
-  await page.locator("#rewardChoiceList .reward-choice-card").first().click();
+  const rewardCard = page.locator("#rewardChoiceList .reward-choice-card").first();
+  await rewardCard.click();
+  await expect(rewardCard).toHaveClass(/is-selected/);
+  await expect(page.locator("#rewardChoiceConfirm")).toBeEnabled();
+  await expect(page.locator("#rewardOverlay")).toBeVisible();
+  await page.locator("#rewardChoiceConfirm").click();
   await expect(page.locator("#stageOverlay")).toBeVisible({ timeout: 3000 });
   const state = await page.evaluate(() => ({
     stageIndex: window.MountPsycho.state.stageIndex,
@@ -762,7 +818,7 @@ test("handedness flips course meaning, matchup weight, release side, and UI labe
     { key: "LL", contact: -0.035, contactQuality: -4, chase: 0.015 },
     { key: "LR", contact: 0.005, contactQuality: 1, chase: 0 }
   ]);
-  expect(result.leftStart).toBeGreaterThan(result.rightStart);
+  expect(result.leftStart).toBeLessThan(result.rightStart);
   expect(result.leftEnd).toBeCloseTo(result.rightEnd, 4);
   expect(result.pitcherLabel).toContain("좌투");
   expect(result.batterLabel).toContain("좌타");
@@ -779,7 +835,7 @@ test("near balls invite swings while far balls are easy takes", async ({ page })
     const near = MP.debug.buildPitchResolutionContext(pitch, batter, {
       zone: 4,
       intent: "ball",
-      targetX: 0.1,
+      targetX: 0.04,
       targetY: 0.5
     });
     const far = MP.debug.buildPitchResolutionContext(pitch, batter, {
@@ -1303,6 +1359,7 @@ test("stage reward selection routes to theme select, then stage-start dugout", a
   await expect(page.locator("#rewardOverlay")).toBeVisible({ timeout: 3000 });
   await page.waitForTimeout(1300);
   await page.locator("#rewardChoiceList .reward-choice-card").first().click();
+  await page.locator("#rewardChoiceConfirm").click();
   await expect(page.locator("#themeSelectOverlay")).toBeVisible({ timeout: 3000 });
   await page.locator("#themeChoiceList .theme-choice-card").first().click();
   await expect(page.locator("#stageOverlay")).toBeVisible({ timeout: 3000 });
@@ -1347,6 +1404,7 @@ test("stage debug page can force stage reward flow", async ({ page }) => {
   await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(2, { timeout: 9000 });
   await expect(frame.locator("#rewardOverlay")).not.toHaveClass(/is-revealing/, { timeout: 9000 });
   await frame.locator("#rewardChoiceList .reward-choice-card:has(.reward-rarity-badge--core)").click();
+  await frame.locator("#rewardChoiceConfirm").click();
   await expect(frame.locator("#ownedCardSummary")).toContainText("태그·진화 1");
   await expect(frame.locator("#ownedCardSummary")).not.toContainText("보유 보상 없음");
 });

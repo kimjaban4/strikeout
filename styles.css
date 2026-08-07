@@ -2447,6 +2447,30 @@ h2 {
   transform: translateY(-2px);
 }
 
+.reward-choice-card.is-selected {
+  border-color: #17120e;
+  box-shadow: 6px 6px 0 #ffcb42;
+  transform: translate(-2px, -2px);
+}
+
+.reward-choice-confirm {
+  display: grid;
+  margin-top: 18px;
+}
+
+.reward-choice-confirm button {
+  min-height: 54px;
+  border: 4px solid #17120e;
+  background: #ef412c;
+  color: #fff;
+  box-shadow: 5px 5px 0 #17120e;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.reward-choice-confirm button:disabled { background: #b9ad96; color: #ded5c3; cursor: not-allowed; }
+
 .reward-choice-card strong {
   min-width: 0;
   font-size: 1.08rem;
@@ -7963,6 +7987,77 @@ body:has(#titleOverlay:not([hidden])) .bgm-toggle {
 .tutorial-screen-box .title-screen-button:hover {
   color: #0a2034;
   background: #ffffff;
+}
+
+.tutorial-screen-overlay {
+  place-items: start center;
+  padding: max(12px, env(safe-area-inset-top, 0px)) 8px max(12px, env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+}
+
+.tutorial-screen-box {
+  width: min(410px, calc(100vw - 16px));
+  padding: 16px;
+  border: 4px solid #17120e;
+  border-radius: 0;
+  background: #f4ead4;
+  box-shadow: 8px 8px 0 #17120e;
+  text-align: left;
+}
+
+.tutorial-screen-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tutorial-screen-head .eyebrow { margin: 0; color: #ef412c; font-size: 12px; font-weight: 1000; letter-spacing: .08em; }
+.tutorial-screen-head > strong { padding: 5px 9px; background: #17120e; color: #ffcb42; font-size: 12px; }
+.tutorial-page { display: grid; gap: 10px; }
+.tutorial-kicker { margin: 0; color: #ef412c; font-size: 12px; font-weight: 1000; }
+.tutorial-screen-box .tutorial-page h2 { margin: 0; color: #17120e; font-size: clamp(25px, 7vw, 32px); line-height: 1.08; word-break: keep-all; }
+.tutorial-screen-box .tutorial-screen-lead { margin: 0; color: #332b23; font-size: 15px; font-weight: 850; line-height: 1.45; }
+.tutorial-points { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.tutorial-points li { position: relative; padding-left: 18px; color: #40372e; font-size: 13px; font-weight: 800; line-height: 1.4; }
+.tutorial-points li::before { content: "▶"; position: absolute; left: 0; color: #ef412c; font-size: 9px; top: 3px; }
+.tutorial-visual { min-height: 150px; display: grid; place-items: center; margin: 10px 0 2px; border: 4px solid #17120e; background: #fff7e6; box-shadow: 5px 5px 0 #ffcb42; overflow: hidden; }
+.tutorial-actions { display: grid; grid-template-columns: 1fr 1.45fr; gap: 8px; margin-top: 16px; }
+.tutorial-actions button { min-height: 48px; border: 3px solid #17120e; background: #fff7e6; color: #17120e; font: inherit; font-size: 14px; font-weight: 1000; box-shadow: 3px 3px 0 #17120e; }
+.tutorial-actions #tutorialNextButton { background: #ef412c; color: #fff; }
+.tutorial-actions #tutorialBackButton { grid-column: 1 / -1; min-height: 40px; background: #ffcb42; }
+.tutorial-actions button:disabled { opacity: .35; cursor: not-allowed; }
+
+.tutorial-score-demo { width: 88%; display: grid; grid-template-columns: repeat(3, 1fr); border: 3px solid #17120e; background: #17120e; gap: 3px; }
+.tutorial-score-demo span { display: grid; place-items: center; gap: 4px; min-height: 80px; background: #fff7e6; color: #5a5045; font-size: 11px; font-weight: 900; }
+.tutorial-score-demo b { color: #ef412c; font-size: 28px; }
+.tutorial-pitch-demo { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding: 18px; }
+.tutorial-pitch-demo span { padding: 12px 14px; border: 3px solid #17120e; box-shadow: 4px 4px 0 #17120e; color: #fff; font-size: 16px; font-weight: 1000; }
+.tutorial-pitch-demo .is-fast { background: #ef412c; }
+.tutorial-pitch-demo .is-slow { background: #2fa363; }
+.tutorial-pitch-demo .is-break { background: #ed8b20; }
+.tutorial-release-demo { position: relative; width: 120px; height: 120px; border: 3px solid #17120e; background: repeating-linear-gradient(90deg, transparent 0 38px, rgba(23,18,14,.25) 39px 41px), repeating-linear-gradient(0deg, transparent 0 38px, rgba(23,18,14,.25) 39px 41px); }
+.tutorial-release-demo i, .tutorial-release-demo b { position: absolute; left: 50%; top: 50%; border-radius: 50%; transform: translate(-50%, -50%); }
+.tutorial-release-demo i { width: 72px; height: 72px; border: 5px solid #ef412c; }
+.tutorial-release-demo b { width: 14px; height: 14px; background: #ffcb42; border: 3px solid #17120e; }
+.tutorial-release-demo span { position: absolute; left: 50%; bottom: 5px; width: max-content; transform: translateX(-50%); padding: 3px 7px; background: #17120e; color: #fff; font-size: 9px; font-weight: 900; }
+.tutorial-zone-demo { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; padding: 16px 10px; }
+.tutorial-zone-demo > span { position: relative; width: 78px; height: 92px; border: 3px solid #17120e; background: repeating-linear-gradient(90deg, transparent 0 24px, rgba(23,18,14,.22) 25px 26px), repeating-linear-gradient(0deg, transparent 0 24px, rgba(23,18,14,.22) 25px 26px); }
+.tutorial-zone-demo i { position: absolute; width: 20px; height: 20px; border: 2px solid #17120e; border-radius: 50%; background: #fff; box-shadow: inset 2px 0 0 #ef412c; }
+.tutorial-zone-demo .is-inside { left: 27px; top: 30px; }
+.tutorial-zone-demo .is-edge { left: -10px; top: 30px; }
+.tutorial-zone-demo .is-outside { left: -25px; top: 30px; }
+.tutorial-zone-demo b { position: absolute; left: 50%; bottom: -22px; transform: translateX(-50%); color: #17120e; font-size: 10px; }
+.tutorial-zone-demo > span:nth-child(-n+2) b { color: #168b50; }
+.tutorial-zone-demo > span:last-child b { color: #ef412c; }
+.tutorial-log-demo { width: 88%; display: grid; border: 3px solid #17120e; background: #fff7e6; }
+.tutorial-log-demo span { padding: 13px; border-bottom: 2px solid #d5c9b3; color: #332b23; font-size: 13px; font-weight: 850; }
+.tutorial-log-demo span:last-child { border-bottom: 0; }
+.tutorial-log-demo b { display: inline-block; margin-right: 8px; padding: 3px 6px; background: #ffcb42; color: #17120e; }
+.tutorial-reward-demo { width: 90%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; padding: 12px; }
+.tutorial-reward-demo span { height: 72px; border: 3px solid #17120e; background: #f4ead4; box-shadow: 3px 3px 0 #17120e; }
+.tutorial-reward-demo span.is-selected { background: #ef412c; box-shadow: 4px 4px 0 #ffcb42; }
+.tutorial-reward-demo b { grid-column: 1 / -1; min-height: 36px; display: grid; place-items: center; border: 3px solid #17120e; background: #ef412c; color: #fff; box-shadow: 3px 3px 0 #17120e; font-size: 13px; }
+
+@media (max-height: 700px) {
+  .tutorial-visual { min-height: 126px; }
+  .tutorial-screen-box { padding: 12px; }
+  .tutorial-screen-box .tutorial-page h2 { font-size: 24px; }
+  .tutorial-actions { margin-top: 12px; }
 }
 
 /* Direct aiming: the existing 5x5 course map remains visual, but the pointer is continuous. */

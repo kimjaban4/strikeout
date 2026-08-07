@@ -410,6 +410,7 @@ function gameFlowDelay(ms) {
 
 MP.STRIKE_ZONE_MIN = 0.125;
 MP.STRIKE_ZONE_MAX = 0.875;
+MP.STRIKE_BALL_RADIUS = 0.06;
 
 MP.GAME_TIMING = {
   pitchResultCleanup: gameFlowDelay(900),
@@ -486,8 +487,31 @@ MP.pitchVelocityAdjust = {
 MP.audioPaths = {
   bgm: "assets/audio/BGM.mp3",
   hit: "assets/audio/hit.mp3",
-  homerun: "assets/audio/homerun.mp3",
-  swing: "assets/audio/swing.wav"
+  homerunHit: "assets/audio/homerun.mp3",
+  swing: "assets/audio/swing.wav",
+  pitchSelect: "assets/audio/구종선택.mp3",
+  courseSelect: "assets/audio/코스선택_편집.mp3",
+  unavailable: "assets/audio/선택불가.mp3",
+  confirm: "assets/audio/최종결정.mp3",
+  release: "assets/audio/릴리즈_편집.mp3",
+  fast: "assets/audio/강속구.mp3",
+  offspeed: "assets/audio/느린공_편집.mp3",
+  breaking: "assets/audio/변화구_편집.mp3",
+  catch: "assets/audio/포구.mp3",
+  ball: ["assets/audio/볼.mp3", "assets/audio/볼2.mp3", "assets/audio/볼3.mp3", "assets/audio/볼4.mp3"],
+  strike: ["assets/audio/스트라이크.mp3", "assets/audio/스트라이크2.mp3", "assets/audio/스트라이크3.mp3", "assets/audio/스트라이크4.mp3"],
+  miss: ["assets/audio/헛스윙.mp3", "assets/audio/헛스윙2.mp3", "assets/audio/헛스윙3.mp3", "assets/audio/헛스윙4.mp3"],
+  foul: ["assets/audio/파울.mp3", "assets/audio/파울2.mp3", "assets/audio/파울3.mp3", "assets/audio/파울4.mp3"],
+  out: ["assets/audio/아웃.mp3", "assets/audio/아웃2.mp3", "assets/audio/아웃3.mp3", "assets/audio/아웃4.mp3"],
+  strikeout: "assets/audio/삼진.mp3",
+  walk: "assets/audio/볼넷.mp3",
+  single: "assets/audio/안타.mp3",
+  texas: "assets/audio/텍사스안타.mp3",
+  doublePlay: "assets/audio/병살.mp3",
+  homeRun: "assets/audio/홈런.mp3",
+  groundOut: "assets/audio/땅볼.mp3",
+  flyOut: "assets/audio/뜬공.mp3",
+  error: "assets/audio/에러.mp3"
 };
 
 MP.audioState = {
@@ -495,7 +519,8 @@ MP.audioState = {
   muted: false,
   bgm: null,
   bgmTimer: null,
-  effects: {}
+  effects: {},
+  lastEffectPaths: {}
 };
 
 MP.pitcherProfiles = [
