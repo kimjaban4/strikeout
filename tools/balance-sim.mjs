@@ -16,7 +16,8 @@ const DEFAULTS = {
   runsDir: "balance-reports/runs",
   fullLog: false,
   bot: "player",
-  mobile: false
+  mobile: false,
+  equipment: []
 };
 
 const MIME_TYPES = {
@@ -51,6 +52,7 @@ function parseArgs(argv) {
     else if (arg === "--bot") options.bot = readValue() === "oracle" ? "oracle" : "player";
     else if (arg === "--oracle") options.bot = "oracle";
     else if (arg === "--mobile") options.mobile = true;
+    else if (arg === "--equipment") options.equipment = readValue().split(",").map((id) => id.trim()).filter(Boolean);
     else if (arg === "--quick") {
       options.games = 3;
       options.maxPitches = 140;
@@ -144,7 +146,7 @@ async function installSeededRandom(page, seed) {
   }, seed);
 }
 
-async function preparePage(browser, baseUrl, gameSeed, pitcherIndex, botProfile = "player", mobile = false) {
+async function preparePage(browser, baseUrl, gameSeed, pitcherIndex, botProfile = "player", mobile = false, equipment = []) {
   const viewport = mobile ? { width: 390, height: 844 } : { width: 1280, height: 900 };
   const page = await browser.newPage({
     viewport,
@@ -161,7 +163,7 @@ async function preparePage(browser, baseUrl, gameSeed, pitcherIndex, botProfile 
   await installSeededRandom(page, gameSeed);
   await page.goto(baseUrl, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => window.MountPsycho?.debugReady);
-  await page.evaluate(({ index, gameSeed, bot, mobile }) => {
+  await page.evaluate(({ index, gameSeed, bot, mobile, equipment }) => {
     const MP = window.MountPsycho;
     Object.keys(MP.GAME_TIMING || {}).forEach((key) => {
       if (typeof MP.GAME_TIMING[key] === "number") MP.GAME_TIMING[key] = 1;
@@ -175,10 +177,11 @@ async function preparePage(browser, baseUrl, gameSeed, pitcherIndex, botProfile 
       botConcept: bot === "player" ? "psych-command-anti-longball" : "oracle",
       deviceProfile: mobile ? "mobile-portrait-390x844" : "desktop"
     });
+    MP.debug.writeClubhouseProfile({ cp: 0, owned: equipment, equipped: equipment, equipmentLimit: 20 });
     MP.debug.startGame();
     const choices = MP.state.pitcherChoices || [];
     MP.debug.beginGameWithPitcher(choices[index % choices.length] || choices[0]);
-  }, { index: pitcherIndex, gameSeed, bot: botProfile, mobile });
+  }, { index: pitcherIndex, gameSeed, bot: botProfile, mobile, equipment });
   await settlePage(page);
   return { page, errors };
 }
@@ -471,6 +474,7 @@ function summarizeGame(index, seed, events, finalState, errors, transitions = []
     stageStars: stageResult.stars || 0,
     suspicionAverage: stageResult.suspicionAverage || 0,
     rival: finalState.rival,
+    runEquipment: finalState.runEquipment || [],
     ownedCards: balanceRun?.ownedCards || finalState.ownedCards || [],
     rewardActions,
     pitchCategoryUse,
@@ -492,7 +496,7 @@ function summarizeGame(index, seed, events, finalState, errors, transitions = []
 
 async function runGame(browser, baseUrl, options, gameIndex) {
   const gameSeed = options.seed + gameIndex * 7919;
-  const { page, errors } = await preparePage(browser, baseUrl, gameSeed, gameIndex, options.bot, options.mobile);
+  const { page, errors } = await preparePage(browser, baseUrl, gameSeed, gameIndex, options.bot, options.mobile, options.equipment);
   const events = [];
   const transitions = [];
   const rememberActions = (actions) => {
@@ -542,6 +546,7 @@ async function runGame(browser, baseUrl, options, gameIndex) {
       runs: state.runs,
       resultTitle: state.gameOver ? MP.debug.els.resultTitle?.textContent || "" : "",
       runStats: { ...(state.runStats || {}) },
+      runEquipment: [...(state.runEquipment || [])],
       currentStageResult: result,
       rival: {
         ...(result?.rivalGoalMet != null ? { goalMet: result.rivalGoalMet } : {}),
@@ -648,6 +653,7 @@ function markdownReport(summary, games) {
   lines.push("");
   lines.push(`- 판수: ${summary.games}`);
   lines.push(`- 봇 프로필: ${summary.options.bot || "player"}`);
+  lines.push(`- 장비: ${(summary.options.equipment || []).join(", ") || "무장비"}`);
   lines.push(`- 시드: ${summary.options.seed}`);
   lines.push(`- 판당 최대 투구 수: ${summary.options.maxPitches}`);
   lines.push(`- 최종 클리어율: ${percent(summary.completeRate)}`);
