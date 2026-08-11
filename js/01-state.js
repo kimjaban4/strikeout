@@ -114,7 +114,9 @@ MP.gameOverTimer = null;
 MP.els = {
   newGameButton: document.querySelector("#newGameButton"),
   bgmToggle: document.querySelector("#bgmToggle"),
+  sfxToggle: document.querySelector("#sfxToggle"),
   mobileMenuBgm: document.querySelector("[data-mobile-menu-bgm]"),
+  mobileMenuSfx: document.querySelector("[data-mobile-menu-sfx]"),
   nextBatterButton: document.querySelector("#nextBatterButton"),
   inningText: document.querySelector("#inningText"),
   runsText: document.querySelector("#runsText"),

@@ -513,6 +513,7 @@ const audioPaths = {
 const audioState = {
   unlocked: false,
   muted: false,
+  sfxMuted: false,
   bgm: null,
   bgmTimer: null,
   effects: {},
@@ -1251,7 +1252,9 @@ let gameOverTimer = null;
 const els = {
   newGameButton: document.querySelector("#newGameButton"),
   bgmToggle: document.querySelector("#bgmToggle"),
+  sfxToggle: document.querySelector("#sfxToggle"),
   mobileMenuBgm: document.querySelector("[data-mobile-menu-bgm]"),
+  mobileMenuSfx: document.querySelector("[data-mobile-menu-sfx]"),
   nextBatterButton: document.querySelector("#nextBatterButton"),
   inningText: document.querySelector("#inningText"),
   runsText: document.querySelector("#runsText"),
@@ -1455,6 +1458,7 @@ const courseZones = {
 const RUN_SAVE_KEY = "mount-psycho-run-v1";
 const RUN_SAVE_VERSION = 1;
 const CLUBHOUSE_KEY = "mount-psycho-clubhouse-v1";
+const AUDIO_SETTINGS_KEY = "mount-psycho-audio-v1";
 const CLUBHOUSE_VERSION = 1;
 const EQUIPMENT_LIMITS = [5, 9, 13, 17, 20];
 const equipmentConflicts = {
@@ -1623,6 +1627,38 @@ function startBgm() {
   }
 }
 
+function saveAudioSettings() {
+  try {
+    window.localStorage.setItem(AUDIO_SETTINGS_KEY, JSON.stringify({ bgmMuted: audioState.muted, sfxMuted: audioState.sfxMuted }));
+  } catch (error) {
+    console.warn("[audio] 설정을 저장하지 못했습니다.", error);
+  }
+}
+
+function loadAudioSettings() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(AUDIO_SETTINGS_KEY) || "null");
+    audioState.muted = saved?.bgmMuted === true;
+    audioState.sfxMuted = saved?.sfxMuted === true;
+  } catch (error) {
+    console.warn("[audio] 저장된 설정을 읽지 못했습니다.", error);
+  }
+  updateAudioToggles();
+}
+
+function updateSfxToggle() {
+  if (els.sfxToggle) {
+    els.sfxToggle.classList.toggle("off", audioState.sfxMuted);
+    els.sfxToggle.setAttribute("aria-pressed", String(audioState.sfxMuted));
+    els.sfxToggle.textContent = audioState.sfxMuted ? "효과음 OFF" : "효과음";
+    els.sfxToggle.title = audioState.sfxMuted ? "효과음 켜기" : "효과음 끄기";
+  }
+  if (els.mobileMenuSfx) {
+    els.mobileMenuSfx.setAttribute("aria-pressed", String(!audioState.sfxMuted));
+    els.mobileMenuSfx.textContent = audioState.sfxMuted ? "효과음 켜기" : "효과음 끄기";
+  }
+}
+
 function updateBgmToggle() {
   if (els.bgmToggle) {
     els.bgmToggle.classList.toggle("off", audioState.muted);
@@ -1636,6 +1672,11 @@ function updateBgmToggle() {
   }
 }
 
+function updateAudioToggles() {
+  updateBgmToggle();
+  updateSfxToggle();
+}
+
 function toggleBgm() {
   audioState.muted = !audioState.muted;
   const bgm = getAudio("bgm");
@@ -1647,7 +1688,14 @@ function toggleBgm() {
       startBgm();
     }
   }
-  updateBgmToggle();
+  saveAudioSettings();
+  updateAudioToggles();
+}
+
+function toggleSfx() {
+  audioState.sfxMuted = !audioState.sfxMuted;
+  saveAudioSettings();
+  updateAudioToggles();
 }
 
 function pickEffectPath(name) {
@@ -1661,6 +1709,7 @@ function pickEffectPath(name) {
 }
 
 function playEffect(name) {
+  if (audioState.sfxMuted) return;
   const source = pickEffectPath(name);
   const audio = getAudio(name, source);
   if (!audio || !audioState.unlocked) return;
@@ -6155,9 +6204,13 @@ function settleRunCp(won = false) {
 }
 
 function abandonRunAndStartGame() {
-  if (state.pitcher && !state.gameOver && !state.pendingGameOver) settleRunCp(false);
+  if (state.pitcher && !state.gameOver && !state.pendingGameOver) {
+    if (!window.confirm("현재 RUN을 포기하고 새 RUN을 시작하시겠습니까?")) return false;
+    settleRunCp(false);
+  }
   clearRunCheckpoint();
   startGame();
+  return true;
 }
 
 function hideRunOverlaysForRestore() {
@@ -6261,7 +6314,7 @@ function returnToTitleScreen() {
 }
 
 function openMobileMenu() {
-  updateBgmToggle();
+  updateAudioToggles();
   if (els.mobileMenuOverlay) els.mobileMenuOverlay.hidden = false;
   els.mobileNewGameButton?.setAttribute("aria-expanded", "true");
 }
@@ -14035,6 +14088,10 @@ function bindUiEvents() {
     event.stopPropagation();
     toggleBgm();
   });
+  els.sfxToggle?.addEventListener("click", (event) => {
+    event.stopPropagation();
+    toggleSfx();
+  });
   els.restartButton.addEventListener("click", startGame);
   els.resultClubhouseButton?.addEventListener("click", openClubhouse);
   els.clubhouseOverlay?.addEventListener("click", (event) => {
@@ -14104,6 +14161,11 @@ function bindUiEvents() {
     if (event.target.closest("[data-mobile-menu-bgm]")) {
       event.preventDefault();
       toggleBgm();
+      return;
+    }
+    if (event.target.closest("[data-mobile-menu-sfx]")) {
+      event.preventDefault();
+      toggleSfx();
     }
   });
   els.mobileThrowButton?.addEventListener("pointerdown", (event) => {
@@ -14632,5 +14694,6 @@ function setupTestConsoleBridge() {
 
 setupTestConsoleBridge();
 
+loadAudioSettings();
 bindUiEvents();
 showTitleScreen();

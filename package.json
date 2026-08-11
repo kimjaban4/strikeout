@@ -6,6 +6,8 @@
     "split:js": "node tools/split-game-modules.mjs",
     "check:structure": "node tools/check-project-structure.mjs",
     "build:deploy": "node tools/build-deploy.mjs",
+    "android:sync": "node tools/build-android-web.mjs && cap sync android",
+    "android:open": "cap open android",
     "build:pages": "node tools/build-pages.mjs",
     "check:deploy": "node tools/check-deploy-sync.mjs",
     "check:pages": "node tools/check-pages.mjs",
@@ -21,6 +23,11 @@
     "test:smoke:ui": "playwright test --ui"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.0",
     "@playwright/test": "^1.52.0"
+  },
+  "dependencies": {
+    "@capacitor/android": "^8.5.0",
+    "@capacitor/core": "^8.5.0"
   }
 }

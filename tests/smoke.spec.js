@@ -4,6 +4,7 @@ async function startFromTitle(page) {
   await page.goto("/");
   await expect(page.locator("#titleOverlay")).toBeVisible();
   await expect(page.locator("#titleStartButton")).toContainText("새 RUN");
+  await expect(page.locator(".title-privacy-link")).toHaveAttribute("href", "docs/privacy-policy.html");
   await expect(page.locator(".title-screen-actions > button").first()).toHaveAttribute("id", "titleStartButton");
   await page.locator("#titleStartButton").click();
   await expect(page.locator("#titleOverlay")).toBeHidden();
@@ -188,6 +189,7 @@ test("mobile header separates count strip from mission and opens menu", async ({
 
   await page.locator("#mobileNewGameButton").click();
   await expect(page.locator("#mobileMenuPanel")).toBeVisible();
+  const sfxButton = page.locator("[data-mobile-menu-sfx]");
   const bgmButton = page.locator("[data-mobile-menu-bgm]");
   await expect(bgmButton).toHaveText("BGM 끄기");
   await bgmButton.click();
@@ -196,8 +198,14 @@ test("mobile header separates count strip from mission and opens menu", async ({
   await bgmButton.click();
   await expect(bgmButton).toHaveText("BGM 끄기");
   await expect(bgmButton).toHaveAttribute("aria-pressed", "true");
+  await expect(sfxButton).toHaveText("효과음 끄기");
+  await sfxButton.click();
+  await expect(sfxButton).toHaveText("효과음 켜기");
+  expect(await page.evaluate(() => JSON.parse(localStorage.getItem("mount-psycho-audio-v1")).sfxMuted)).toBe(true);
+  await sfxButton.click();
   await expect(page.locator("[data-mobile-menu-new-game]")).toContainText("새게임 시작");
 
+  page.once("dialog", (dialog) => dialog.accept());
   await page.locator("[data-mobile-menu-new-game]").click();
   await expect(page.locator("#mobileMenuPanel")).toBeHidden();
   await expect(page.locator("#pitcherSelectOverlay")).toBeVisible();

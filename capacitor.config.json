@@ -1,0 +1,8 @@
+{
+  "appId": "io.github.kimjaban4.strikeout",
+  "appName": "마운드 심리전",
+  "webDir": "_android_web",
+  "server": {
+    "androidScheme": "https"
+  }
+}

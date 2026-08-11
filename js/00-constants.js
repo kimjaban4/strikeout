@@ -517,6 +517,7 @@ MP.audioPaths = {
 MP.audioState = {
   unlocked: false,
   muted: false,
+  sfxMuted: false,
   bgm: null,
   bgmTimer: null,
   effects: {},

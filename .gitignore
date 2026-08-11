@@ -2,8 +2,10 @@ node_modules/
 test-results/
 _site/
 _site-test/
+_android_web/
 backup/
 balance-reports/
+inst_user_settings.tmp
 *.log
 styles.consolidated.css
 

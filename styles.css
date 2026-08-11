@@ -600,6 +600,10 @@ h2 {
   border-color: #e4919e !important;
 }
 
+.bgm-toggle.sfx-toggle {
+  top: calc(50% + 36px) !important;
+}
+
 .batter-card .batter-type,
 .batter-card.compact .batter-type,
 .batter-card.tag-open .batter-type {
@@ -8354,6 +8358,7 @@ body:has(#titleOverlay:not([hidden])) .bgm-toggle {
 #titleStartButton { order: 2; }
 .title-screen-secondary-actions { order: 3; }
 .title-screen-season { order: 4; }
+.title-privacy-link { order: 5; }
 
 .title-screen-actions:has(#titleContinueButton:not([hidden])) #titleStartButton {
   background: var(--comic-paper);
@@ -8380,6 +8385,15 @@ body:has(#titleOverlay:not([hidden])) .bgm-toggle {
   letter-spacing: 2px;
   text-align: center;
 }
+
+.title-privacy-link {
+  color: var(--comic-muted);
+  font-size: 11px;
+  font-weight: 800;
+  text-underline-offset: 3px;
+}
+
+.title-privacy-link:focus-visible { outline: 3px solid var(--comic-yellow); }
 
 @media (max-height: 700px) {
   .title-screen-inner { gap: 14px; }
