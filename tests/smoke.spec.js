@@ -1083,6 +1083,11 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1, { timeout: 9000 });
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(2, { timeout: 9000 });
   await expect(page.locator("#rewardChoiceList .reward-choice-card--core .core-evo-name")).toHaveCSS("color", "rgb(255, 203, 66)");
+  const selectedReward = page.locator("#rewardChoiceList .reward-choice-card").first();
+  await selectedReward.click();
+  await expect(selectedReward).toHaveAttribute("aria-pressed", "true");
+  await expect(selectedReward).toHaveCSS("background-color", "rgb(239, 65, 44)");
+  await expect(page.locator("#rewardChoiceConfirm")).toBeEnabled();
   const rewardMotion = await page.locator("#rewardChoiceList .reward-choice-card").evaluateAll((cards) => cards.map((card) => ({
     upgraded: card.classList.contains("is-upgraded-by-performance"),
     animated: card.dataset.upgradeAnimated === "true"

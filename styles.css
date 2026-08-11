@@ -8787,3 +8787,35 @@ body:has(#titleOverlay:not([hidden])) .bgm-toggle {
     font-weight: 900;
   }
 }
+
+/* Stage reward selection: a full color inversion, not only a border change. */
+.reward-overlay .reward-choice-card.is-selected,
+.reward-overlay .reward-choice-card.core-evolution-card.is-selected {
+  border-color: var(--comic-ink, #17120e) !important;
+  background: var(--comic-red, #ef412c) !important;
+  box-shadow: 6px 6px 0 var(--comic-yellow, #ffcb42) !important;
+  color: #fff8e7 !important;
+  transform: translate(-2px, -2px);
+}
+
+.reward-overlay .reward-choice-card.is-selected .core-evo-name,
+.reward-overlay .reward-choice-card.is-selected .core-evo-sub,
+.reward-overlay .reward-choice-card.is-selected .core-evo-value,
+.reward-overlay .reward-choice-card.is-selected .reward-card-foot,
+.reward-overlay .reward-choice-card.is-selected small {
+  color: #fff8e7 !important;
+}
+
+.reward-overlay .reward-choice-card.is-selected .core-evo-label {
+  color: var(--comic-yellow, #ffcb42) !important;
+}
+
+.reward-overlay .reward-choice-card.is-selected .reward-rarity-badge {
+  border-color: var(--comic-ink, #17120e) !important;
+  background: var(--comic-yellow, #ffcb42) !important;
+  color: var(--comic-ink, #17120e) !important;
+}
+
+.reward-overlay .reward-choice-card.is-selected .core-evo-row {
+  border-color: rgba(255, 248, 231, 0.4) !important;
+}
