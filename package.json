@@ -9,6 +9,7 @@
     "android:sync": "node tools/build-android-web.mjs && cap sync android",
     "android:open": "cap open android",
     "build:pages": "node tools/build-pages.mjs",
+    "check:play": "node tools/check-play-release.mjs",
     "check:deploy": "node tools/check-deploy-sync.mjs",
     "check:pages": "node tools/check-pages.mjs",
     "verify": "npm run build:deploy && npm run test:smoke",

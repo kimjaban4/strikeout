@@ -15,7 +15,7 @@
 | 카테고리 | 스포츠 | 확정 |
 | 지원 이메일 | 미정 | 필수 입력 |
 | 웹사이트 | `https://kimjaban4.github.io/strikeout/` | 공개 응답 확인 필요 |
-| 개인정보처리방침 | `https://kimjaban4.github.io/strikeout/docs/privacy-policy.html` | 공개 응답 확인 필요 |
+| 개인정보처리방침 | `https://kimjaban4.github.io/strikeout/docs/privacy-policy.html` | `200` 응답 및 본문 확인 완료 |
 
 패키지 ID는 Play Console에 첫 AAB를 올린 뒤 변경할 수 없으므로 최종 확인 전 앱을 생성하지 않습니다.
 
@@ -63,9 +63,9 @@
 
 | 자료 | 필수 규격 | 상태 |
 | --- | --- | --- |
-| 스토어 아이콘 | 512×512, 32비트 PNG, 알파 허용, 1MB 이하 | 제작 필요 |
-| 기능 그래픽 | 1024×500, 24비트 PNG 또는 JPG, 알파 없음 | 제작 필요 |
-| 휴대전화 스크린샷 | PNG/JPG, 각 변 320~3840px, 긴 변은 짧은 변의 2배 이하 | 실제 Android 캡처 필요 |
+| 스토어 아이콘 | 512×512, 32비트 PNG, 알파 허용, 1MB 이하 | `store-assets/google-play/icon-512.png` 검증 완료 |
+| 기능 그래픽 | 1024×500, 24비트 PNG 또는 JPG, 알파 없음 | `store-assets/google-play/feature-graphic-1024x500.png` 검증 완료 |
+| 휴대전화 스크린샷 | PNG/JPG, 각 변 320~3840px, 긴 변은 짧은 변의 2배 이하 | 1080×1920 실제 게임 화면 4장 검증 완료 |
 
 게임 추천 영역 노출을 고려해 실제 앱 화면의 1080×1920 세로 스크린샷 4장을 준비합니다.
 
