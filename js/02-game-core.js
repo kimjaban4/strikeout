@@ -5513,7 +5513,7 @@ function cancelReleaseTiming({ renderAfter = true, keepResult = false } = {}) {
 
 function modelReleaseForBot(pitch, plannedCourse, profile = "player") {
   const challenge = buildReleaseTimingChallenge(pitch, plannedCourse);
-  const skillBias = profile === "oracle" ? 0 : profile === "player-smart" ? 0.045 : 0.075;
+  const skillBias = profile === "oracle" ? 0 : profile === "player-smart" ? 0.045 : profile === "novice" ? 0.11 : 0.075;
   const pressureSpread = clamp((challenge.pressure || 0) / 780, 0, 0.1);
   const controlHelp = clamp((challenge.control - 55) / 2200, -0.025, 0.025);
   const missSide = chance(0.5) ? -1 : 1;

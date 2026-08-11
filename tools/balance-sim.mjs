@@ -49,7 +49,10 @@ function parseArgs(argv) {
     else if (arg === "--out-dir") options.outDir = readValue() || DEFAULTS.outDir;
     else if (arg === "--runs-dir") options.runsDir = readValue() || DEFAULTS.runsDir;
     else if (arg === "--full-log") options.fullLog = true;
-    else if (arg === "--bot") options.bot = readValue() === "oracle" ? "oracle" : "player";
+    else if (arg === "--bot") {
+      const value = readValue();
+      options.bot = ["novice", "oracle"].includes(value) ? value : "player";
+    }
     else if (arg === "--oracle") options.bot = "oracle";
     else if (arg === "--mobile") options.mobile = true;
     else if (arg === "--equipment") options.equipment = readValue().split(",").map((id) => id.trim()).filter(Boolean);
@@ -292,12 +295,12 @@ async function throwAutoPitch(page, botProfile = "player") {
     const history = state.atBat.choiceHistory || [];
     const last = history[history.length - 1];
     const recent = history.slice(-2);
-    const playerCtx = bot === "player" ? debug.getPlayerVisiblePitchContext?.() || null : null;
+    const playerCtx = bot !== "oracle" ? debug.getPlayerVisiblePitchContext?.() || null : null;
     const impressionId =
       bot === "player"
         ? playerCtx?.impressionHint || null
-        : state.atBat.batterMind?.lastImpression?.id || null;
-    const target = bot === "player" ? playerCtx?.guessedTarget || "fast" : state.atBat.target;
+        : bot === "oracle" ? state.atBat.batterMind?.lastImpression?.id || null : null;
+    const target = bot === "player" ? playerCtx?.guessedTarget || "fast" : bot === "oracle" ? state.atBat.target : null;
     const recommendedCategory = playerCtx?.recommendation?.recommendedCategory || null;
     const suspicion = playerCtx?.suspicion ?? Math.round(state.atBat?.suspicion || 0);
     const byCategory = (category) => repertoire.filter((pitch) => pitch.category === category);
@@ -314,7 +317,16 @@ async function throwAutoPitch(page, botProfile = "player") {
     let ballPlan = "";
 
     // ponytail: reward sampling needs a strike-throwing control group; player bot keeps its normal decisions.
-    if (bot === "oracle") {
+    if (bot === "novice") {
+      pitch = repertoire[Math.floor(Math.random() * repertoire.length)] || repertoire[0];
+      zone = [1, 3, 5, 7, 9][Math.floor(Math.random() * 5)];
+      if (state.strikes >= 2 && state.balls < 3 && Math.random() < 0.2) {
+        intent = "ball";
+        targetRow = 3;
+        targetCol = 2;
+        ballPlan = "fishing";
+      }
+    } else if (bot === "oracle") {
       pitch = bestControl(repertoire);
       zone = [1, 3, 7, 9][Math.floor(Math.random() * 4)];
     } else if (state.balls >= 3) {
