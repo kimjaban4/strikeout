@@ -902,6 +902,8 @@ function rewardCardControlBonus(pitch, aimed, intent) {
   }
   if (pitch.category === "fast") bonus += dugoutEffectValue("fastControl");
   if (pitch.category !== "fast") bonus += dugoutEffectValue("breakingQuality");
+  if (aimed.row === 2) bonus += dugoutEffectValue("lowCourseControl");
+  if (pitch.category !== "fast" && state.bases.some(Boolean)) bonus += dugoutEffectValue("runnerBreakingQuality");
   const combo = state.comboRuntime?.setup || {};
   const edge = aimed.inZone && (aimed.col === 0 || aimed.col === 2 || aimed.row === 0 || aimed.row === 2);
   if (hasRewardCard("TC02") && combo.activeGroundOutNext && edge && intent === "strike") bonus += 4;
@@ -1044,12 +1046,32 @@ function rewardCardPitchEffect(pitch, location, plannedCourse, pattern, batter) 
     effect.contactQuality -= 4;
   }
   if (pitch.category !== "fast") effect.quality += dugoutEffectValue("breakingQuality");
+  if (pitch.category !== "fast" && state.bases.some(Boolean)) effect.quality += dugoutEffectValue("runnerBreakingQuality");
+  if (height === "low" && dugoutEffectValue("lowLongHitGuard")) {
+    effect.contactQuality -= 5 * dugoutEffectValue("lowLongHitGuard");
+  }
+  if (height === "low" && dugoutEffectValue("lowGroundBall")) {
+    effect.contactQuality -= 4 * dugoutEffectValue("lowGroundBall");
+    effect.doublePlayBonus += 0.06 * dugoutEffectValue("lowGroundBall");
+  }
+  if (height === "low" && !location.inZone && dugoutEffectValue("lowBallChase")) {
+    effect.swing += dugoutEffectValue("lowBallChase");
+    effect.chase += dugoutEffectValue("lowBallChase");
+    effect.contact -= dugoutEffectValue("lowBallChase") * 0.6;
+  }
+  if (side === "outside" && impression?.id === "inside_fast" && dugoutEffectValue("insideFastOutsideBoost")) {
+    effect.quality += 3 * dugoutEffectValue("insideFastOutsideBoost");
+    effect.contactQuality -= 4 * dugoutEffectValue("insideFastOutsideBoost");
+  }
   if (dugoutEffectValue("firstStrikePressure") && (state.atBat?.pitchHistory?.length || 0) <= 1 && location.inZone) {
     effect.contactQuality -= 2 * dugoutEffectValue("firstStrikePressure");
   }
-  if (dugoutEffectValue("longHitGuard")) {
-    effect.contactQuality -= 5;
-    effect.contact += dugoutEffectValue("singleRisk") || 0.02;
+  if (dugoutEffectValue("longHitGuard")) effect.contactQuality -= 5 * dugoutEffectValue("longHitGuard");
+  effect.contact += dugoutEffectValue("singleRisk");
+  effect.contactQuality += dugoutEffectValue("singleRisk") * 20;
+  if ((batter?.isRival || batter?.isBoss) && dugoutEffectValue("rivalRisk")) {
+    effect.contact += 0.04 * dugoutEffectValue("rivalRisk");
+    effect.contactQuality += 6 * dugoutEffectValue("rivalRisk");
   }
   return effect;
 }
@@ -5390,10 +5412,11 @@ function neutralReleaseResult() {
 
 function buildReleaseTimingChallenge(pitch, plannedCourse) {
   const control = pitcherEffectiveStat("제구");
-  const mental = state.pitcher.stats.멘탈 ?? 60;
+  const mental = (state.pitcher.stats.멘탈 ?? 60) + dugoutEffectValue("mentalStability");
   const burden = MP.getBurdenModifiers ? MP.getBurdenModifiers(pitch) : null;
   const runnerPressure = releasePressureBreakdown();
-  const burdenPressure = Math.max(0, burden?.commandPenalty || 0) * 1.8 + Math.max(0, pitch.cost || 0) * 1.7;
+  const burdenControl = dugoutEffectMultiplier("burdenControl");
+  const burdenPressure = (Math.max(0, burden?.commandPenalty || 0) * 1.8 + Math.max(0, pitch.cost || 0) * 1.7) * burdenControl;
   const mentalPressure = Math.max(0, 70 - mental) * 0.38;
   const pressureReasons = runnerPressure.reasons.slice(0, 4);
   if (mentalPressure >= 4) pressureReasons.push("멘탈 흔들림");
@@ -6361,12 +6384,17 @@ function applyMindGameResult(result, pattern) {
 
 function handednessMatchupEffect(pitcher = state.pitcher, batter = currentBatter()) {
   const key = `${pitcherThrows(pitcher)}${batterBats(batter)}`;
-  return {
+  const effect = {
     RR: { contact: -0.015, contactQuality: -2, chase: 0.005 },
     RL: { contact: 0.02, contactQuality: 2, chase: -0.005 },
     LL: { contact: -0.035, contactQuality: -4, chase: 0.015 },
     LR: { contact: 0.005, contactQuality: 1, chase: 0 }
   }[key];
+  const sameHand = key[0] === key[1];
+  const scale = sameHand
+    ? 1 + Math.max(0, dugoutEffectValue("sameHandEdge")) * 0.25
+    : Math.max(0, 1 - Math.max(0, dugoutEffectValue("oppositeHandGuard")) * 0.5);
+  return Object.fromEntries(Object.entries(effect).map(([name, value]) => [name, value * scale]));
 }
 
 function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {}) {
@@ -6397,7 +6425,7 @@ function buildPitchResolutionContext(pitch, batter, plannedCourse, pattern = {})
       tagEffect.quality +
       impressionEffect.quality +
       cardEffect.quality -
-      burden.commandPenalty,
+      burden.commandPenalty * dugoutEffectMultiplier("burdenControl"),
     20,
     99
   );
@@ -7810,7 +7838,7 @@ const DUGOUT_EVENTS = [
         label: "호흡을 늦추고 낮게 시작한다",
         correct: true,
         resultText: "호흡이 돌아왔습니다.\n낮은 코스와 초구 압박이 살아납니다.",
-        effects: { breakingQuality: 3, firstStrikePressure: 1 }
+        effects: { mentalStability: 8, firstStrikePressure: 1 }
       },
       {
         label: "바로 던져 흐름을 끊는다",
@@ -7879,7 +7907,7 @@ const DUGOUT_EVENTS = [
         label: "낮은 코너를 계속 찌른다",
         correct: true,
         resultText: "주심 손이 올라갑니다.\n낮은 코스 제구와 성과 흡수가 오릅니다.",
-        effects: { breakingQuality: 4, courseReadBoost: 0.25 }
+        effects: { lowCourseControl: 4, courseReadBoost: 0.25 }
       },
       {
         label: "높은 공으로 존을 확인한다",
@@ -7902,7 +7930,7 @@ const DUGOUT_EVENTS = [
         label: "몸쪽 빠른 공으로 세운다",
         correct: true,
         resultText: "타자가 몸을 뺍니다.\n바깥쪽 승부가 크게 열립니다.",
-        effects: { fastControl: 5, impressionBonus: 0.14 }
+        effects: { fastControl: 5, insideFastOutsideBoost: 1 }
       },
       {
         label: "바깥쪽 변화구부터 던진다",
@@ -7948,7 +7976,7 @@ const DUGOUT_EVENTS = [
         label: "제구 쉬운 구종으로 시작한다",
         correct: true,
         resultText: "손끝이 안정됩니다.\n제구 부담이 줄어듭니다.",
-        effects: { burdenControl: 0.85, fastControl: 3 }
+        effects: { burdenControl: 0.85, fastControl: 3, mentalStability: 4 }
       },
       {
         label: "낙차 큰 공부터 던진다",
@@ -7971,7 +7999,7 @@ const DUGOUT_EVENTS = [
         label: "낮은 공으로 굴린다",
         correct: true,
         resultText: "땅볼 루트가 열립니다.\n병살과 범타 보상이 크게 오릅니다.",
-        effects: { breakingQuality: 4, longHitGuard: 1 }
+        effects: { lowGroundBall: 1 }
       },
       {
         label: "높은 공으로 뜬공을 노린다",
@@ -7994,7 +8022,7 @@ const DUGOUT_EVENTS = [
         label: "견제 후 변화구",
         correct: true,
         resultText: "주자가 묶입니다.\n타자 타이밍도 늦습니다.",
-        effects: { breakingQuality: 4, slowAfterFastBoost: 0.12 }
+        effects: { runnerBreakingQuality: 4, slowAfterFastBoost: 0.12 }
       },
       {
         label: "바로 빠른 공 승부",
@@ -8017,7 +8045,7 @@ const DUGOUT_EVENTS = [
         label: "낮은 유인구를 믿는다",
         correct: true,
         resultText: "포수가 막아냈고 배트가 따라 나옵니다.\n결정구 보상이 크게 오릅니다.",
-        effects: { breakingQuality: 5, slowAfterFastBoost: 0.12 }
+        effects: { lowBallChase: 0.12, slowAfterFastBoost: 0.12 }
       },
       {
         label: "안전하게 존 안에 넣는다",
@@ -8086,7 +8114,7 @@ const DUGOUT_EVENTS = [
         label: "낮게 눌러 장타를 지운다",
         correct: true,
         resultText: "큰 타구를 막습니다.\n외야 깊게 배치 보상이 붙습니다.",
-        effects: { longHitGuard: 1, breakingQuality: 4 }
+        effects: { lowLongHitGuard: 1, lowCourseControl: 4 }
       },
       {
         label: "헛스윙만 노리고 높게 간다",
@@ -8102,20 +8130,20 @@ const DUGOUT_EVENTS = [
     category: "분석",
     strength: "일반",
     performanceScore: 2,
-    title: "대타 준비",
-    desc: "상대 벤치가 대타 가능성을 열어 둡니다. 좌우 상성보다 초구 반응이 중요합니다.",
+    title: "대타 상성 준비",
+    desc: "상대 벤치가 대타 카드를 준비합니다. 같은 손 타자를 더 강하게 누를지, 반대 손 약점을 줄일지 정해야 합니다.",
     choices: [
       {
-        label: "초구 반응을 먼저 본다",
+        label: "같은 손 타자를 더 강하게 누른다",
         correct: true,
-        resultText: "대타의 첫 반응을 잡습니다.\n약점 단서가 열립니다.",
-        effects: { candidateNextFirstWeakness: 2, reactionCheckBoost: 0.25 }
+        resultText: "상성 우위를 밀어붙입니다.\n같은 손 타자 상대 효과가 강해집니다.",
+        effects: { sameHandEdge: 1 }
       },
       {
-        label: "상성만 보고 밀어붙인다",
+        label: "반대 손 타자 약점을 줄인다",
         correct: false,
-        resultText: "대타가 준비한 공입니다.\n정타 위험이 오릅니다.",
-        effects: { singleRisk: 0.1, firstBatterSuspicion: 6 }
+        resultText: "불리한 상성을 안전하게 줄입니다.\n반대 손 타자 페널티가 절반으로 줄어듭니다.",
+        effects: { oppositeHandGuard: 1 }
       }
     ]
   },
@@ -8155,7 +8183,7 @@ const DUGOUT_EVENTS = [
         label: "낮은 공으로 뜬공을 줄인다",
         correct: true,
         resultText: "뜬공을 줄였습니다.\n장타 억제가 붙습니다.",
-        effects: { longHitGuard: 1, breakingQuality: 4 }
+        effects: { lowLongHitGuard: 1, lowCourseControl: 4 }
       },
       {
         label: "높은 공으로 힘을 겨룬다",
@@ -8201,7 +8229,7 @@ const DUGOUT_EVENTS = [
         label: "땅볼 수비로 통일한다",
         correct: true,
         resultText: "수비가 맞춰 섭니다.\n범타 보상이 오릅니다.",
-        effects: { longHitGuard: 1, suspicionMult: 0.95 }
+        effects: { lowGroundBall: 1, suspicionMult: 0.95 }
       },
       {
         label: "각자 판단에 맡긴다",
@@ -8223,8 +8251,11 @@ const DUGOUT_EVENTS = [
       {
         label: "그냥 믿고 낮게 간다",
         correct: true,
+        successChance: 0.5,
         resultText: "이상하게 먹힙니다.\n낮은 코스 성과 흡수가 크게 오릅니다.",
-        effects: { breakingQuality: 5, longHitGuard: 1 }
+        failureText: "테이프가 오히려 손끝을 방해합니다.\n정타 위험이 오릅니다.",
+        effects: { lowCourseControl: 5, lowLongHitGuard: 1 },
+        failureEffects: { singleRisk: 0.1 }
       },
       {
         label: "미신은 치우고 평소대로 간다",
@@ -8270,7 +8301,7 @@ const DUGOUT_EVENTS = [
         label: "그 기세로 초구부터 간다",
         correct: true,
         resultText: "집중력이 확 올라옵니다.\n초구 압박과 성과 흡수가 오릅니다.",
-        effects: { firstStrikePressure: 2 }
+        effects: { firstStrikePressure: 2, mentalStability: 6 }
       },
       {
         label: "물부터 마시고 진정한다",
@@ -8315,8 +8346,11 @@ const DUGOUT_EVENTS = [
       {
         label: "동전 운에 맡긴다",
         correct: true,
+        successChance: 0.5,
         resultText: "운이 붙었습니다.\n이번 이닝 성과 흡수가 크게 오릅니다.",
-        effects: { firstStrikePressure: 1, slowAfterFastBoost: 0.12, fastControl: 4 }
+        failureText: "동전이 작전을 망쳤습니다.\n간파도와 정타 위험이 오릅니다.",
+        effects: { firstStrikePressure: 1, slowAfterFastBoost: 0.12, fastControl: 4 },
+        failureEffects: { firstBatterSuspicion: 10, singleRisk: 0.12 }
       },
       {
         label: "작전표대로 간다",
@@ -8333,23 +8367,28 @@ function generateDugoutReadEventChoices(options = {}) {
   if (!force && Math.random() > DUGOUT_EVENT_CHANCE) return [];
   const poolName = Math.random() < DUGOUT_WEIRD_EVENT_CHANCE ? "weird" : "base";
   const pool = DUGOUT_EVENTS.filter((event) => event.pool === poolName);
-  const selected = pick(pool.length ? pool : DUGOUT_EVENTS);
+  const selected = options.eventId
+    ? DUGOUT_EVENTS.find((event) => event.id === options.eventId)
+    : pick(pool.length ? pool : DUGOUT_EVENTS);
   if (!selected) return [];
-  return selected.choices.map((choice, index) => ({
-    id: `${selected.id}_${index}`,
-    dugoutEventId: selected.id,
-    category: selected.category || "벤치",
-    title: choice.label,
-    desc: dugoutEventDescription(selected),
-    hint: "",
-    resultText: choice.resultText,
-    correct: !!choice.correct,
-    strength: selected.strength || "일반",
-    pool: selected.pool || "base",
-    performanceScore: choice.correct ? selected.performanceScore || 2 : 0,
-    effects: choice.effects || {},
-    rarity: "common"
-  }));
+  return selected.choices.map((choice, index) => {
+    const correct = choice.successChance == null ? !!choice.correct : Math.random() < choice.successChance;
+    return {
+      id: `${selected.id}_${index}`,
+      dugoutEventId: selected.id,
+      category: selected.category || "벤치",
+      title: choice.label,
+      desc: dugoutEventDescription(selected),
+      hint: "",
+      resultText: correct ? choice.resultText : choice.failureText || choice.resultText,
+      correct,
+      strength: selected.strength || "일반",
+      pool: selected.pool || "base",
+      performanceScore: correct ? selected.performanceScore || 2 : 0,
+      effects: (correct ? choice.effects : choice.failureEffects || choice.effects) || {},
+      rarity: "common"
+    };
+  });
 }
 
 const DUGOUT_RARE_EFFECT_MULT = 1.35;
@@ -8393,7 +8432,10 @@ function dugoutEffectSummary(effects = {}, correct = false, performanceScore = 2
   const lines = [];
   if (effects.fastControl) lines.push(`강속구 제구 +${effects.fastControl}`);
   if (effects.breakingQuality) lines.push(`변화구 제구 +${effects.breakingQuality}`);
+  if (effects.lowCourseControl) lines.push(`낮은 코스 제구 +${effects.lowCourseControl}`);
+  if (effects.runnerBreakingQuality) lines.push(`주자 있을 때 변화구 제구 +${effects.runnerBreakingQuality}`);
   if (effects.burdenControl && effects.burdenControl < 1) lines.push(`제구 부담 -${Math.round((1 - effects.burdenControl) * 100)}%`);
+  if (effects.mentalStability) lines.push(`멘탈 안정 +${effects.mentalStability}`);
   if (effects.firstStrikePressure) lines.push(`초구 압박 +${effects.firstStrikePressure}`);
   if (effects.slowAfterFastBoost) lines.push(`완급 연결 +${Math.round(effects.slowAfterFastBoost * 100)}%`);
   if (effects.impressionBonus) lines.push(`직전 공 각인 +${Math.round(effects.impressionBonus * 100)}%`);
@@ -8403,6 +8445,13 @@ function dugoutEffectSummary(effects = {}, correct = false, performanceScore = 2
   if (effects.missionChoiceBonus) lines.push(`미션 보상 +${effects.missionChoiceBonus}장`);
   if (effects.rivalCoreChoiceBonus) lines.push(`위험 타자 보상 +${effects.rivalCoreChoiceBonus}장`);
   if (effects.longHitGuard) lines.push("외야 깊게 배치");
+  if (effects.lowLongHitGuard) lines.push("낮은 공 장타 억제");
+  if (effects.lowGroundBall) lines.push("낮은 공 땅볼 유도");
+  if (effects.lowBallChase) lines.push(`낮은 볼 유인 +${Math.round(effects.lowBallChase * 100)}%`);
+  if (effects.insideFastOutsideBoost) lines.push("몸쪽 빠른 공 뒤 바깥쪽 강화");
+  if (effects.sameHandEdge) lines.push("같은 손 상성 강화");
+  if (effects.oppositeHandGuard) lines.push("반대 손 불리함 감소");
+  if (effects.rivalRisk) lines.push("위험 타자 장타 위험 증가");
   if (effects.repeatSuspicionMult && effects.repeatSuspicionMult < 1) lines.push(`반복 노림 -${Math.round((1 - effects.repeatSuspicionMult) * 100)}%`);
   if (effects.suspicionMult && effects.suspicionMult < 1) lines.push(`간파도 -${Math.round((1 - effects.suspicionMult) * 100)}%`);
   if (effects.repeatSuspicionMult && effects.repeatSuspicionMult > 1) lines.push(`반복 노림 +${Math.round((effects.repeatSuspicionMult - 1) * 100)}%`);
@@ -12888,10 +12937,14 @@ MP.debug = {
   batterBats,
   horizontalCourseSide,
   handednessMatchupEffect,
+  rewardCardControlBonus,
+  rewardCardPitchEffect,
+  dugoutEffectSummary,
   ballDistanceEffect,
   isStrikeZonePoint,
   buildPitchResolutionContext,
   pitchSwingProbability,
+  resolvePitch,
   addOut,
   advanceStage,
   finishAtBat,

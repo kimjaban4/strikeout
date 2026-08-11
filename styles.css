@@ -7016,7 +7016,7 @@ button.card-toggle {
 
 /* Final polish: unified rewards, tags, mission overlay, stage alignment */
 .reward-choice-list.core-evolution-list {
-  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  grid-template-columns: 1fr !important;
 }
 
 .reward-choice-card.core-evolution-card {

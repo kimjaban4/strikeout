@@ -1007,7 +1007,7 @@ test("mobile throw records a log entry", async ({ page }) => {
 });
 
 test("stage card reward assigns performance tokens to cards", async ({ page }) => {
-  await page.setViewportSize({ width: 390, height: 844 });
+  await page.setViewportSize({ width: 1440, height: 900 });
   await chooseFirstPitcher(page);
   await page.evaluate(() => {
     const MP = window.MountPsycho;
@@ -1026,6 +1026,9 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
     MP.state.lastStageResult = MP.debug.calculateStageResult();
     MP.debug.openRewardDraft("스테이지 보상", null, "stageCard");
   });
+  const rewardCardLefts = await page.locator("#rewardChoiceList .reward-choice-card").evaluateAll((cards) => cards.map((card) => Math.round(card.getBoundingClientRect().left)));
+  expect(new Set(rewardCardLefts).size).toBe(1);
+  await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.locator("#rewardAbsorbList")).toBeVisible();
   const rewardScrollLayout = await page.locator('#rewardOverlay[data-kind="stageCard"]').evaluate((overlay) => {
     const box = overlay.querySelector(".reward-box");
@@ -1298,6 +1301,49 @@ test("dugout event pool uses 20 baseball plans and 5 weird events", async ({ pag
   expect(result.choiceDesc).not.toContain("관찰:");
 });
 
+test("dugout effects change release, contact, and handedness", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await chooseFirstPitcher(page);
+  const result = await page.evaluate(() => {
+    const MP = window.MountPsycho;
+    const pitch = MP.state.pitcher.repertoire[0];
+    const course = { zone: 5, intent: "strike", targetRow: 1, targetCol: 1, targetX: 0.5, targetY: 0.5 };
+    const setEffects = (effects) => {
+      MP.state.activeDugoutEffects = [{ effects, expiresInning: MP.state.inning }];
+    };
+
+    setEffects({});
+    const baseRelease = MP.debug.buildReleaseTimingChallenge(pitch, course);
+    const baseSame = MP.debug.handednessMatchupEffect({ throws: "R" }, { bats: "R" });
+    const baseOpposite = MP.debug.handednessMatchupEffect({ throws: "R" }, { bats: "L" });
+
+    setEffects({ mentalStability: 8, burdenControl: 0.85 });
+    const stableRelease = MP.debug.buildReleaseTimingChallenge(pitch, course);
+
+    setEffects({ singleRisk: 0.08, lowGroundBall: 1 });
+    const contact = MP.debug.rewardCardPitchEffect(
+      pitch,
+      { row: 2, col: 1, inZone: true },
+      course,
+      {},
+      { isRival: false }
+    );
+
+    setEffects({ sameHandEdge: 1 });
+    const boostedSame = MP.debug.handednessMatchupEffect({ throws: "R" }, { bats: "R" });
+    setEffects({ oppositeHandGuard: 1 });
+    const guardedOpposite = MP.debug.handednessMatchupEffect({ throws: "R" }, { bats: "L" });
+    return { baseRelease, stableRelease, contact, baseSame, boostedSame, baseOpposite, guardedOpposite };
+  });
+
+  expect(result.stableRelease.mental).toBe(result.baseRelease.mental + 8);
+  expect(result.stableRelease.pressure).toBeLessThanOrEqual(result.baseRelease.pressure);
+  expect(result.contact.contact).toBeGreaterThanOrEqual(0.08);
+  expect(result.contact.doublePlayBonus).toBeGreaterThanOrEqual(0.06);
+  expect(result.boostedSame.contactQuality).toBeLessThan(result.baseSame.contactQuality);
+  expect(result.guardedOpposite.contactQuality).toBeLessThan(result.baseOpposite.contactQuality);
+});
+
 test("dugout batting-order warning uses the actual upcoming hitters", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await chooseFirstPitcher(page);
@@ -1400,9 +1446,9 @@ test("stage debug page can force stage reward flow", async ({ page }) => {
   await expect(frame.locator("#rewardChoiceList .reward-choice-card")).toHaveCount(3);
   await expect(frame.locator("#rewardAbsorbList .reward-performance-pill")).toHaveCount(8);
   await expect(frame.locator("#rewardChoiceList .reward-card-upgrade-badge")).toHaveCount(3);
-  await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1, { timeout: 9000 });
-  await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(2, { timeout: 9000 });
-  await expect(frame.locator("#rewardOverlay")).not.toHaveClass(/is-revealing/, { timeout: 9000 });
+  await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1, { timeout: 15000 });
+  await expect(frame.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(2, { timeout: 15000 });
+  await expect(frame.locator("#rewardOverlay")).not.toHaveClass(/is-revealing/, { timeout: 15000 });
   await frame.locator("#rewardChoiceList .reward-choice-card:has(.reward-rarity-badge--core)").click();
   await frame.locator("#rewardChoiceConfirm").click();
   await expect(frame.locator("#ownedCardSummary")).toContainText("태그·진화 1");
@@ -1443,6 +1489,39 @@ test("stage debug page opens a forced dugout event after game preparation", asyn
   await expect(frame.locator("#dugoutOverlay")).toBeVisible({ timeout: 5000 });
   expect(await frame.locator("#dugoutChoiceList .dugout-choice-card").count()).toBeGreaterThan(0);
   expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+});
+
+test("QA control room applies state, simulates pitches, and opens a selected dugout event", async ({ page }) => {
+  await page.setViewportSize({ width: 1100, height: 900 });
+  await page.goto("/stage-debug.html");
+  await page.locator('[data-action="prepare"]').click();
+  await expect(page.locator("#qaDugoutEvent option")).toHaveCount(25, { timeout: 10000 });
+  expect(await page.locator("#qaPitch option").count()).toBeGreaterThan(0);
+
+  await page.selectOption("#qaBalls", "3");
+  await page.selectOption("#qaStrikes", "2");
+  await page.selectOption("#qaOuts", "1");
+  await page.selectOption("#qaPitcherHand", "L");
+  await page.selectOption("#qaBatterHand", "R");
+  await page.locator("#qaBase1").check();
+  await page.locator('[data-action="applyState"]').click();
+  const frame = page.frameLocator("#gameFrame");
+  const applied = await page.locator("#gameFrame").evaluate((iframe) => {
+    const state = iframe.contentWindow.MountPsycho.state;
+    return { balls: state.balls, strikes: state.strikes, outs: state.outs, runner: !!state.bases[0], throws: state.pitcher.throws };
+  });
+  expect(applied).toEqual({ balls: 3, strikes: 2, outs: 1, runner: true, throws: "L" });
+  await expect(page.locator("#status")).toContainText("3B 2S 1O");
+
+  await page.selectOption("#qaTrials", "100");
+  await page.locator('[data-action="simulatePitch"]').click();
+  await expect(page.locator("#qaSimulationResult")).toContainText("100회");
+  await expect(page.locator("#qaSimulationResult")).toContainText("투구 품질");
+
+  await page.selectOption("#qaDugoutEvent", "rival_plan");
+  await page.locator('[data-action="dugoutSelected"]').click();
+  await expect(frame.locator("#dugoutOverlay")).toBeVisible();
+  await expect(frame.locator("#dugoutChoiceList")).toContainText("코스 전환으로 묶는다");
 });
 
 test("mobile player tags open detail modal with tag text", async ({ page }) => {

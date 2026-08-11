@@ -10,14 +10,16 @@
       margin: 0;
       min-height: 100vh;
       display: grid;
-      grid-template-columns: minmax(250px, 320px) minmax(390px, 1fr);
+      grid-template-columns: minmax(320px, 380px) minmax(390px, 1fr);
       gap: 12px;
       padding: 12px;
-      background: #eaf4fb;
-      color: #142438;
+      background: #27211e;
+      color: #18120e;
       font-family: Arial, "Malgun Gothic", sans-serif;
     }
     .panel {
+      max-height: calc(100vh - 24px);
+      overflow: auto;
       display: grid;
       align-content: start;
       gap: 10px;
@@ -32,9 +34,9 @@
     button {
       width: 100%;
       min-height: 42px;
-      border: 0;
-      border-radius: 8px;
-      background: #14314d;
+      border: 2px solid #18120e;
+      border-radius: 0;
+      background: #18120e;
       color: #fff;
       font-weight: 900;
       cursor: pointer;
@@ -42,6 +44,29 @@
     button.secondary { background: #276e82; }
     button.warn { background: #8c4a18; }
     button:disabled { opacity: 0.5; cursor: wait; }
+    .tool-section {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border: 2px solid #18120e;
+      background: #fff7e5;
+      box-shadow: 3px 3px 0 #f2b928;
+    }
+    .control-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .control-grid label, .wide-control { display: grid; gap: 4px; font-size: 11px; font-weight: 900; }
+    .wide-control { grid-column: 1 / -1; }
+    .base-checks { display: flex; gap: 10px; align-items: center; min-height: 38px; }
+    .base-checks label { display: flex; gap: 4px; align-items: center; }
+    input[type="checkbox"] { width: 18px; height: 18px; accent-color: #ef3f2d; }
+    .qa-result {
+      min-height: 42px;
+      padding: 8px;
+      border: 2px solid #18120e;
+      background: #fff;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+    }
     .stage-picker { display: grid; gap: 6px; font-size: 12px; font-weight: 900; }
     select {
       width: 100%;
@@ -81,7 +106,7 @@
       display: grid;
       place-items: center;
       border-radius: 8px;
-      background: #d7eaf6;
+      background: #17110e;
       overflow: hidden;
     }
     iframe {
@@ -100,8 +125,8 @@
 </head>
 <body>
   <aside class="panel">
-    <h1>스테이지 플로우 테스트</h1>
-    <p>게임을 다시 플레이하지 않고 종료/보상/덕아웃 흐름을 빠르게 확인합니다.</p>
+    <h1>게임 QA 관제실</h1>
+    <p>화면 이동, 경기 상태, 덕아웃 이벤트, 투구 판정을 한곳에서 확인합니다.</p>
     <p><b>QA 20260721 · 시작/핵심태그/직사각형 존</b></p>
     <button class="secondary" data-action="titleScreen">시작 화면 확인</button>
     <button class="secondary" data-action="coreTagScreen">핵심태그 선택 확인</button>
@@ -129,6 +154,51 @@
     <button class="secondary" data-action="stageReward">스테이지 보상 바로 열기</button>
     <button class="secondary" data-action="dugout">덕아웃 이벤트</button>
     <button class="warn" data-action="runComplete">STAGE 12 최종 정산</button>
+
+    <section class="tool-section">
+      <h2>경기 상태 설정</h2>
+      <div class="control-grid">
+        <label>볼<select id="qaBalls"><option>0</option><option>1</option><option>2</option><option>3</option></select></label>
+        <label>스트라이크<select id="qaStrikes"><option>0</option><option>1</option><option>2</option></select></label>
+        <label>아웃<select id="qaOuts"><option>0</option><option>1</option><option>2</option></select></label>
+        <label>투수<select id="qaPitcherHand"><option value="R">우투</option><option value="L">좌투</option></select></label>
+        <label>타자<select id="qaBatterHand"><option value="R">우타</option><option value="L">좌타</option></select></label>
+        <div class="wide-control">주자
+          <div class="base-checks">
+            <label><input id="qaBase1" type="checkbox">1루</label>
+            <label><input id="qaBase2" type="checkbox">2루</label>
+            <label><input id="qaBase3" type="checkbox">3루</label>
+          </div>
+        </div>
+      </div>
+      <button data-action="applyState">상태 적용</button>
+    </section>
+
+    <section class="tool-section">
+      <h2>덕아웃 이벤트 검사</h2>
+      <label class="wide-control">이벤트<select id="qaDugoutEvent"></select></label>
+      <button class="secondary" data-action="dugoutSelected">선택 이벤트 열기</button>
+    </section>
+
+    <section class="tool-section">
+      <h2>투구 판정 실험실</h2>
+      <div class="control-grid">
+        <label>구종<select id="qaPitch"></select></label>
+        <label>코스
+          <select id="qaZone">
+            <option value="1">1 · 좌상</option><option value="2">2 · 중상</option><option value="3">3 · 우상</option>
+            <option value="4">4 · 좌중</option><option value="5" selected>5 · 중앙</option><option value="6">6 · 우중</option>
+            <option value="7">7 · 좌하</option><option value="8">8 · 중하</option><option value="9">9 · 우하</option>
+          </select>
+        </label>
+        <label class="wide-control">반복 횟수
+          <select id="qaTrials"><option value="1">1회</option><option value="100" selected>100회</option><option value="1000">1000회</option></select>
+        </label>
+      </div>
+      <button class="warn" data-action="simulatePitch">판정 실행</button>
+      <div id="qaSimulationResult" class="qa-result">게임 준비 후 실행할 수 있습니다.</div>
+    </section>
+
     <button data-action="reload">새로고침</button>
     <a class="server-link" href="http://127.0.0.1:4173/stage-debug.html">로컬 서버 주소 열기</a>
     <div id="status" class="status">대기 중</div>
@@ -142,6 +212,16 @@
     const frame = document.querySelector("#gameFrame");
     const statusBox = document.querySelector("#status");
     const stageSelect = document.querySelector("#stageSelect");
+    const qaBalls = document.querySelector("#qaBalls");
+    const qaStrikes = document.querySelector("#qaStrikes");
+    const qaOuts = document.querySelector("#qaOuts");
+    const qaPitcherHand = document.querySelector("#qaPitcherHand");
+    const qaBatterHand = document.querySelector("#qaBatterHand");
+    const qaDugoutEvent = document.querySelector("#qaDugoutEvent");
+    const qaPitch = document.querySelector("#qaPitch");
+    const qaZone = document.querySelector("#qaZone");
+    const qaTrials = document.querySelector("#qaTrials");
+    const qaSimulationResult = document.querySelector("#qaSimulationResult");
     const localServerUrl = "http://127.0.0.1:4173/stage-debug.html";
     const fileMode = window.location.protocol === "file:";
     let lastMessage = "대기 중";
@@ -206,6 +286,32 @@
       return checkFrameAccess(() => frame.contentWindow?.MountPsycho);
     }
 
+    function syncQaControls(MP) {
+      if (!MP?.state?.pitcher) return;
+      const state = MP.state;
+      const batter = MP.debug.currentBatter();
+      qaBalls.value = String(state.balls || 0);
+      qaStrikes.value = String(state.strikes || 0);
+      qaOuts.value = String(state.outs || 0);
+      qaPitcherHand.value = MP.debug.pitcherThrows(state.pitcher);
+      qaBatterHand.value = MP.debug.batterBats(batter);
+      document.querySelector("#qaBase1").checked = !!state.bases[0];
+      document.querySelector("#qaBase2").checked = !!state.bases[1];
+      document.querySelector("#qaBase3").checked = !!state.bases[2];
+
+      const selectedEvent = qaDugoutEvent.value;
+      qaDugoutEvent.innerHTML = MP.debug.dugoutEventCatalog()
+        .map((event) => `<option value="${event.id}">${event.pool === "weird" ? "돌발 · " : ""}${event.title}</option>`)
+        .join("");
+      if ([...qaDugoutEvent.options].some((option) => option.value === selectedEvent)) qaDugoutEvent.value = selectedEvent;
+
+      const selectedPitch = qaPitch.value;
+      qaPitch.innerHTML = state.pitcher.repertoire
+        .map((pitch) => `<option value="${pitch.id}">${pitch.name}</option>`)
+        .join("");
+      if ([...qaPitch.options].some((option) => option.value === selectedPitch)) qaPitch.value = selectedPitch;
+    }
+
     function visibleElement(selector) {
       const element = doc()?.querySelector(selector);
       if (!element || element.hidden || element.disabled) return null;
@@ -225,7 +331,10 @@
     async function prepareGame() {
       await waitFor(() => game()?.debug);
       const MP = game();
-      if (MP.state?.pitcher && MP.state?.lineup?.length) return MP;
+      if (MP.state?.pitcher && MP.state?.lineup?.length) {
+        syncQaControls(MP);
+        return MP;
+      }
       if (visibleElement("#titleStartButton")) await clickWhenReady("#titleStartButton");
       await clickWhenReady(".pitcher-choice-card", () => {
         const overlay = doc().querySelector("#pitcherSelectOverlay");
@@ -242,6 +351,7 @@
         doc().querySelector("[data-dugout-continue]")?.click();
       }
       await waitFor(() => MP.state?.pitcher && MP.state?.lineup?.length);
+      syncQaControls(MP);
       return MP;
     }
 
@@ -363,6 +473,66 @@
       log("덕아웃 선택/판단 오버레이를 열었습니다.");
     }
 
+    async function applyState() {
+      const desired = {
+        balls: Number(qaBalls.value),
+        strikes: Number(qaStrikes.value),
+        outs: Number(qaOuts.value),
+        pitcherHand: qaPitcherHand.value,
+        batterHand: qaBatterHand.value,
+        bases: [1, 2, 3].map((base) => document.querySelector(`#qaBase${base}`).checked)
+      };
+      const MP = await prepareGame();
+      const state = MP.state;
+      state.balls = desired.balls;
+      state.strikes = desired.strikes;
+      state.outs = desired.outs;
+      state.pitcher.throws = desired.pitcherHand;
+      MP.debug.currentBatter().bats = desired.batterHand;
+      state.bases = desired.bases.map((occupied, index) => occupied ? { name: `QA ${index + 1}루 주자` } : null);
+      MP.debug.render();
+      log(`상태 적용: ${state.balls}B ${state.strikes}S ${state.outs}O · ${MP.debug.pitcherThrows(state.pitcher)}투/${MP.debug.batterBats(MP.debug.currentBatter())}타`);
+    }
+
+    async function dugoutSelected() {
+      const MP = await prepareGame();
+      const choices = MP.debug.generateDugoutChoices({ force: true, eventId: qaDugoutEvent.value });
+      if (!choices.length) throw new Error("선택한 덕아웃 이벤트를 찾지 못했습니다.");
+      MP.state.pendingDugoutChoices = choices;
+      MP.state.dugoutPending = true;
+      MP.state.dugoutBeforeAtBat = true;
+      MP.state.dugoutAdvanceBatterOnConfirm = false;
+      MP.debug.openDugoutChoiceOverlay();
+      log(`덕아웃 이벤트 강제 실행: ${qaDugoutEvent.selectedOptions[0]?.textContent || qaDugoutEvent.value}`);
+    }
+
+    async function simulatePitch() {
+      const MP = await prepareGame();
+      const pitch = MP.debug.pitchById(qaPitch.value) || MP.state.pitcher.repertoire[0];
+      const batter = MP.debug.currentBatter();
+      const trials = Number(qaTrials.value);
+      const course = MP.debug.intendedCourse(Number(qaZone.value), "strike");
+      const context = MP.debug.buildPitchResolutionContext(pitch, batter, course, {});
+      const swingProbability = MP.debug.pitchSwingProbability(context);
+      const counts = {};
+      for (let index = 0; index < trials; index += 1) {
+        const result = MP.debug.resolvePitch(pitch, batter, course, {});
+        counts[result.result] = (counts[result.result] || 0) + 1;
+      }
+      const labels = { calledStrike: "루킹 스트라이크", swingingStrike: "헛스윙", ball: "볼", foul: "파울", inPlayOut: "인플레이 아웃", groundOut: "땅볼 아웃", flyOut: "뜬공 아웃", single: "안타", double: "2루타", triple: "3루타", homeRun: "홈런", doublePlay: "병살" };
+      const resultLines = Object.entries(counts)
+        .sort((a, b) => b[1] - a[1])
+        .map(([key, count]) => `${labels[key] || key}: ${count}회 (${Math.round(count / trials * 100)}%)`);
+      qaSimulationResult.textContent = [
+        `${pitch.name} · ${qaZone.selectedOptions[0].textContent} · ${trials}회`,
+        `투구 품질 ${Math.round(context.quality)} · 스윙 확률 ${Math.round(swingProbability * 100)}%`,
+        `좌우 상성 접촉 ${context.handedness.contact >= 0 ? "+" : ""}${Math.round(context.handedness.contact * 1000) / 10}%`,
+        "",
+        ...resultLines
+      ].join("\n");
+      log(`${pitch.name} 판정 ${trials}회 실행 완료`);
+    }
+
     async function runComplete() {
       stageSelect.value = "11";
       const MP = await openSelectedStage();
@@ -385,7 +555,7 @@
       log("테스트 화면을 새로 불러옵니다.");
     }
 
-    const actions = { titleScreen, coreTagScreen, themeScreen, prepare: prepareGame, openStage: openSelectedStage, stageReward, naturalStageEnd, dugout, runComplete, reload: reloadFrame };
+    const actions = { titleScreen, coreTagScreen, themeScreen, prepare: prepareGame, openStage: openSelectedStage, stageReward, naturalStageEnd, dugout, applyState, dugoutSelected, simulatePitch, runComplete, reload: reloadFrame };
 
     window.setInterval(renderStatus, 500);
 
