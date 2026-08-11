@@ -1075,6 +1075,11 @@ test("stage card reward assigns performance tokens to cards", async ({ page }) =
   await expect(page.locator("#rewardAbsorbList .reward-performance-pill").filter({ hasText: /설계 삼진/ })).toHaveCount(1);
   await expect(page.locator("#rewardAbsorbList .reward-performance-pill").filter({ hasText: /→ [123]번/ })).toHaveCount(2);
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--common")).toHaveCount(3);
+  const animatingCard = page.locator("#rewardChoiceList .is-rarity-upgrade-animating").first();
+  await expect(animatingCard).toBeVisible({ timeout: 6000 });
+  await expect.poll(() => animatingCard.evaluate((card) =>
+    card.getAnimations().some((animation) => animation.playState === "running")
+  )).toBe(true);
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1, { timeout: 9000 });
   await expect(page.locator("#rewardChoiceList .reward-rarity-badge--rare")).toHaveCount(2, { timeout: 9000 });
   await expect(page.locator("#rewardChoiceList .reward-choice-card--core .core-evo-name")).toHaveCSS("color", "rgb(255, 203, 66)");

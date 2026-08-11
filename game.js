@@ -10713,30 +10713,13 @@ function generateCoreEvolutionChoices() {
 function playRewardRarityUpgrade(card, badge, reward) {
   if (!card) return;
   card.dataset.upgradeAnimated = "true";
-  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches || typeof card.animate !== "function") return;
-  const tone = reward.rarity === "core" ? "#ffcb42" : "#3c7ed6";
-  card.animate(
-    [
-      { transform: "scale(1)", filter: "saturate(0.55) brightness(0.88)", boxShadow: "5px 5px 0 #17120e" },
-      { transform: "scale(0.97)", filter: "saturate(0.7) brightness(0.92)", offset: 0.2 },
-      { transform: "scale(1.065)", filter: "saturate(1.35) brightness(1.55)", boxShadow: `5px 5px 0 #17120e, 0 0 0 7px ${tone}, 0 0 28px ${tone}`, offset: 0.48 },
-      { transform: "scale(1.018)", filter: "saturate(1.1) brightness(1.12)", boxShadow: `5px 5px 0 #17120e, 0 0 14px ${tone}`, offset: 0.76 },
-      { transform: "scale(1)", filter: "none", boxShadow: "5px 5px 0 #17120e" }
-    ],
-    { duration: 1150, easing: "cubic-bezier(0.18, 0.9, 0.22, 1)", fill: "none" }
-  );
-  [badge, card.querySelector(".reward-card-upgrade-badge")]
-    .filter(Boolean)
-    .forEach((element, index) => {
-      element.animate(
-        [
-          { opacity: 0, transform: "translateY(8px) scale(0.72)" },
-          { opacity: 1, transform: "translateY(-3px) scale(1.14)", offset: 0.55 },
-          { opacity: 1, transform: "translateY(0) scale(1)" }
-        ],
-        { duration: 680, delay: index * 70, easing: "cubic-bezier(0.18, 0.9, 0.22, 1)", fill: "forwards" }
-      );
-    });
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+  card.classList.remove("is-rarity-upgrade-animating");
+  void card.offsetWidth;
+  card.classList.add("is-rarity-upgrade-animating");
+  MP.rewardUpgradeRevealTimers.push(window.setTimeout(() => {
+    card.classList.remove("is-rarity-upgrade-animating");
+  }, 1250));
 }
 function startRewardRevealAnimation() {
   if (!els.rewardOverlay) return;
