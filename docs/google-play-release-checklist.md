@@ -16,6 +16,7 @@
 - [x] Android 뒤로가기: 상세창·메뉴 우선 닫기, 게임 중 메뉴 열기
 - [x] 앱 백그라운드 전환 시 BGM 일시정지 및 복귀 처리
 - [x] 디버그 AAB 빌드 성공
+- [x] 미서명 release AAB 빌드 및 lintVital 성공: 68.6MB
 - [ ] Play Console 앱 생성 전에 최종 앱 ID 확정
 - [ ] 업로드 키 생성 및 Play App Signing 등록
 - [ ] 서명된 release AAB 생성
