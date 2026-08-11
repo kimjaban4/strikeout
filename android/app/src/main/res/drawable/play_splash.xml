@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="#1B140F" />
+        </shape>
+    </item>
+    <item
+        android:width="184dp"
+        android:height="184dp"
+        android:gravity="center"
+        android:drawable="@drawable/play_app_icon" />
+</layer-list>

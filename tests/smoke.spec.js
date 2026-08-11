@@ -89,6 +89,26 @@ test("title tutorial explains the four core rules", async ({ page }) => {
   await expect(page.locator("#tutorialNextButton")).toHaveText("튜토리얼 완료");
 });
 
+test("android back closes transient screens before exiting", async ({ page }) => {
+  await page.goto("/");
+  expect(await page.evaluate(() => window.MountPsycho.handleAndroidBack())).toBe(false);
+
+  await page.locator("#titleTutorialButton").click();
+  expect(await page.evaluate(() => window.MountPsycho.handleAndroidBack())).toBe(true);
+  await expect(page.locator("#tutorialOverlay")).toBeHidden();
+  await expect(page.locator("#titleOverlay")).toBeVisible();
+
+  await page.locator("#titleClubhouseButton").click();
+  await expect(page.locator("#clubhouseOverlay")).toBeVisible();
+  expect(await page.evaluate(() => window.MountPsycho.handleAndroidBack())).toBe(true);
+  await expect(page.locator("#clubhouseOverlay")).toBeHidden();
+
+  await startFromTitle(page);
+  expect(await page.evaluate(() => window.MountPsycho.handleAndroidBack())).toBe(true);
+  await expect(page.locator("#pitcherSelectOverlay")).toBeHidden();
+  await expect(page.locator("#titleOverlay")).toBeVisible();
+});
+
 test("game flow runs at 1.3x while pitch result toasts stay at three seconds", async ({ page }) => {
   await page.goto("/");
   const timing = await page.evaluate(() => window.MountPsycho.GAME_TIMING);

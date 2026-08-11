@@ -309,6 +309,11 @@ function toggleSfx() {
   updateAudioToggles();
 }
 
+function syncAudioVisibility() {
+  if (document.hidden) audioState.bgm?.pause();
+  else startBgm();
+}
+
 function pickEffectPath(name) {
   const paths = [audioPaths[name]].flat().filter(Boolean);
   if (paths.length < 2) return paths[0] || "";
@@ -4934,6 +4939,43 @@ function closeMobileMenu() {
   if (els.mobileMenuOverlay) els.mobileMenuOverlay.hidden = true;
   els.mobileNewGameButton?.setAttribute("aria-expanded", "false");
 }
+
+function handleAndroidBack() {
+  if (state.releaseTiming?.active) {
+    cancelReleaseTiming();
+    return true;
+  }
+  if (els.mobilePlayerDetailPanel?.hidden === false || els.mobileInfoPanel?.hidden === false) {
+    closeMobileSheets();
+    return true;
+  }
+  if (els.stageThemeDetailOverlay?.hidden === false) {
+    closeStageThemeDetail();
+    return true;
+  }
+  if (els.mobileMenuOverlay?.hidden === false) {
+    closeMobileMenu();
+    return true;
+  }
+  if (els.clubhouseOverlay?.hidden === false || els.equipmentSetupOverlay?.hidden === false) {
+    closeClubhouse();
+    return true;
+  }
+  if (els.tutorialOverlay?.hidden === false || els.pitcherSelectOverlay?.hidden === false) {
+    showTitleScreen();
+    return true;
+  }
+  if ([els.rewardOverlay, els.dugoutOverlay, els.stageOverlay, els.themeSelectOverlay, els.resultOverlay].some((overlay) => overlay?.hidden === false)) {
+    return true;
+  }
+  if (els.titleOverlay?.hidden !== false) {
+    openMobileMenu();
+    return true;
+  }
+  return false;
+}
+
+MP.handleAndroidBack = handleAndroidBack;
 
 function startGame() {
   clearAutoAdvance();
@@ -12656,6 +12698,7 @@ function bindUiEvents() {
   MP.uiEventsBound = true;
 
   syncTitleScreenEls();
+  document.addEventListener("visibilitychange", syncAudioVisibility);
   els.titleOverlay?.addEventListener("click", (event) => {
     if (event.target.closest("#titleClubhouseButton")) {
       event.preventDefault();
