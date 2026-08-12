@@ -1497,12 +1497,14 @@ test("test page opens upgraded stage rewards and selection highlight", async ({ 
   await page.setViewportSize({ width: 1200, height: 900 });
   await page.goto("/test.html");
   await expect(page.locator("#conn")).toContainText("연결됨", { timeout: 10000 });
+  await expect(page.locator("#stage")).toHaveCSS("width", "390px");
   await page.locator('[data-act="rewardStageCard"]').click();
   const game = page.frameLocator("#stage");
   await expect(game.locator("#rewardOverlay")).toBeVisible({ timeout: 8000 });
   await expect(game.locator("#rewardChoiceList .is-upgraded-by-performance")).toHaveCount(3);
   await expect(game.locator("#rewardChoiceList .reward-rarity-badge--core")).toHaveCount(1, { timeout: 10000 });
   const card = game.locator("#rewardChoiceList .reward-choice-card").first();
+  await expect(card).toHaveCSS("border-radius", "0px");
   await card.click();
   await expect(card).toHaveCSS("background-color", "rgb(239, 65, 44)");
 });
