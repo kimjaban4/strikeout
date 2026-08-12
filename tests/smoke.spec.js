@@ -1509,6 +1509,18 @@ test("test page opens upgraded stage rewards and selection highlight", async ({ 
   await expect(card).toHaveCSS("background-color", "rgb(239, 65, 44)");
 });
 
+test("test page always opens visible dugout choices", async ({ page }) => {
+  await page.setViewportSize({ width: 1200, height: 900 });
+  await page.goto("/test.html");
+  await expect(page.locator("#conn")).toContainText("연결됨", { timeout: 10000 });
+  await page.locator('[data-act="dugoutChoice"]').click();
+  const game = page.frameLocator("#stage");
+  await expect(game.locator("#dugoutOverlay")).toBeVisible({ timeout: 8000 });
+  const choices = game.locator("#dugoutChoiceList .dugout-choice-card");
+  expect(await choices.count()).toBeGreaterThan(0);
+  await expect(choices.first()).toBeVisible();
+});
+
 test("stage debug page opens the title, core-tag, and opponent checks", async ({ page }) => {
   await page.goto("/stage-debug.html");
   await page.getByRole("button", { name: "시작 화면 확인", exact: true }).click();

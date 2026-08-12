@@ -519,7 +519,7 @@
           await ensurePitcher();
           await gameExec(`(() => {
             const d = MountPsycho.debug, s = MountPsycho.state;
-            s.pendingDugoutChoices = d.generateDugoutChoices();
+            s.pendingDugoutChoices = d.generateDugoutChoices({ force: true });
             s.dugoutPending = true;
             d.openDugoutChoiceOverlay();
           })()`);
