@@ -1,5 +1,6 @@
 export const deployFiles = [
   "index.html",
+  "test.html",
   "stage-debug.html",
   "docs/privacy-policy.html",
   "styles.css",
