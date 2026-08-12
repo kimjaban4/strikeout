@@ -385,7 +385,10 @@
       async function ensurePitcher() {
         await gameExec(`(() => {
           const d = MountPsycho.debug, s = MountPsycho.state;
-          if (!s.pitcher) d.beginGameWithPitcher(d.generatePitcher());
+          if (!s.pitcher) {
+            d.startGame();
+            d.beginGameWithPitcher(d.generatePitcher());
+          }
         })()`);
         buildPitchCtls();
         buildSlotSeg();
@@ -498,6 +501,16 @@
           await ensurePitcher();
           await gameExec(`(() => {
             const d = MountPsycho.debug, s = MountPsycho.state;
+            if (s.awaitingStageStart) d.startStageFromOverlay();
+            const events = ["설계 삼진", "병살 유도", "이닝 미션 성공"];
+            s.stageRun.stagePerformanceEvents = events.map((label, index) => ({
+              key: "qa:reward:" + index, label, score: 4, source: "테스트"
+            }));
+            s.stageRun.rewardBoost.absorbed = events.length;
+            s.stageRun.rewardBoost.performanceScore = 40;
+            s.pitcher.rewardHistory.conditionTypesByStage = ["pitchUpgrade", "weaknessMitigation", "bonusTag"].map(type => ({
+              stageIndex: s.stageIndex, type
+            }));
             s.lastStageResult = d.calculateStageResult();
             d.openRewardDraft("스테이지 카드 보상", null, "stageCard");
           })()`);
