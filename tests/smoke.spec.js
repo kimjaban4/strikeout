@@ -285,7 +285,8 @@ test("12 stages map to four three-inning games and the planned reward schedule",
         stage: debug.currentStageNumber(),
         game: debug.currentGameNumber(),
         inning: debug.currentGameInning(),
-        reward: debug.stageRewardKind(stageIndex)
+        reward: debug.stageRewardKind(stageIndex),
+        runLimit: debug.currentStageRunLimit()
       };
     });
   });
@@ -296,6 +297,7 @@ test("12 stages map to four three-inning games and the planned reward schedule",
     "3-1", "3-2", "3-3",
     "4-1", "4-2", "4-3"
   ]);
+  expect(result.map(({ runLimit }) => runLimit)).toEqual([4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5]);
   expect(result.map(({ reward }) => reward)).toEqual([
     "stageCard", "stageCard", "stageCard",
     "stageCard", "stageCard", "stageCard",
@@ -896,10 +898,10 @@ test("starter stats are capped and release shake combines command with mental", 
   const result = await page.evaluate(() => {
     const MP = window.MountPsycho;
     const limits = {
-      power: { 구속: [64, 78], 제구: [44, 62], 변화: [32, 48], 멘탈: [42, 66], 예측: [34, 56] },
-      breaking: { 구속: [42, 60], 제구: [46, 64], 변화: [64, 78], 멘탈: [42, 68], 예측: [38, 60] },
-      command: { 구속: [44, 62], 제구: [64, 78], 변화: [44, 62], 멘탈: [46, 70], 예측: [40, 62] },
-      balanced: { 구속: [52, 66], 제구: [52, 66], 변화: [52, 66], 멘탈: [44, 68], 예측: [38, 58] }
+      power: { 구속: [56, 68], 제구: [38, 52], 변화: [28, 42], 멘탈: [36, 52], 예측: [30, 46] },
+      breaking: { 구속: [38, 52], 제구: [40, 54], 변화: [56, 68], 멘탈: [36, 54], 예측: [32, 48] },
+      command: { 구속: [40, 54], 제구: [56, 68], 변화: [40, 54], 멘탈: [40, 56], 예측: [34, 50] },
+      balanced: { 구속: [46, 58], 제구: [46, 58], 변화: [46, 58], 멘탈: [38, 54], 예측: [32, 48] }
     };
     const statsInRange = Array.from({ length: 200 }, () => MP.debug.generatePitcher()).every((pitcher) =>
       Object.entries(limits[pitcher.profileId]).every(([stat, [min, max]]) =>

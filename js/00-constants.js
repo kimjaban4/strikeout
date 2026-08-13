@@ -209,9 +209,8 @@ MP.stageConfigs = (typeof MP === "undefined" ? gameConfigs : MP.gameConfigs).fla
 );
 
 MP.stageInnings = Array(12).fill(1);
-// ponytail: provisional limits preserve the current three-inning balance; tune after the 12-inning simulator runs.
-MP.gameRunLimits = [4, 5, 6, 6];
-MP.stageRunLimits = [4, 4, 4, 5, 5, 5, 6, 6, 6, 6, 6, 6];
+// ponytail: keep the rookie game forgiving; later games must earn their extra margin through equipment and rewards.
+MP.stageRunLimits = [4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 5];
 MP.stageRewardSchedule = [
   "stageCard", "stageCard", "stageCard",
   "stageCard", "stageCard", "stageCard",
@@ -529,44 +528,44 @@ MP.pitcherProfiles = [
     id: "power",
     label: "파워 피처",
     stats: {
-      구속: [64, 78],
-      제구: [44, 62],
-      변화: [32, 48],
-      멘탈: [42, 66],
-      예측: [34, 56]
+      구속: [56, 68],
+      제구: [38, 52],
+      변화: [28, 42],
+      멘탈: [36, 52],
+      예측: [30, 46]
     }
   },
   {
     id: "breaking",
     label: "변화구 장인",
     stats: {
-      구속: [42, 60],
-      제구: [46, 64],
-      변화: [64, 78],
-      멘탈: [42, 68],
-      예측: [38, 60]
+      구속: [38, 52],
+      제구: [40, 54],
+      변화: [56, 68],
+      멘탈: [36, 54],
+      예측: [32, 48]
     }
   },
   {
     id: "command",
     label: "제구형 투수",
     stats: {
-      구속: [44, 62],
-      제구: [64, 78],
-      변화: [44, 62],
-      멘탈: [46, 70],
-      예측: [40, 62]
+      구속: [40, 54],
+      제구: [56, 68],
+      변화: [40, 54],
+      멘탈: [40, 56],
+      예측: [34, 50]
     }
   },
   {
     id: "balanced",
     label: "균형형 투수",
     stats: {
-      구속: [52, 66],
-      제구: [52, 66],
-      변화: [52, 66],
-      멘탈: [44, 68],
-      예측: [38, 58]
+      구속: [46, 58],
+      제구: [46, 58],
+      변화: [46, 58],
+      멘탈: [38, 54],
+      예측: [32, 48]
     }
   }
 ];

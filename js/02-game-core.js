@@ -10,7 +10,6 @@ window.MountPsycho = window.MountPsycho || {};
     gameConfigs,
     stageConfigs,
     stageInnings,
-    gameRunLimits,
     stageRunLimits,
     stageRewardSchedule,
     rivalPsychPatterns,
